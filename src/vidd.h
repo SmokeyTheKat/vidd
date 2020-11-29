@@ -8,7 +8,19 @@
 #include <ddcColors.h>
 #include <ddcKeyboard.h>
 
+struct vidd;
+struct viddCursor;
+struct viddCommand;
+
 enum viddWriteMode{ VIDD_MODE_NORMAL=0, VIDD_MODE_INSERT, VIDD_MODE_REPLACE};
+
+struct viddCommand
+{
+	const char* name;
+	void (*function)(struct vidd*);
+};
+
+#include "./commands.h"
 
 struct viddCursor
 {
@@ -41,6 +53,8 @@ void vidd_draw_mode(struct vidd* vidd);
 void vidd_handle_normal_mode_key(struct vidd* vidd, char key);
 void vidd_handle_insert_mode_key(struct vidd* vidd, char key);
 void vidd_handle_replace_mode_key(struct vidd* vidd, char key);
+void vidd_read_command(struct vidd* vidd);
+void vidd_run_command(struct vidd* vidd, ddString command);
 void vidd_main_input_loop(struct vidd* vidd);
 
 struct viddCursor make_viddCursor(ddIVec2 position, ddColor fg, ddColor bg)
@@ -166,28 +180,48 @@ void vidd_main_input_loop(struct vidd* vidd)
 	}
 }
 
+void vidd_read_command(struct vidd* vidd)
+{
+	ddString command = make_ddString("");
+	cursor_push();
+	cursor_moveTo(0, vidd->height-1);
+	ddPrint_char(':');
+	char comKey = ddKey_getch_noesc();
+	while (comKey != DDK_RETURN && comKey != DDK_ESCAPE)
+	{
+		ddString_push_char_back(&command, comKey);
+		ddPrint_char(comKey);
+		comKey = ddKey_getch_noesc();
+	}
+	cursor_deleteLine();
+	cursor_pop();
+	cursor_moveUp();
+	cursor_moveUp();
+	cursor_moveUp();
+	cursor_moveLeft();
+	vidd_run_command(vidd, command);
+	raze_ddString(&command);
+}
+
+void vidd_run_command(struct vidd* vidd, ddString command)
+{
+	for (sizet i = 0; i < viddCommandVectorLength; i++)
+	{
+		if (ddString_compare_cstring(command, viddCommandVector[i].name))
+		{
+			(*(viddCommandVector[i].function))(vidd);
+			return;
+		}
+	}
+}
+
 void vidd_handle_normal_mode_key(struct vidd* vidd, char key)
 {
 	switch (key)
 	{
 		case ':':
 		{
-			ddString command = make_ddString("");
-			char comKey = ddKey_getch_noesc();
-			cursor_push();
-			cursor_moveTo(0, vidd->height-1);
-			ddPrint_char(':');
-			while (comKey != DDK_RETURN && comKey != DDK_ESCAPE)
-			{
-				ddString_push_char_back(&command, comKey);
-				ddPrint_char(comKey);
-				comKey = ddKey_getch_noesc();
-			}
-			cursor_deleteLine();
-			cursor_pop();
-			cursor_moveUp();
-			cursor_moveLeft();
-			raze_ddString(&command);
+			vidd_read_command(vidd);
 			break;
 		}
 		case 'i':
