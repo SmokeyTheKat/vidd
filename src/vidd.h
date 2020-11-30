@@ -70,14 +70,13 @@ struct viddCursor viddCursor_set_position(struct viddCursor* vcursor, int x, int
 {
 	vcursor->position.x = x;
 	vcursor->position.y = y;
-	cursor_moveTo(x, y);
+	cursor_move_to(x, y);
 }
 struct viddCursor viddCursor_write_char(struct viddCursor* vcursor, char key)
 {
 	vcursor->position.x++;
 	ddPrint_char(key);
 }
-
 
 struct vidd make_vidd(uint16t width, uint16t height)
 {
@@ -95,29 +94,25 @@ struct vidd make_vidd(uint16t width, uint16t height)
 void vidd_draw_mode(struct vidd* vidd)
 {
 	cursor_push();
-
 	if (vidd->mode == VIDD_MODE_NORMAL)
 	{
-		cursor_moveTo(0, vidd->height);
-		cursor_deleteLine();
-		cursor_chWrite("[NORMAL]");
+		cursor_move_to(0, vidd->height);
+		cursor_delete_line();
+		cursor_write_cstring("[NORMAL]");
 	}
 	else if (vidd->mode == VIDD_MODE_INSERT)
 	{
-		cursor_moveTo(0, vidd->height);
-		cursor_deleteLine();
-		cursor_chWrite("[INSERT]");
+		cursor_move_to(0, vidd->height);
+		cursor_delete_line();
+		cursor_write_cstring("[INSERT]");
 	}
 	else if (vidd->mode == VIDD_MODE_REPLACE)
 	{
-		cursor_moveTo(0, vidd->height);
-		cursor_deleteLine();
-		cursor_chWrite("[REPALCE]");
+		cursor_move_to(0, vidd->height);
+		cursor_delete_line();
+		cursor_write_cstring("[REPALCE]");
 	}
-
 	cursor_pop();
-	cursor_moveUp();
-	cursor_moveLeft();
 }
 
 void vidd_set_mode(struct vidd* vidd, int mode)
@@ -138,7 +133,7 @@ void vidd_clear_line(struct vidd* vidd, uint16t line)
 	for (int x = 0; x < vidd->width; x++)
 		vidd->buffer[line].cstr[x] = ' ';
 	vidd_reset_line_nulls(vidd, line);
-	cursor_deleteLine();
+	cursor_delete_line();
 }
 
 void vidd_reset_line_nulls(struct vidd* vidd, uint16t line)
@@ -158,7 +153,6 @@ void vidd_buffer_replace(struct vidd* vidd, char key)
 
 void vidd_main_input_loop(struct vidd* vidd)
 {
-	init_cursor();
 	cursor_clear();
 	vidd_set_mode(vidd, VIDD_MODE_NORMAL);
 	char key;
@@ -184,22 +178,19 @@ void vidd_read_command(struct vidd* vidd)
 {
 	ddString command = make_ddString("");
 	cursor_push();
-	cursor_moveTo(0, vidd->height-1);
+	cursor_move_to(0, vidd->height-1);
 	ddPrint_char(':');
 	char comKey = ddKey_getch_noesc();
 	while (comKey != DDK_RETURN && comKey != DDK_ESCAPE)
 	{
 		ddString_push_char_back(&command, comKey);
-		ddPrint_char(comKey);
+		cursor_write_char(comKey);
 		comKey = ddKey_getch_noesc();
 	}
-	cursor_deleteLine();
+	cursor_delete_line();
 	cursor_pop();
-	cursor_moveUp();
-	cursor_moveUp();
-	cursor_moveUp();
-	cursor_moveLeft();
-	vidd_run_command(vidd, command);
+	if (comKey != DDK_ESCAPE)
+		vidd_run_command(vidd, command);
 	raze_ddString(&command);
 }
 
