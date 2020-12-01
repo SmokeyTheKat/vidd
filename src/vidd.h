@@ -58,6 +58,7 @@ void vidd_set_mode(struct vidd* vidd, int mode);
 void vidd_set_position(struct vidd* vidd, int x, int y);
 void vidd_write_char(struct vidd* vidd, char key);
 void vidd_draw_mode(struct vidd* vidd);
+void vidd_insert_line(struct vidd* vidd, int pos);
 void vidd_redraw_line_at(struct vidd* vidd, int position);
 int vidd_get_last_nonwhite(struct vidd* vidd);
 int vidd_get_first_nonwhite(struct vidd* vidd);
@@ -142,6 +143,12 @@ void vidd_draw_mode(struct vidd* vidd)
 		cursor_write_cstring("[REPALCE]");
 	}
 	cursor_pop();
+}
+
+void vidd_insert_line(struct vidd* vidd, int pos)
+{
+	vidd->buffer.data[vidd->buffer.lineCount] = make_ddString(" ");
+	vidd->buffer.lineCount++;
 }
 
 int vidd_get_last_nonwhite(struct vidd* vidd)
@@ -277,10 +284,14 @@ void vidd_handle_normal_mode_key(struct vidd* vidd, char key)
 			break;
 		}
 		case 'o':
-			//vidd_insert_line(vidd, vidd->cursor.position.y+1);
+			vidd_insert_line(vidd, vidd->cursor.position.y+1);
+			vidd->cursor.position.x = 0;
+			vidd->cursor.position.y++;
+			cursor_move_to(vidd->cursor.position.x, vidd->cursor.position.y);
+			vidd_set_mode(vidd, VIDD_MODE_INSERT);
 			break;
 		case 'O':
-			//vidd_insert_line(vidd, vidd->cursor.position.y-1);
+			vidd_insert_line(vidd, vidd->cursor.position.y-1);
 			break;
 		case 'i':
 			vidd_set_mode(vidd, VIDD_MODE_INSERT);
@@ -348,9 +359,13 @@ void vidd_handle_normal_mode_key(struct vidd* vidd, char key)
 			break;
 		case 'j':
 			vidd_set_position(vidd, vidd->cursor.position.x, vidd->cursor.position.y+1);
+			if (vidd->cursor.position.x > vidd->buffer.data[vidd->cursor.position.y].length)
+				vidd_set_position(vidd, vidd->buffer.data[vidd->cursor.position.y].length-1, vidd->cursor.position.y);
 			break;
 		case 'k':
 			vidd_set_position(vidd, vidd->cursor.position.x, vidd->cursor.position.y-1);
+			if (vidd->cursor.position.x > vidd->buffer.data[vidd->cursor.position.y].length)
+				vidd_set_position(vidd, vidd->buffer.data[vidd->cursor.position.y].length-1, vidd->cursor.position.y);
 			break;
 		case 'l':
 			vidd_set_position(vidd, vidd->cursor.position.x+1, vidd->cursor.position.y);
@@ -372,6 +387,13 @@ void vidd_handle_insert_mode_key(struct vidd* vidd, char key)
 			vidd_write_char(vidd, ' ');
 			vidd_set_position(vidd, vidd->cursor.position.x-1, vidd->cursor.position.y);
 			vidd_redraw_line_at(vidd, vidd->cursor.position.x);
+			break;
+		case DDK_RETURN:
+			vidd_insert_line(vidd, vidd->cursor.position.y+1);
+			vidd->cursor.position.x = 0;
+			vidd->cursor.position.y++;
+			cursor_move_to(vidd->cursor.position.x, vidd->cursor.position.y);
+			vidd_set_mode(vidd, VIDD_MODE_INSERT);
 			break;
 		default:
 			vidd_buffer_insert(vidd, key);
