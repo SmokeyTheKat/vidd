@@ -145,11 +145,51 @@ void vidd_draw_mode(struct vidd* vidd)
 	cursor_pop();
 }
 
+void vidd_rewrite(struct vidd* vidd)
+{
+	cursor_clear();
+	for (sizet i = 0; i < vidd->buffer.lineCount; i++)
+	{
+		ddPrint_ddString_nl(vidd->buffer.data[i]);
+	}
+}
+
 void vidd_insert_line(struct vidd* vidd, int pos)
 {
-	vidd->buffer.data[vidd->buffer.lineCount] = make_ddString(" ");
+	vidd->buffer.data[vidd->buffer.lineCount] = make_ddString("    ");
 	vidd->buffer.lineCount++;
+	for (sizet i = vidd->buffer.lineCount-1; i > pos; i--)
+	{
+		ddString_copy(&(vidd->buffer.data[i]), vidd->buffer.data[i-1]);
+	}
+	remake_ddString(&(vidd->buffer.data[pos]), " ");
+	vidd_rewrite(vidd);
 }
+void vidd_remove_line(struct vidd* vidd, int pos)
+{
+	cursor_push();
+	for (sizet i = pos; i < vidd->buffer.lineCount; i++)
+	{
+		ddString_copy(&(vidd->buffer.data[i]), vidd->buffer.data[i+1]);
+	}
+	vidd->buffer.lineCount--;
+	vidd_rewrite(vidd);
+	cursor_pop();
+}
+/*
+
+0
+1
+2
+3
+3
+4
+5
+6
+7
+8
+9
+*/
 
 int vidd_get_last_nonwhite(struct vidd* vidd)
 {
@@ -191,9 +231,9 @@ void vidd_clear(struct vidd* vidd)
 }
 void vidd_clear_line(struct vidd* vidd, uint16t line)
 {
-	for (int x = 0; x < vidd->buffer.width; x++)
-		vidd->buffer.data[line].cstr[x] = '\0';
-	vidd_reset_line_nulls(vidd, line);
+	vidd->buffer.data[line].cstr[0] = ' ';
+	vidd->buffer.data[line].cstr[1] = '\0';
+	vidd->buffer.data[line].length = 1;
 	cursor_delete_line();
 }
 
@@ -341,9 +381,22 @@ void vidd_handle_normal_mode_key(struct vidd* vidd, char key)
 			char nextKey = ddKey_getch_noesc();
 			if (nextKey == 'd')
 			{
-				vidd_clear_line(vidd, vidd->cursor.position.y);
+				vidd_remove_line(vidd, vidd->cursor.position.y);
 				//viddCursor_set_position(&(vidd->cursor), 0, vidd->cursor.position.y);
 				// pop line
+			}
+			if (nextKey == 'j')
+			{
+				vidd_remove_line(vidd, vidd->cursor.position.y);
+				vidd_remove_line(vidd, vidd->cursor.position.y);
+			}
+			if (nextKey == 'k')
+			{
+				vidd_set_position(vidd, vidd->cursor.position.x, vidd->cursor.position.y-1);
+				if (vidd->cursor.position.x > vidd->buffer.data[vidd->cursor.position.y].length)
+					vidd_set_position(vidd, vidd->buffer.data[vidd->cursor.position.y].length-1, vidd->cursor.position.y);
+				vidd_remove_line(vidd, vidd->cursor.position.y);
+				vidd_remove_line(vidd, vidd->cursor.position.y);
 			}
 			break;
 		}
