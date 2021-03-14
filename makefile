@@ -1,4 +1,4 @@
 all:
-	gcc ./test/test.c -o ./test/test -lm -lpthread
-run: all
+	gcc ./src/vidd.c -o ./vidd -lm -lpthread
+tc: all
 	./test/test
