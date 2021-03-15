@@ -12,8 +12,8 @@
 #include "file.h"
 #include "line.h"
 
-#define IDX(x, y, w) (y*w+x)
-#define IS_LETTER(c) ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_')
+#define IS_NUMBER(c) (c >= '0' && c <= '9')
+#define IS_LETTER(c) ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
 #define CLAMP(v, m) ((v > m) ? m : v)
 #define ABS(x) (((x) >= 0) ? (x) : -(x))
 
@@ -38,6 +38,7 @@ void vidd_void(struct client* c);
 
 int vidd_main(void);
 void vidd_read_command(struct client* c);
+void vidd_read_number(struct client* c);
 void vidd_handel_key(char key);
 
 void vidd_write(struct client* c, char* dat);
@@ -164,6 +165,7 @@ struct client
 	char* filename;
 	int width, height;
 	int x, y;
+	char key;
 	int mode;
 	int spos;
 	int vpos;
@@ -186,8 +188,8 @@ void vidd_show_message(struct client* c, char* msg)
 {
 	cursor_save();
 	vidd_draw_status_start(c);
-	ddPrintf(" "CRED"%s"CWHITE, msg);
-	sleep(1);
+	ddPrintf(" %s"CWHITE, msg);
+	usleep(MESSAGE_SLEEP_TIME);
 	cursor_restore();
 	vidd_draw_status(c);
 }
@@ -202,7 +204,7 @@ void vidd_exit(struct client* c, char* dat)
 {
 	if (c->sts.changed)
 	{
-		vidd_show_message(c, "UNSAVED CHANGED");
+		vidd_show_message(c, CRED"UNSAVED CHANGED");
 	}
 	else
 	{
@@ -216,11 +218,12 @@ void vidd_write(struct client* c, char* dat)
 {
 	ddString data = make_ddString_capacity("", line_get_last(c->cur.y)->num*100);
 	struct line* l = line_get_first(c->cur.y);
+	struct line* o = l;
 	while (l)
 	{
 		for (int i = 0; i < l->len; i++)
 		{
-				if (*(int*)&l->text[i] == *(int*)"	")
+				if (*(int*)&l->text[i] == *(int*)"    ")
 				{
 					ddString_push_char_back(&data, '	');
 					i += 3;
@@ -228,12 +231,16 @@ void vidd_write(struct client* c, char* dat)
 				else ddString_push_char_back(&data, l->text[i]);
 		}
 		ddString_push_char_back(&data, '\n');
+		o = l;
 		l = l->next;
 	}
 	write_file(c->filename, data);
 	c->sts.changed = false;
 	data.length--;
 	raze_ddString(&data);
+	ddString mes = make_format_ddString(CGREEN"%dL WRITEN TO \"%s\"", o->num, c->filename);
+	vidd_show_message(c, mes.cstr);
+	raze_ddString(&mes);
 }
 
 void vidd_enter_normal_mode(struct client* c)
@@ -353,7 +360,13 @@ void vidd_start_macro(struct client* c)
 	else
 	{
 		c->mac.recording = false;
+		if (c->mac.data[c->mac.len-1] == 'q')
+		{
+			c->mac.data[c->mac.len-1] = 0;
+			c->mac.len--;
+		}
 	}
+	vidd_draw_status(c);
 }
 void vidd_run_macro(struct client* c)
 {
@@ -378,36 +391,30 @@ void vidd_draw_status(struct client* c)
 }
 void vidd_draw_status_start(struct client* c)
 {
+	cursor_move_to(0, c->height);
+	cursor_erase_line();
+	if (c->mac.recording)
+		ddPrints("@");
 	switch (c->mode)
 	{
 		case VIDD_MODE_NORMAL:
 		{
-			cursor_move_to(0, c->height);
-			cursor_erase_line();
 			ddPrintf("[NORMAL]");
 		} break;
 		case VIDD_MODE_INSERT:
 		{
-			cursor_move_to(0, c->height);
-			cursor_erase_line();
 			ddPrintf("[INSERT]");
 		} break;
 		case VIDD_MODE_REPLACE:
 		{
-			cursor_move_to(0, c->height);
-			cursor_erase_line();
 			ddPrintf("[REPLACE]");
 		} break;
 		case VIDD_MODE_SELECT:
 		{
-			cursor_move_to(0, c->height);
-			cursor_erase_line();
 			ddPrintf("[SELECT]");
 		} break;
 		case VIDD_MODE_LINE_SELECT:
 		{
-			cursor_move_to(0, c->height);
-			cursor_erase_line();
 			ddPrintf("[LSELECT]");
 		} break;
 	}
@@ -424,7 +431,7 @@ void vidd_goto_start(struct client* c)
 {
 	while (c->cur.x > 0)
 		vidd_move_left(c);
-	if (*((int*)(c->cur.y->text)) == *((int*)"	"))
+	if (*((int*)(c->cur.y->text)) == *((int*)"    "))
 	{
 		vidd_skip_word(c);
 	}
@@ -464,6 +471,22 @@ void vidd_delete_commands(struct client* c)
 		case 'd':
 		{
 			vidd_delete_line(c);
+		} break;
+		case 'w':
+		{
+			if (IS_LETTER(c->cur.y->text[c->cur.x]))
+			{
+				while (c->cur.x+1 < c->cur.y->len && IS_LETTER(c->cur.y->text[c->cur.x]))
+					vidd_delete(c);
+			}
+			else
+			{
+				char on = c->cur.y->text[c->cur.x];
+				while (c->cur.x+1 < c->cur.y->len && c->cur.y->text[c->cur.x] == on)
+					vidd_delete(c);
+			}
+			if (c->cur.x+1 >= c->cur.y->len)
+				vidd_delete(c);
 		} break;
 		case 'k':
 		{
@@ -540,108 +563,118 @@ void vidd_copy_line(struct client* c)
 }
 void vidd_copy(struct client* c)
 {
-	c->sel.y2 = c->cur.y;
-	c->sel.x2 = c->cur.x;
-	ddString v;
-	if (c->mode == VIDD_MODE_SELECT)
+	if (c->mode == VIDD_MODE_NORMAL)
 	{
-		v = make_ddString_capacity("a", ABS(c->sel.y1->num-c->sel.y2->num)*100);
-		if (c->sel.y2->num == c->sel.y1->num)
-		{
-			struct line* l = c->sel.y1;
-			for (int i = c->sel.x1; i < c->sel.x2; i++)
-				ddString_push_char_back(&v, l->text[i]);
-		}
-		else if (c->sel.y2->num > c->sel.y1->num)
-		{
-			struct line* l = c->sel.y1;
-			for (int i = c->sel.x1; i < l->len; i++)
-				ddString_push_char_back(&v, l->text[i]);
-			ddString_push_char_back(&v, '\n');
-			l = l->next;
-			while (l->num != c->sel.y2->num)
-			{
-				for (int i = 0; i < l->len; i++)
-					ddString_push_char_back(&v, l->text[i]);
-				ddString_push_char_back(&v, '\n');
-				l = l->next;
-			}
-			for (int i = 0; i < c->sel.x2; i++)
-				ddString_push_char_back(&v, l->text[i]);
-		}
-		else
-		{
-			struct line* l = c->sel.y2;
-			for (int i = c->sel.x2; i < l->len; i++)
-				ddString_push_char_back(&v, l->text[i]);
-			ddString_push_char_back(&v, '\n');
-			l = l->next;
-			while (l->num != c->sel.y1->num)
-			{
-				for (int i = 0; i < l->len; i++)
-					ddString_push_char_back(&v, l->text[i]);
-				ddString_push_char_back(&v, '\n');
-				l = l->next;
-			}
-			for (int i = 0; i < c->sel.x1; i++)
-				ddString_push_char_back(&v, l->text[i]);
-		}
+		vidd_copy_line(c);
 	}
-	else if (c->mode == VIDD_MODE_LINE_SELECT)
+	else
 	{
-		v = make_ddString("o");
-		if (c->sel.y2->num == c->sel.y1->num)
+		c->sel.y2 = c->cur.y;
+		c->sel.x2 = c->cur.x;
+		ddString v;
+		if (c->mode == VIDD_MODE_SELECT)
 		{
-			struct line* l = c->sel.y1;
-			for (int i = 0; i < l->len; i++)
-				ddString_push_char_back(&v, l->text[i]);
-		}
-		else if (c->sel.y2->num > c->sel.y1->num)
-		{
-			struct line* l = c->sel.y1;
-			for (int i = 0; i < l->len; i++)
-				ddString_push_char_back(&v, l->text[i]);
-			ddString_push_char_back(&v, '\n');
-			l = l->next;
-			while (l->num != c->sel.y2->num)
+			v = make_ddString_capacity("a", ABS(c->sel.y1->num-c->sel.y2->num)*100);
+			if (c->sel.y2->num == c->sel.y1->num)
 			{
+				struct line* l = c->sel.y1;
+				for (int i = c->sel.x1; i < c->sel.x2; i++)
+					ddString_push_char_back(&v, l->text[i]);
+			}
+			else if (c->sel.y2->num > c->sel.y1->num)
+			{
+				struct line* l = c->sel.y1;
+				for (int i = c->sel.x1; i < l->len; i++)
+					ddString_push_char_back(&v, l->text[i]);
+				ddString_push_char_back(&v, '\n');
+				l = l->next;
+				while (l->num != c->sel.y2->num)
+				{
+					for (int i = 0; i < l->len; i++)
+						ddString_push_char_back(&v, l->text[i]);
+					ddString_push_char_back(&v, '\n');
+					l = l->next;
+				}
+				for (int i = 0; i < c->sel.x2; i++)
+					ddString_push_char_back(&v, l->text[i]);
+			}
+			else
+			{
+				struct line* l = c->sel.y2;
+				for (int i = c->sel.x2; i < l->len; i++)
+					ddString_push_char_back(&v, l->text[i]);
+				ddString_push_char_back(&v, '\n');
+				l = l->next;
+				while (l->num != c->sel.y1->num)
+				{
+					for (int i = 0; i < l->len; i++)
+						ddString_push_char_back(&v, l->text[i]);
+					ddString_push_char_back(&v, '\n');
+					l = l->next;
+				}
+				for (int i = 0; i < c->sel.x1; i++)
+					ddString_push_char_back(&v, l->text[i]);
+			}
+		}
+		else if (c->mode == VIDD_MODE_LINE_SELECT)
+		{
+			v = make_ddString("o");
+			if (c->sel.y2->num == c->sel.y1->num)
+			{
+				struct line* l = c->sel.y1;
+				for (int i = 0; i < l->len; i++)
+					ddString_push_char_back(&v, l->text[i]);
+			}
+			else if (c->sel.y2->num > c->sel.y1->num)
+			{
+				struct line* l = c->sel.y1;
 				for (int i = 0; i < l->len; i++)
 					ddString_push_char_back(&v, l->text[i]);
 				ddString_push_char_back(&v, '\n');
 				l = l->next;
-			}
-			for (int i = 0; i < l->len; i++)
-				ddString_push_char_back(&v, l->text[i]);
-		}
-		else
-		{
-			struct line* l = c->sel.y2;
-			for (int i = c->sel.x2; i < l->len; i++)
-				ddString_push_char_back(&v, l->text[i]);
-			ddString_push_char_back(&v, '\n');
-			l = l->next;
-			while (l->num != c->sel.y1->num)
-			{
+				while (l->num != c->sel.y2->num)
+				{
+					for (int i = 0; i < l->len; i++)
+						ddString_push_char_back(&v, l->text[i]);
+					ddString_push_char_back(&v, '\n');
+					l = l->next;
+				}
 				for (int i = 0; i < l->len; i++)
+					ddString_push_char_back(&v, l->text[i]);
+			}
+			else
+			{
+				struct line* l = c->sel.y2;
+				for (int i = c->sel.x2; i < l->len; i++)
 					ddString_push_char_back(&v, l->text[i]);
 				ddString_push_char_back(&v, '\n');
 				l = l->next;
+				while (l->num != c->sel.y1->num)
+				{
+					for (int i = 0; i < l->len; i++)
+						ddString_push_char_back(&v, l->text[i]);
+					ddString_push_char_back(&v, '\n');
+					l = l->next;
+				}
+				for (int i = 0; i < c->sel.x1; i++)
+					ddString_push_char_back(&v, l->text[i]);
 			}
-			for (int i = 0; i < c->sel.x1; i++)
-				ddString_push_char_back(&v, l->text[i]);
 		}
+		if (!c->buf.data) free(c->buf.data);
+		c->buf.len = v.length;
+		c->buf.data = v.cstr;
+		vidd_enter_normal_mode(c);
 	}
-	if (!c->buf.data) free(c->buf.data);
-	c->buf.len = v.length;
-	c->buf.data = v.cstr;
-	vidd_enter_normal_mode(c);
 }
 void vidd_paste_line(struct client* c)
 {
-	for (int i = 0; i < c->buf.len; i++)
-		vidd_handel_key(c->buf.data[i]);
-	vidd_enter_normal_mode(c);
-	vidd_move_left(c);
+	if (c->buf.data)
+	{
+		for (int i = 0; i < c->buf.len; i++)
+			vidd_handel_key(c->buf.data[i]);
+		vidd_enter_normal_mode(c);
+		vidd_move_left(c);
+	}
 }
 
 void vidd_adjust_x(struct client* c)
@@ -801,12 +834,32 @@ void vidd_print(struct client c)
 
 void vidd_handel_key(char key)
 {
+	cmaster.key = key;
 	switch (cmaster.mode)
 	{
 		case VIDD_MODE_SELECT:
 		case VIDD_MODE_LINE_SELECT:
 		case VIDD_MODE_NORMAL:
 		{
+			if (IS_NUMBER(key))
+			{
+				static char num[8] = {0};
+				static int pos = 0;
+				do
+				{
+					num[pos++] = key;
+					key = ddKey_getch_noesc();
+				} while (IS_NUMBER(key));
+				if (key != 27)
+				{
+					long count = ddString_to_int(make_constant_ddString(num));
+					for (int i = 0; i < count; i++)
+						vidd_handel_key(key);
+				}
+				*(long*)num = 0;
+				pos = 0;
+				break;
+			}
 			mode_normal_functions[key](&cmaster);
 		} break;
 		case VIDD_MODE_REPLACE:
@@ -857,6 +910,25 @@ void vidd_handel_key(char key)
 			}
 		} break;
 	}
+}
+
+void vidd_read_number(struct client* c)
+{
+/*
+	static char num[5] = {0};
+	static int pos = 0;
+	if (c->key == 'm')
+	{
+		char key = ddKey_getch_noesc();
+		int count = ddString_to_int(make_constant_ddString(num));
+		for (int i = 0; i < count; i++)
+			vidd_handel_key(key);
+		for (int i = 0; i < sizeof(num)/sizeof(char); i++)
+			num[i] = 0;
+		pos = 0;
+	}
+	else num[pos++] = c->key;
+*/
 }
 
 void vidd_run_command(struct client* c, char* com, char* comdat)

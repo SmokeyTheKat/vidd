@@ -1,5 +1,7 @@
 #include "styles.h"
 
+#define MESSAGE_SLEEP_TIME 400000
+
 void vidd_debug(struct client* c)
 {
 }
@@ -12,6 +14,8 @@ struct command commands[] = {
 
 void(*mode_normal_functions[])(struct client*) = {
 	[0 ... 1000]=vidd_void,
+	['0' ... '9']=vidd_read_number,
+	['!']=vidd_read_number,
 	[':']=vidd_read_command,
 	['Q']=vidd_exit,
 	['q']=vidd_start_macro,
@@ -31,6 +35,7 @@ void(*mode_normal_functions[])(struct client*) = {
 	['o']=vidd_insert_line_down,
 	['O']=vidd_insert_line_up,
 	['d']=vidd_delete_commands,
+	['D']=vidd_delete_line,
 	['y']=vidd_copy,
 	['Y']=vidd_copy_line,
 	['v']=vidd_enter_select_mode,

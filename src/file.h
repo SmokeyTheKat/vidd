@@ -7,7 +7,7 @@ void write_file(const char* path, ddString content)
 {
     FILE* fp = fopen(path, "w");
     if (fp == null) return;
-    fwrite(content.cstr, sizeof(char), content.length, fp);
+    fwrite(content.cstr, sizeof(char), content.length-1, fp);
     fclose(fp);
 }
 
