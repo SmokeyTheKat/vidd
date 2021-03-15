@@ -66,6 +66,7 @@ void vidd_move_force_right(struct client* c);
 void vidd_pos_up(struct client* c);
 void vidd_pos_down(struct client* c);
 void vidd_pos_left(struct client* c);
+void vidd_pos_right(struct client* c);
 
 void vidd_goto_top(struct client* c);
 void vidd_goto_bottom(struct client* c);
@@ -81,6 +82,7 @@ void vidd_insert_at_start(struct client* c);
 void vidd_insert_at_end(struct client* c);
 void vidd_insert_line_down(struct client* c);
 void vidd_insert_line_up(struct client* c);
+void vidd_replace_once(struct client* c);
 void vidd_delete(struct client* c);
 void vidd_delete_line(struct client* c);
 void vidd_delete_commands(struct client* c);
@@ -316,6 +318,15 @@ void vidd_goto_bottom(struct client* c)
 	c->cur.x = 0;
 	cursor_home();
 	cursor_return();
+}
+
+void vidd_replace_once(struct client* c)
+{
+	char key = ddKey_getch_noesc();
+	if (key == 27) return;
+	c->cur.y->text[c->cur.x] = key;
+	ddPrint_char(key);
+	cursor_left();
 }
 
 void vidd_insert_at_start(struct client* c)
@@ -809,6 +820,8 @@ void vidd_handel_key(char key)
 			cmaster.sts.changed = true;
 			line_replace(cmaster.cur.y, cmaster.cur.x, key);
 			ddPrint_char(key);
+			cursor_left();
+			vidd_move_right(&cmaster);
 		} break;
 		case VIDD_MODE_INSERT:
 		{
