@@ -1039,6 +1039,7 @@ int main(int argc, char** argv)
 		line_append(cmaster.cur.y, data.cstr[i]);
 	}
 	cmaster.cur.y->next = (0);
+	cmaster.cur.y->text[--cmaster.cur.y->len] = 0;
 
 	vidd_print(cmaster);
 	vidd_enter_normal_mode(&cmaster);
