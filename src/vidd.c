@@ -117,7 +117,7 @@ struct keyword
 
 struct style
 {
-	char* extension;
+	char* extensions[5];
 	struct keyword keywords[100];
 };
 
@@ -671,13 +671,13 @@ void vidd_adjust_x(struct client* c)
 		vidd_goto_start(c);
 		return;
 	}
-	if (c->cur.lx >= c->cur.y->len)
+	if (c->cur.x >= c->cur.y->len)
 	{
 		vidd_goto_end(c);
 	}
 	else
 	{
-		vidd_move_to_line_pos(c, c->cur.lx, c->cur.y);
+		vidd_move_to_line_pos(c, c->cur.x, c->cur.y);
 	}
 }
 
@@ -750,7 +750,6 @@ void vidd_move_down(struct client* c)
 }
 void vidd_move_right(struct client* c)
 {
-	cmaster.cur.lx = cmaster.cur.x;
 	if (c->cur.x+1 < c->cur.y->len)
 	{
 		c->cur.x++;
@@ -764,7 +763,6 @@ void vidd_move_right(struct client* c)
 }
 void vidd_move_left(struct client* c)
 {
-	cmaster.cur.lx = cmaster.cur.x;
 	if (c->cur.x > 0)
 	{
 		c->cur.x--;
@@ -797,11 +795,56 @@ void vidd_backspace(struct client* c)
 void vidd_redraw_line(struct client c)
 {
 	cursor_save();
-
 	cursor_erase_line();
-
 	cursor_return();
-	ddPrint(c.cur.y->text+c.vpos, CLAMP(c.cur.y->len, c.width));
+
+	char* buf = malloc(c.width * 2);
+	int pos = 0;
+
+	struct line* l = c.cur.y;
+	
+	for (int i = 0; i < CLAMP(l->len-c.vpos, c.width); i++)
+	{
+		bool syntax_found = false;
+		for (int s = 0; c.sty.keywords[s].len != 0; s++)
+		{
+			if (( ( (!IS_LETTER(l->text[i+c.vpos+c.sty.keywords[s].len]) || i+c.vpos+c.sty.keywords[s].len >= l->len) &&
+				(i == 0 || !IS_LETTER(l->text[i+c.vpos-1]))) ||
+			     !c.sty.keywords[s].embedded) &&
+				(l->len >= i+c.vpos+c.sty.keywords[s].len && cstring_compare_length(c.sty.keywords[s].word, &l->text[i+c.vpos], c.sty.keywords[s].len)))
+			{
+				syntax_found = true;
+				unsigned long stylelen;
+				unsigned long cwhitelen;
+				cstring_get_length(c.sty.keywords[s].style, &stylelen);
+				mem_copy(&buf[pos], c.sty.keywords[s].style, stylelen);
+				pos += stylelen;
+				if (i+c.vpos + c.sty.keywords[s].len > c.width)
+				{
+					mem_copy(&buf[pos], &l->text[i+c.vpos], c.width-(i+c.vpos));
+					pos += c.width-(i+c.vpos);
+				}
+				else
+				{
+					mem_copy(&buf[pos], &l->text[i+c.vpos], c.sty.keywords[s].len);
+					pos += c.sty.keywords[s].len;
+				}
+				cstring_get_length(CWHITE, &cwhitelen);
+				mem_copy(&buf[pos], CWHITE, cwhitelen);
+				pos += cwhitelen;
+				i += c.sty.keywords[s].len;
+				i--;
+				break;
+			}
+		}
+		if (!syntax_found && i < CLAMP(l->len-c.vpos, c.width)) buf[pos++] = l->text[i+c.vpos];
+	}
+
+	ddPrint(buf, pos);
+	free(buf);
+/*
+	ddPrint(c.cur.y->text, c.cur.y->len);
+*/
 
 	cursor_restore();
 }
@@ -815,6 +858,9 @@ void vidd_print(struct client c)
 	cursor_clear();
 	cursor_home();
 	struct line* l = line_get_line(c.cur.y, c.spos);
+	char* buf = malloc(c.width * c.height * 2);
+	long pos = 0;
+	
 	for (int h = 0; h < c.height-1 && l; h++)
 	{
 		//ddPrintf("%d ", l->num);
@@ -822,31 +868,48 @@ void vidd_print(struct client c)
 		{
 			for (int i = 0; i < CLAMP(l->len-c.vpos, c.width); i++)
 			{
-				for (int s = 0; styles[0].keywords[s].len != 0; s++)
+				bool syntax_found = false;
+				for (int s = 0; c.sty.keywords[s].len != 0; s++)
 				{
-					if ((((!IS_LETTER(l->text[i+c.sty.keywords[s].len]) ||
-									i+c.vpos+c.sty.keywords[s].len >= l->len) &&
-								(i+c.vpos-1 < c.vpos || !IS_LETTER(l->text[i+c.vpos-1]))) ||
-							!c.sty.keywords[s].embedded) &&
+					if (( ( (!IS_LETTER(l->text[i+c.vpos+c.sty.keywords[s].len]) || i+c.vpos+c.sty.keywords[s].len >= l->len) &&
+						(i == 0 || !IS_LETTER(l->text[i+c.vpos-1]))) ||
+					     !c.sty.keywords[s].embedded) &&
 						cstring_compare_length(c.sty.keywords[s].word, &l->text[i+c.vpos], c.sty.keywords[s].len))
 					{
-						ddPrints(c.sty.keywords[s].style);
+						syntax_found = true;
+						unsigned long stylelen;
+						unsigned long cwhitelen;
+						cstring_get_length(c.sty.keywords[s].style, &stylelen);
+						mem_copy(&buf[pos], c.sty.keywords[s].style, stylelen);
+						pos += stylelen;
 						if (i+c.vpos + c.sty.keywords[s].len > c.width)
-							ddPrint(&l->text[i+c.vpos], c.width-(i+c.vpos));
-						else ddPrint(&l->text[i+c.vpos], c.sty.keywords[s].len);
-						ddPrints(CWHITE);
+						{
+							mem_copy(&buf[pos], &l->text[i+c.vpos], c.width-(i+c.vpos));
+							pos += c.width-(i+c.vpos);
+						}
+						else
+						{
+							mem_copy(&buf[pos], &l->text[i+c.vpos], c.sty.keywords[s].len);
+							pos += c.sty.keywords[s].len;
+						}
+						cstring_get_length(CWHITE, &cwhitelen);
+						mem_copy(&buf[pos], CWHITE, cwhitelen);
+						pos += cwhitelen;
 						i += c.sty.keywords[s].len;
+						i--;
 						break;
 					}
 				}
-				if (i < CLAMP(l->len-c.vpos, c.width)) ddPrint_char(l->text[i+c.vpos]);
+				if (!syntax_found && i < CLAMP(l->len-c.vpos, c.width)) buf[pos++] = l->text[i+c.vpos];
 			}
 		}
-		ddPrint_nl();
+		buf[pos++] = '\n';
 		l = l->next;
 	}
+	ddPrint(buf, pos);
 	cursor_restore();
 	vidd_draw_status(&c);
+	free(buf);
 }
 
 void vidd_handel_key(char key)
@@ -1034,6 +1097,20 @@ int main(int argc, char** argv)
 	cmaster.buf.data = 0;
 
 	cmaster.sty = styles[0];
+	for (int i = 0; i < sizeof(styles)/sizeof(struct style); i++)
+	{
+		for (int j = 0; styles[i].extensions[j]; j++)
+		{
+			if (cstring_compare_length(styles[i].extensions[j], 
+				argv[1]+cstring_length(argv[1])-cstring_length(styles[i].extensions[j]),
+				cstring_length(styles[i].extensions[j])))
+			{
+				cmaster.sty = styles[i];
+				goto STYLE_FIND_LOOP_EXIT;
+			}
+		}
+	}
+STYLE_FIND_LOOP_EXIT:
 
 	cmaster.sts.changed = false;
 
