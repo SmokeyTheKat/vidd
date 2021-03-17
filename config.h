@@ -4,6 +4,7 @@
 
 void vidd_debug(struct client* c)
 {
+	vidd_move_to(c, 500, 72);
 }
 
 struct command commands[] = {
@@ -14,9 +15,7 @@ struct command commands[] = {
 
 void(*mode_normal_functions[])(struct client*) = {
 	[0 ... 1000]=vidd_void,
-	['0' ... '9']=vidd_read_number,
-	['!']=vidd_read_number,
-	[':']=vidd_read_command,
+	[':']=vidd_enter_command_mode,
 	['Q']=vidd_exit,
 	['q']=vidd_start_macro,
 	['@']=vidd_run_macro,
@@ -50,6 +49,6 @@ void(*mode_normal_functions[])(struct client*) = {
 	['>']=vidd_indent,
 	['$']=vidd_goto_end,
 	['^']=vidd_goto_start,
-	['~']=vidd_void,
+	['~']=vidd_debug,
 	[27]=vidd_enter_normal_mode,
 };

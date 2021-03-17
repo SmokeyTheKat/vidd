@@ -27,9 +27,9 @@ struct line* line_get_line(struct line* l, long num)
 {
     if (l->num == num) return l;
     else if (num < l->num)
-        while (l->num != num) l = l->prev;
+        while (l->num != num && l->prev) l = l->prev;
     else
-        while (l->num != num) l = l->next;
+        while (l->num != num && l->next) l = l->next;
     return l;
 }
 struct line* line_get_first(struct line* l)
