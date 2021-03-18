@@ -798,7 +798,8 @@ void vidd_redraw_line(struct client c)
 	cursor_erase_line();
 	cursor_return();
 
-	char* buf = malloc(c.width * 2);
+	long len = c.width * 10;
+	char* buf = malloc(len);
 	int pos = 0;
 
 	struct line* l = c.cur.y;
@@ -816,7 +817,12 @@ void vidd_redraw_line(struct client c)
 				syntax_found = true;
 				unsigned long stylelen;
 				unsigned long cwhitelen;
+				cstring_get_length(CWHITE, &cwhitelen);
 				cstring_get_length(c.sty.keywords[s].style, &stylelen);
+
+				if (stylelen + c.sty.keywords[s].len + cwhitelen + pos + 20 > len)
+					realloc(buf, stylelen + c.sty.keywords[s].len + cwhitelen + pos + 50);
+
 				mem_copy(&buf[pos], c.sty.keywords[s].style, stylelen);
 				pos += stylelen;
 				if (i+c.vpos + c.sty.keywords[s].len > c.width)
@@ -829,7 +835,6 @@ void vidd_redraw_line(struct client c)
 					mem_copy(&buf[pos], &l->text[i+c.vpos], c.sty.keywords[s].len);
 					pos += c.sty.keywords[s].len;
 				}
-				cstring_get_length(CWHITE, &cwhitelen);
 				mem_copy(&buf[pos], CWHITE, cwhitelen);
 				pos += cwhitelen;
 				i += c.sty.keywords[s].len;
@@ -842,10 +847,6 @@ void vidd_redraw_line(struct client c)
 
 	ddPrint(buf, pos);
 	free(buf);
-/*
-	ddPrint(c.cur.y->text, c.cur.y->len);
-*/
-
 	cursor_restore();
 }
 void vidd_redraw(struct client c)
@@ -858,12 +859,12 @@ void vidd_print(struct client c)
 	cursor_clear();
 	cursor_home();
 	struct line* l = line_get_line(c.cur.y, c.spos);
-	char* buf = malloc(c.width * c.height * 2);
+	long len = c.width * c.height * 4;
+	char* buf = malloc(len);
 	long pos = 0;
 	
 	for (int h = 0; h < c.height-1 && l; h++)
 	{
-		//ddPrintf("%d ", l->num);
 		if (c.vpos < l->len)
 		{
 			for (int i = 0; i < CLAMP(l->len-c.vpos, c.width); i++)
@@ -879,7 +880,12 @@ void vidd_print(struct client c)
 						syntax_found = true;
 						unsigned long stylelen;
 						unsigned long cwhitelen;
+						cstring_get_length(CWHITE, &cwhitelen);
 						cstring_get_length(c.sty.keywords[s].style, &stylelen);
+
+						if (stylelen + c.sty.keywords[s].len + cwhitelen + pos + 20 > len)
+							realloc(buf, stylelen + c.sty.keywords[s].len + cwhitelen + pos + 200);
+
 						mem_copy(&buf[pos], c.sty.keywords[s].style, stylelen);
 						pos += stylelen;
 						if (i+c.vpos + c.sty.keywords[s].len > c.width)
@@ -892,7 +898,6 @@ void vidd_print(struct client c)
 							mem_copy(&buf[pos], &l->text[i+c.vpos], c.sty.keywords[s].len);
 							pos += c.sty.keywords[s].len;
 						}
-						cstring_get_length(CWHITE, &cwhitelen);
 						mem_copy(&buf[pos], CWHITE, cwhitelen);
 						pos += cwhitelen;
 						i += c.sty.keywords[s].len;
