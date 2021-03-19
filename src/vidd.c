@@ -163,7 +163,7 @@ struct client
 {
 	char* filename;
 	int width, height;
-	int x, y;
+	int sx, x, y;
 	char key;
 	int mode;
 	int spos;
@@ -215,7 +215,7 @@ void vidd_write(struct client* c, char* dat)
 	{
 		for (int i = 0; i < l->len; i++)
 		{
-				if (*(int*)&l->text[i] == *(int*)"    ")
+				if (*(int*)&l->text[i] == *(int*)"	")
 				{
 					ddString_push_char_back(&data, '	');
 					i += 3;
@@ -268,7 +268,7 @@ void vidd_center(struct client* c)
 		else
 		{
 			vidd_redraw(*c);
-			cursor_move_to(c->cur.x, c->height/2);
+			cursor_move_to(c->x + c->cur.x, c->height/2);
 		}
 	}
 	else
@@ -292,7 +292,7 @@ void vidd_indent(struct client* c)
 }
 void vidd_deindent(struct client* c)
 {
-	if (*((int*)(c->cur.y->text)) != *((int*)"    ")) return;
+	if (*((int*)(c->cur.y->text)) != *((int*)"	")) return;
 	line_delete(c->cur.y, 0);
 	line_delete(c->cur.y, 0);
 	line_delete(c->cur.y, 0);
@@ -419,7 +419,7 @@ void vidd_goto_end(struct client* c)
 void vidd_goto_start(struct client* c)
 {
 	vidd_move_to_line_pos(c, 0, c->cur.y);
-	if (*((int*)(c->cur.y->text)) == *((int*)"    "))
+	if (*((int*)(c->cur.y->text)) == *((int*)"	"))
 	{
 		vidd_skip_word(c);
 	}
@@ -522,12 +522,12 @@ void vidd_insert_line_down(struct client* c)
 	vidd_redraw(*c);
 	vidd_enter_insert_mode(c);
 	vidd_move_down(c);
-	cursor_return();
+	cursor_move_to(c->x - c->vpos, c->y + c->cur.y->num - c->spos);
 	c->cur.x = 0;
 }
 void vidd_insert_line_up(struct client* c)
 {
-	cursor_return();
+	cursor_move_to(c->x - c->vpos, c->y + c->cur.y->num - c->spos);
 	c->cur.x = 0;
 	line_split(cmaster.cur.y, cmaster.cur.x);
 	vidd_redraw(*c);
@@ -706,7 +706,7 @@ void vidd_move_to_line_pos(struct client* c, int x, struct line* l)
 		redraw = true;
 	}
 	if (redraw) vidd_redraw(*c);
-	cursor_move_to(x - c->vpos, y - c->spos);
+	cursor_move_to(c->x + x - c->vpos, c->y + y - c->spos);
 }
 
 void vidd_move_force_right(struct client* c)
@@ -769,6 +769,7 @@ void vidd_move_left(struct client* c)
 		if (c->cur.x-c->vpos < 0)
 		{
 			c->vpos--;
+			cursor_right();
 			vidd_redraw(*c);
 		}
 		cursor_left();
@@ -795,8 +796,10 @@ void vidd_backspace(struct client* c)
 void vidd_redraw_line(struct client c)
 {
 	cursor_save();
-	cursor_erase_line();
-	cursor_return();
+	cursor_move_to(c.x - c.vpos, c.y + c.cur.y->num - c.spos);
+	for (int i = 0; i < c.width; i++)
+		ddPrint_char(' ');
+	cursor_move_to(c.x - c.vpos, c.y + c.cur.y->num - c.spos);
 
 	long len = c.width * 10;
 	char* buf = malloc(len);
@@ -811,7 +814,7 @@ void vidd_redraw_line(struct client c)
 		{
 			if (( ( (!IS_LETTER(l->text[i+c.vpos+c.sty.keywords[s].len]) || i+c.vpos+c.sty.keywords[s].len >= l->len) &&
 				(i == 0 || !IS_LETTER(l->text[i+c.vpos-1]))) ||
-			     !c.sty.keywords[s].embedded) &&
+				 !c.sty.keywords[s].embedded) &&
 				(l->len >= i+c.vpos+c.sty.keywords[s].len && cstring_compare_length(c.sty.keywords[s].word, &l->text[i+c.vpos], c.sty.keywords[s].len)))
 			{
 				syntax_found = true;
@@ -857,14 +860,42 @@ void vidd_print(struct client c)
 {
 	cursor_save();
 	cursor_clear();
-	cursor_home();
+
+	long linecount = line_get_last(c.cur.y)->num+1;
+	ddString linestr = make_ddString_from_int(linecount);
+	ddString_push_char_back(&linestr, ' ');
+	ddString lempty = make_multi_ddString_cstring(" ", linestr.length);
+
+	c.x = c.sx;
+
+	cursor_move_to(c.x+1, c.y);
+
+	ddString returnseq = make_format_ddString("\x1b[B\r\x1b[%dC", c.x);
+	ddString ro = make_format_ddString("\x1b[%d;%dH", c.y+1, c.x+1);
 	struct line* l = line_get_line(c.cur.y, c.spos);
 	long len = c.width * c.height * 4;
 	char* buf = malloc(len);
 	long pos = 0;
+
+	if (c.x != 0)
+	{
+		mem_copy(&buf[pos], ro.cstr, ro.length);
+		pos += ro.length;
+	}
+
 	
 	for (int h = 0; h < c.height-1 && l; h++)
 	{
+		char linebuf[10] = {0};
+		ddString ln = make_ddString_buf_from_int(linebuf, 10, l->num+1);
+		mem_copy(&buf[pos], lnum_color, sizeof(lnum_color));
+		pos += sizeof(lnum_color);
+		mem_copy(&buf[pos], lempty.cstr, lempty.length);
+		pos += (lempty.length-1) - number_length(l->num+1);
+		mem_copy(&buf[pos], ln.cstr, ln.length);
+		pos += number_length(l->num+1)+1;
+		mem_copy(&buf[pos], "\x1b[0m", cstring_length("\x1b[0m"));
+		pos += cstring_length("\x1b[0m");
 		if (c.vpos < l->len)
 		{
 			for (int i = 0; i < CLAMP(l->len-c.vpos, c.width); i++)
@@ -874,7 +905,7 @@ void vidd_print(struct client c)
 				{
 					if (( ( (!IS_LETTER(l->text[i+c.vpos+c.sty.keywords[s].len]) || i+c.vpos+c.sty.keywords[s].len >= l->len) &&
 						(i == 0 || !IS_LETTER(l->text[i+c.vpos-1]))) ||
-					     !c.sty.keywords[s].embedded) &&
+						 !c.sty.keywords[s].embedded) &&
 						cstring_compare_length(c.sty.keywords[s].word, &l->text[i+c.vpos], c.sty.keywords[s].len))
 					{
 						syntax_found = true;
@@ -908,12 +939,17 @@ void vidd_print(struct client c)
 				if (!syntax_found && i < CLAMP(l->len-c.vpos, c.width)) buf[pos++] = l->text[i+c.vpos];
 			}
 		}
-		buf[pos++] = '\n';
+		mem_copy(&buf[pos], returnseq.cstr, returnseq.length);
+		pos += returnseq.length;
 		l = l->next;
 	}
 	ddPrint(buf, pos);
 	cursor_restore();
 	vidd_draw_status(&c);
+	raze_ddString(&ro);
+	raze_ddString(&returnseq);
+	raze_ddString(&linestr);
+	raze_ddString(&lempty);
 	free(buf);
 }
 
@@ -1023,7 +1059,7 @@ void vidd_handel_key(char key)
 				line_split(cmaster.cur.y, cmaster.cur.x);
 				vidd_redraw(cmaster);
 				vidd_move_down(&cmaster);
-				cursor_return();
+				cursor_move_to(cmaster.x - cmaster.vpos, cmaster.y + cmaster.cur.y->num - cmaster.spos);
 				cmaster.cur.x = 0;
 				break;
 			}
@@ -1072,10 +1108,12 @@ void vidd_macro_insert(struct client* c, char key)
 
 int vidd_main(void)
 {
+	cmaster.x = cmaster.sx + number_length(line_get_last(cmaster.cur.y)->num)+2;
+	vidd_move_to(&cmaster, 0, 0);
 	for (;;)
 	{
-		cmaster.width = cursor_get_width();
-		cmaster.height = cursor_get_height();
+		cmaster.x = cmaster.sx + number_length(line_get_last(cmaster.cur.y)->num)+2;
+
 		char key = ddKey_getch_noesc();
 		if (cmaster.mac.recording) vidd_macro_insert(&cmaster, key);
 		vidd_handel_key(key);
@@ -1090,10 +1128,10 @@ int main(int argc, char** argv)
 
 	cmaster.filename = argv[1];
 
-	cmaster.width = cursor_get_width();
-	cmaster.height = cursor_get_height();
-	cmaster.x = 0;
+	cmaster.sx = 0;
 	cmaster.y = 0;
+	cmaster.width = cursor_get_width() - cmaster.sx;
+	cmaster.height = cursor_get_height();
 
 	cmaster.mac.recording = false;
 
@@ -1144,11 +1182,19 @@ STYLE_FIND_LOOP_EXIT:
 	cmaster.cur.y->next = (0);
 	cmaster.cur.y->text[--cmaster.cur.y->len] = 0;
 
+	cmaster.cur.y = line_get_line(cmaster.cur.y, cmaster.spos);
+
+
+	long linecount = line_get_last(cmaster.cur.y)->num;
+	ddString linestr = make_ddString_from_int(linecount);
+	ddString_push_char_back(&linestr, ' ');
+	cmaster.x = cmaster.sx + linestr.length;
+	raze_ddString(&linestr);
+
 	vidd_print(cmaster);
+
 	vidd_enter_normal_mode(&cmaster);
 	cursor_home();
-
-	cmaster.cur.y = line_get_line(cmaster.cur.y, cmaster.spos);
 
 	vidd_main();
 

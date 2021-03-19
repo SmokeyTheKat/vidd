@@ -2,6 +2,8 @@
 
 #define MESSAGE_SLEEP_TIME 400000
 
+const char lnum_color[] = CYELLOW;
+
 void vidd_debug(struct client* c)
 {
 	vidd_move_to(c, 500, 72);
