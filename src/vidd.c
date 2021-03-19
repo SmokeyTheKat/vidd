@@ -283,26 +283,28 @@ void vidd_indent(struct client* c)
 	line_insert(c->cur.y, 0, ' ');
 	line_insert(c->cur.y, 0, ' ');
 	line_insert(c->cur.y, 0, ' ');
+
+	vidd_move_right(c);
+	vidd_move_right(c);
+	vidd_move_right(c);
+	vidd_move_right(c);
+
 	vidd_redraw_line(*c);
-	c->cur.x += 4;
-	cursor_right();
-	cursor_right();
-	cursor_right();
-	cursor_right();
 }
 void vidd_deindent(struct client* c)
 {
-	if (*((int*)(c->cur.y->text)) != *((int*)"	")) return;
+	if (*((int*)(c->cur.y->text)) != *((int*)"    ")) return;
 	line_delete(c->cur.y, 0);
 	line_delete(c->cur.y, 0);
 	line_delete(c->cur.y, 0);
 	line_delete(c->cur.y, 0);
+
+	vidd_move_left(c);
+	vidd_move_left(c);
+	vidd_move_left(c);
+	vidd_move_left(c);
+
 	vidd_redraw_line(*c);
-	c->cur.x -= 4;
-	cursor_left();
-	cursor_left();
-	cursor_left();
-	cursor_left();
 }
 void vidd_goto_top(struct client* c)
 {
@@ -868,9 +870,9 @@ void vidd_print(struct client c)
 
 	c.x = c.sx;
 
-	cursor_move_to(c.x+1, c.y);
+	cursor_move_to(c.x, c.y);
 
-	ddString returnseq = make_format_ddString("\x1b[B\r\x1b[%dC", c.x);
+	ddString returnseq = make_format_ddString("\x1b[B\r\x1b[%dC", c.x-1);
 	ddString ro = make_format_ddString("\x1b[%d;%dH", c.y+1, c.x+1);
 	struct line* l = line_get_line(c.cur.y, c.spos);
 	long len = c.width * c.height * 4;
@@ -1108,11 +1110,11 @@ void vidd_macro_insert(struct client* c, char key)
 
 int vidd_main(void)
 {
-	cmaster.x = cmaster.sx + number_length(line_get_last(cmaster.cur.y)->num)+2;
+	cmaster.x = cmaster.sx + number_length(line_get_last(cmaster.cur.y)->num)+1;
 	vidd_move_to(&cmaster, 0, 0);
 	for (;;)
 	{
-		cmaster.x = cmaster.sx + number_length(line_get_last(cmaster.cur.y)->num)+2;
+		cmaster.x = cmaster.sx + number_length(line_get_last(cmaster.cur.y)->num)+1;
 
 		char key = ddKey_getch_noesc();
 		if (cmaster.mac.recording) vidd_macro_insert(&cmaster, key);
@@ -1185,11 +1187,7 @@ STYLE_FIND_LOOP_EXIT:
 	cmaster.cur.y = line_get_line(cmaster.cur.y, cmaster.spos);
 
 
-	long linecount = line_get_last(cmaster.cur.y)->num;
-	ddString linestr = make_ddString_from_int(linecount);
-	ddString_push_char_back(&linestr, ' ');
-	cmaster.x = cmaster.sx + linestr.length;
-	raze_ddString(&linestr);
+	cmaster.x = cmaster.sx + number_length(line_get_last(cmaster.cur.y)->num)+1;
 
 	vidd_print(cmaster);
 
