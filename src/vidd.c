@@ -380,6 +380,11 @@ void vidd_draw_status(struct client* c)
 	cursor_save();
 	vidd_draw_status_start(c);
 	cursor_restore();
+	cursor_save();
+	ddString fst = make_constant_ddString(c->filename);
+	cursor_move_to(c->width - fst.length, c->height);
+	ddPrints(fst.cstr);
+	cursor_restore();
 
 }
 void vidd_draw_status_start(struct client* c)
