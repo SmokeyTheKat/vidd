@@ -1,6 +1,6 @@
 all:
-	gcc ./src/vidd.c -o ./vidd -lm -lpthread
+	gcc ./src/vidd.c -o ./vidd -Wall -lm -lpthread
 install:
 	sudo cp ./vidd /usr/bin/
 tc: all
-	./test/test
+	./vidd ./test

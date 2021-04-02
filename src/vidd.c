@@ -807,29 +807,26 @@ void vidd_backspace(struct client* c)
 
 void vidd_redraw_line(struct client c)
 {
-/*
 	cursor_save();
 
-	long linecount = c.cur.y->num+1;
-	ddString ro = make_format_ddString("\x1b[%d;%dH", c.cur.y->num - c.spos, c.x+1);
+	long linecount = line_get_last(c.cur.y)->num+1;
 	ddString linestr = make_ddString_from_int(linecount);
 	ddString_push_char_back(&linestr, ' ');
 	ddString lempty = make_multi_ddString_cstring(" ", linestr.length);
 
 	c.x = c.sx;
 
-	cursor_move_to(c.x, c.cur.y->num - c.spos);
-	for (int i = 0; i < c.cur.y->len - c.vpos; i++);
-		ddPrint_char(' ');
-	cursor_move_to(c.x, c.cur.y->num - c.spos);
-
+	ddString ro = make_format_ddString("\x1b[%d;%dH", c.y+1, c.x+1);
 	struct line* l = c.cur.y;
 	long len = c.width * c.height * 4;
 	char* buf = malloc(len);
 	long pos = 0;
 
-	mem_copy(&buf[pos], ro.cstr, ro.length);
-	pos += ro.length;
+	if (c.x != 0)
+	{
+		mem_copy(&buf[pos], ro.cstr, ro.length);
+		pos += ro.length;
+	}
 
 	char linebuf[10] = {0};
 	ddString ln = make_ddString_buf_from_int(linebuf, 10, l->num+1);
@@ -884,106 +881,15 @@ void vidd_redraw_line(struct client c)
 			if (!syntax_found && i < CLAMP(l->len-c.vpos, c.width)) buf[pos++] = l->text[i+c.vpos];
 		}
 	}
-
-
+	cursor_move_to(c.x, c.cur.y->num - c.spos);
+	ddString multi = make_multi_ddString_cstring(" ", c.width);
+	ddPrint(multi.cstr, multi.length);
+	cursor_move_to(c.x, c.cur.y->num - c.spos);
 	ddPrint(buf, pos);
 	cursor_restore();
 	vidd_draw_status(&c);
-	raze_ddString(&linestr);
-	raze_ddString(&lempty);
+	raze_ddString(&multi);
 	raze_ddString(&ro);
-	free(buf);
-*/
-	cursor_save();
-	cursor_clear();
-
-	long linecount = line_get_last(c.cur.y)->num+1;
-	ddString linestr = make_ddString_from_int(linecount);
-	ddString_push_char_back(&linestr, ' ');
-	ddString lempty = make_multi_ddString_cstring(" ", linestr.length);
-
-	c.x = c.sx;
-
-	cursor_move_to(c.x, c.y);
-
-	ddString returnseq = make_format_ddString("\x1b[B\r\x1b[%dC", c.x-1);
-	ddString ro = make_format_ddString("\x1b[%d;%dH", c.y+1, c.x+1);
-	struct line* l = line_get_line(c.cur.y, c.spos);
-	long len = c.width * c.height * 4;
-	char* buf = malloc(len);
-	long pos = 0;
-
-	if (c.x != 0)
-	{
-		mem_copy(&buf[pos], ro.cstr, ro.length);
-		pos += ro.length;
-	}
-
-	
-	for (int h = 0; h < c.height-1 && l; h++)
-	{
-		char linebuf[10] = {0};
-		ddString ln = make_ddString_buf_from_int(linebuf, 10, l->num+1);
-		mem_copy(&buf[pos], lnum_color, sizeof(lnum_color));
-		pos += sizeof(lnum_color);
-		mem_copy(&buf[pos], lempty.cstr, lempty.length);
-		pos += (lempty.length-1) - number_length(l->num+1);
-		mem_copy(&buf[pos], ln.cstr, ln.length);
-		pos += number_length(l->num+1)+1;
-		mem_copy(&buf[pos], "\x1b[0m", cstring_length("\x1b[0m"));
-		pos += cstring_length("\x1b[0m");
-		if (c.vpos < l->len)
-		{
-			for (int i = 0; i < CLAMP(l->len-c.vpos, c.width); i++)
-			{
-				bool syntax_found = false;
-				for (int s = 0; c.sty.keywords[s].len != 0; s++)
-				{
-					if (( ( (!IS_LETTER(l->text[i+c.vpos+c.sty.keywords[s].len]) || i+c.vpos+c.sty.keywords[s].len >= l->len) &&
-						(i == 0 || !IS_LETTER(l->text[i+c.vpos-1]))) ||
-						 !c.sty.keywords[s].embedded) &&
-						cstring_compare_length(c.sty.keywords[s].word, &l->text[i+c.vpos], c.sty.keywords[s].len))
-					{
-						syntax_found = true;
-						unsigned long stylelen;
-						unsigned long cwhitelen;
-						cstring_get_length(CWHITE, &cwhitelen);
-						cstring_get_length(c.sty.keywords[s].style, &stylelen);
-
-						if (stylelen + c.sty.keywords[s].len + cwhitelen + pos + 20 > len)
-							realloc(buf, stylelen + c.sty.keywords[s].len + cwhitelen + pos + 200);
-
-						mem_copy(&buf[pos], c.sty.keywords[s].style, stylelen);
-						pos += stylelen;
-						if (i+c.vpos + c.sty.keywords[s].len > c.width)
-						{
-							mem_copy(&buf[pos], &l->text[i+c.vpos], c.width-(i+c.vpos));
-							pos += c.width-(i+c.vpos);
-						}
-						else
-						{
-							mem_copy(&buf[pos], &l->text[i+c.vpos], c.sty.keywords[s].len);
-							pos += c.sty.keywords[s].len;
-						}
-						mem_copy(&buf[pos], CWHITE, cwhitelen);
-						pos += cwhitelen;
-						i += c.sty.keywords[s].len;
-						i--;
-						break;
-					}
-				}
-				if (!syntax_found && i < CLAMP(l->len-c.vpos, c.width)) buf[pos++] = l->text[i+c.vpos];
-			}
-		}
-		mem_copy(&buf[pos], returnseq.cstr, returnseq.length);
-		pos += returnseq.length;
-		l = l->next;
-	}
-	ddPrint(buf, pos);
-	cursor_restore();
-	vidd_draw_status(&c);
-	raze_ddString(&ro);
-	raze_ddString(&returnseq);
 	raze_ddString(&linestr);
 	raze_ddString(&lempty);
 	free(buf);
@@ -1006,7 +912,13 @@ void vidd_print(struct client c)
 
 	cursor_move_to(c.x, c.y);
 
-	ddString returnseq = make_format_ddString("\x1b[B\r\x1b[%dC", c.x-1);
+
+	ddString returnseq;
+	if (c.x-1 < 0)
+		returnseq = make_constant_ddString("\x1b[B\r");
+	else
+		returnseq = make_format_ddString("\x1b[B\r\x1b[%dC", c.x-1);
+
 	ddString ro = make_format_ddString("\x1b[%d;%dH", c.y+1, c.x+1);
 	struct line* l = line_get_line(c.cur.y, c.spos);
 	long len = c.width * c.height * 4;
@@ -1117,7 +1029,7 @@ void vidd_handel_key(char key)
 				pos = 0;
 				break;
 			}
-			mode_normal_functions[key](&cmaster);
+			mode_normal_functions[(int)key](&cmaster);
 		} break;
 		case VIDD_MODE_COMMAND:
 		{

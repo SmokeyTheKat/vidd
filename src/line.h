@@ -34,13 +34,11 @@ struct line* line_get_line(struct line* l, long num)
 }
 struct line* line_get_first(struct line* l)
 {
-    struct line* first = l;
     while (l->prev != (0)) l = l->prev;
     return l;
 }
 struct line* line_get_last(struct line* l)
 {
-    struct line* first = l;
     while (l->next != (0)) l = l->next;
     return l;
 }
