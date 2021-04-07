@@ -188,9 +188,9 @@ void vidd_show_message(struct client* c, char* msg)
 	cursor_save();
 	vidd_draw_status_start(c);
 	ddPrintf(" %s"CWHITE, msg);
-	usleep(MESSAGE_SLEEP_TIME);
+	//usleep(MESSAGE_SLEEP_TIME);
 	cursor_restore();
-	vidd_draw_status(c);
+	//vidd_draw_status(c);
 }
 
 void vidd_force_exit(struct client* c, char* dat)
@@ -1156,14 +1156,9 @@ void vidd_macro_insert(struct client* c, char key)
 
 int vidd_main(void)
 {
-	cmaster.x = cmaster.sx + number_length(line_get_last(cmaster.cur.y)->num)+1;
-	cmaster.width = cursor_get_width() - cmaster.x;
 	vidd_move_to(&cmaster, 0, 0);
 	for (;;)
 	{
-		cmaster.x = cmaster.sx + number_length(line_get_last(cmaster.cur.y)->num)+1;
-		cmaster.width = cursor_get_width() - cmaster.x;
-
 		char key = ddKey_getch_noesc();
 		if (cmaster.mac.recording) vidd_macro_insert(&cmaster, key);
 		vidd_handel_key(key);
@@ -1180,7 +1175,7 @@ int main(int argc, char** argv)
 
 	cmaster.sx = 0;
 	cmaster.y = 0;
-	cmaster.width = cursor_get_width() - cmaster.sx;
+	cmaster.width = (cursor_get_width()) - cmaster.sx;
 	cmaster.height = cursor_get_height();
 
 	cmaster.mac.recording = false;
