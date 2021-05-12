@@ -12,6 +12,7 @@ void vidd_debug(struct client* c)
 struct command commands[] = {
 	{ "w", vidd_write },
 	{ "q", vidd_exit },
+	{ "wq", vidd_write_exit },
 	{ "q!", vidd_force_exit },
 };
 

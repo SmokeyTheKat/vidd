@@ -39,6 +39,7 @@ void vidd_handel_key(char key);
 
 void vidd_write(struct client* c, char* dat);
 void vidd_exit(struct client* c, char* dat);
+void vidd_write_exit(struct client* c, char* dat);
 void vidd_force_exit(struct client* c, char* dat);
 
 void vidd_draw_status_start(struct client* c);
@@ -188,15 +189,18 @@ void vidd_show_message(struct client* c, char* msg)
 	cursor_save();
 	vidd_draw_status_start(c);
 	ddPrintf(" %s"CWHITE, msg);
-	//usleep(MESSAGE_SLEEP_TIME);
 	cursor_restore();
-	//vidd_draw_status(c);
 }
 
 void vidd_force_exit(struct client* c, char* dat)
 {
 	system("tput rmcup");
 	exit(0);
+}
+void vidd_write_exit(struct client* c, char* dat)
+{
+	vidd_write(c, dat);
+	vidd_exit(c, dat);
 }
 void vidd_exit(struct client* c, char* dat)
 {
