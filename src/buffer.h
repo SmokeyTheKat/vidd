@@ -38,7 +38,7 @@ void buffer_delete_before(struct buffer* buffer, intmax_t pos);
 
 struct buffer
 {
-	char* data;
+	unsigned char* data;
 	intmax_t length;
 	intmax_t capacity;
 };
