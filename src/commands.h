@@ -308,8 +308,13 @@ bool vidd_cursor_fix_overflow(struct vidd_client* client)
 	if (client->cursor.x >= client->cursor.y->buffer.length)
 	{
 		if (client->mode == VIDD_MODE_NORMAL && client->cursor.x >= client->cursor.y->buffer.length)
+		{
 			client->cursor.x = client->cursor.y->buffer.length-1;
-		else client->cursor.x = client->cursor.y->buffer.length;
+		}
+		else
+		{
+			client->cursor.x = client->cursor.y->buffer.length;
+		}
 	}
 	if (client->cursor.x < 0)
 		client->cursor.x = 0;
@@ -464,13 +469,22 @@ void vidd_move_down(struct vidd_client* client)
 }
 void vidd_move_right(struct vidd_client* client)
 {
+	if (client->cursor.x == vidd_last_movable(client))
+	{
+		printf("\a");
+		return;
+	}
 	client->cursor.x++;
 	client->cursor.lx = client->cursor.x;
 	vidd_cursor_adjust(client);
 }
 void vidd_move_left(struct vidd_client* client)
 {
-	if (client->cursor.x == 0) return;
+	if (client->cursor.x == 0)
+	{
+		printf("\a");
+		return;
+	}
 	client->cursor.x--;
 	client->cursor.lx = client->cursor.x;
 	vidd_cursor_adjust(client);
