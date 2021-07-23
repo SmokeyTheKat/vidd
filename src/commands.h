@@ -149,6 +149,8 @@ void vidd_redraw(struct vidd_client* client)
 {
 	if (!client->displayOn) return;
 
+	vidd_cursor_adjust(client);
+
 	//vidd_check_for_window_size_change(client);
 	vidd_view_adjust_offset(client);
 
@@ -173,7 +175,7 @@ void vidd_redraw(struct vidd_client* client)
 	else
 	{
 		line = line_skip(line, client->view.y);
-		cursor_move_to(0, vidd_view_get_absolute_y_offset(client));
+		buffer_printf(&toprint, CURSOR_TO("1", "%d"), vidd_view_get_absolute_y_offset(client)+1);
 	}
 
 	if (client->x != 0 && client->view.y >= 0)
@@ -210,7 +212,7 @@ void vidd_redraw(struct vidd_client* client)
 		buffer_push_cstring(&toprint, NOSTYLE, sizeof(NOSTYLE)-1);
 	}
 
-	printf("%s", toprint.data);
+	printf(CURSOR_HIDE "%s" CURSOR_SHOW, toprint.data);
 
 	free_buffer(&toprint);
 
@@ -218,8 +220,8 @@ void vidd_redraw(struct vidd_client* client)
 
 	if (client->mode == VIDD_MODE_LINE_SELECT) vidd_selection_draw(client);
 	if (client->mode == VIDD_MODE_SELECT) vidd_selection_draw(client);
-
-	vidd_cursor_adjust(client);
+	cursor_move_to(vidd_view_get_absolute_x_offset(client) + client->cursor.x - client->view.x,
+				vidd_view_get_absolute_y_offset(client) + (client->cursor.y->number - 1) - client->view.y);
 }
 void vidd_redraw_line(struct vidd_client* client)
 {

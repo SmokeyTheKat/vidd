@@ -27,6 +27,8 @@
 #define STYLE_UNDERLINE "\x1b[7m"
 #define STYLE_ITALIC "\x1b[3m"
 
+#define CURSOR_HIDE "\x1b[?25l"
+#define CURSOR_SHOW "\x1b[?25h"
 #define CURSOR_TO(x, y) "\x1b[" y ";" x "H"
 #define CURSOR_UP(v) "\x1b[" v "A"
 #define CURSOR_DOWN(v) "\x1b[" v "B"
