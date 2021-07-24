@@ -5,7 +5,41 @@
 #include "line.h"
 #include "buffer.h"
 
+char* current_color = "";
+
 void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buffer, struct line* line);
+void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i, bool colored);
+
+void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i, bool colored)
+{
+	if (!IS_PRINTABLE(line->buffer.data[*i]))
+	{
+		if ((*i) + 3 < line->buffer.length &&
+			!IS_PRINTABLE(line->buffer.data[(*i)+1]) &&
+			!IS_PRINTABLE(line->buffer.data[(*i)+2]))
+		{
+			buffer_push_cstring(buffer, &line->buffer.data[*i], 3);
+			(*i) += 3;
+			if (colored) buffer_push_cstring(buffer, FRGB("100", "100", "100") "··" NOSTYLE, sizeof(FRGB("100", "100", "100") "··" NOSTYLE)-1);
+			else
+			{
+				buffer_push_cstring(buffer, FRGB("100", "100", "100") "··" NOSTYLE, sizeof(FRGB("100", "100", "100") "··" NOSTYLE)-1);
+				buffer_push_cstring(buffer, current_color, strlen(current_color));
+			}
+		}
+		else
+		{
+			if (colored) buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
+			else
+			{
+				buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
+				buffer_push_cstring(buffer, current_color, strlen(current_color));
+			}
+			(*i)++;
+		}
+	}
+	else buffer_push(buffer, line->buffer.data[(*i)++]);
+}
 
 void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buffer, struct line* line)
 {
@@ -44,6 +78,7 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 						}
 						if (!exists && key_end[0] != '\0') continue;
 
+						current_color = SYNTAX_COLORS[(int)stype];
 						buffer_push_cstring(buffer, SYNTAX_COLORS[(int)stype], strlen(SYNTAX_COLORS[(int)stype]));
 						buffer_push_cstring(buffer, &text[i], key_start_length);
 
@@ -52,8 +87,7 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 						if (key_end[0] == '\0') key_end_length = 1;
 						while (i < line->buffer.length && i < client->view.x + client->view.width && strncmp(&text[i], key_end, key_end_length))
 						{
-							if (!IS_PRINTABLE(line->buffer.data[i])) { buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1); i++; }
-							else buffer_push(buffer, line->buffer.data[i++]);
+							vidd_syntax_push_next(buffer, line, &i, false);
 						}
 						if (i < line->buffer.length && i < client->view.x + client->view.width && key_end[0] != '\0')
 						{
@@ -85,8 +119,7 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 					goto VIDD_SYNTAX_APPLY_TO_BUFFER_TEXT_LOOP;
 				}
 			}
-			if (!IS_PRINTABLE(line->buffer.data[i])) { buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1); i++; }
-			else buffer_push(buffer, line->buffer.data[i++]);
+			vidd_syntax_push_next(buffer, line, &i, true);
 VIDD_SYNTAX_APPLY_TO_BUFFER_TEXT_LOOP:
 		}
 	}
@@ -94,8 +127,7 @@ VIDD_SYNTAX_APPLY_TO_BUFFER_TEXT_LOOP:
 	{
 		for (intmax_t i = client->view.x; i < line->buffer.length && i < client->view.x + client->view.width;)
 		{
-			if (!IS_PRINTABLE(line->buffer.data[i])) { buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1); i++; }
-			else buffer_push(buffer, line->buffer.data[i++]);
+			vidd_syntax_push_next(buffer, line, &i, true);
 		}
 	}
 }

@@ -955,6 +955,7 @@ void vidd_replace_character(struct vidd_client* client)
 
 void vidd_selection_draw(struct vidd_client* client)
 {
+	struct buffer toprint = make_buffer(ABS(client->selection.y1 - client->selection.y0)  * client->view.width);
 	struct line* line;
 	cursor_save();
 	if (client->mode == VIDD_MODE_LINE_SELECT)
@@ -986,7 +987,9 @@ void vidd_selection_draw(struct vidd_client* client)
 			printf(STYLE_UNDERLINE "%.*s" NOSTYLE, (int)MIN(client->view.width, x1), line->buffer.data);
 		}, {});
 	}
+	printf("%s", toprint.data);
 	cursor_restore();
+	free_buffer(&toprint);
 }
 void vidd_line_selection_draw(struct vidd_client* client)
 {

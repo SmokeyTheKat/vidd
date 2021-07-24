@@ -19,6 +19,7 @@
 #define MAX(a, b) ((a >= b) ? (a) : (b))
 #define MIN(a, b) ((a <= b) ? (a) : (b))
 #define SWAP(a, b) { typeof(a) tmp = a; a = b; b = tmp; }
+#define ABS(v) (((v) >= 0) ? ((v)) : (-1*(v)))
 
 #define FRGB(r, g, b) "\x1b[38;2;" r ";" g ";" b "m"
 #define BRGB(r, g, b) "\x1b[48;2;" r ";" g ";" b "m"
