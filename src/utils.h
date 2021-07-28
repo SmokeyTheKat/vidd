@@ -31,6 +31,7 @@
 #define CURSOR_HIDE "\x1b[?25l"
 #define CURSOR_SHOW "\x1b[?25h"
 #define CURSOR_TO(x, y) "\x1b[" y ";" x "H"
+#define CURSOR_MOVE(x, y) "\x1b[" x "C" "\x1b[" y "B"
 #define CURSOR_UP(v) "\x1b[" v "A"
 #define CURSOR_DOWN(v) "\x1b[" v "B"
 #define CURSOR_RIGHT(v) "\x1b[" v "C"
@@ -44,11 +45,14 @@ enum
 	KEY_LEFT=441,
 	KEY_DELETE=295,
 	KEY_BACKSPACE=127,
+	KEY_CTRL_BACKSLASH=28,
+	KEY_RETURN=13,
+	KEY_SHIFT_RETURN=438,
 	KEY_ESCAPE=27,
 	KEY_CTRL_BACKSPACE=8,
 };
 
-#define VIDD_LINE_SELECTION_LOOP(c) \
+#define VIDD_LINE_SELECTION_FULL_LOOP(c) \
 	{ \
 		intmax_t y0 = client->selection.y0; \
 		intmax_t y1 = client->selection.y1; \
@@ -60,7 +64,22 @@ enum
 			c \
 		} \
 	}
-#define VIDD_SELECTION_LOOP_CRSMEJ(c, r, s, m, e, J) \
+#define VIDD_LINE_SELECTION_LOOP(c) \
+	{ \
+		intmax_t y0 = client->selection.y0; \
+		intmax_t y1 = client->selection.y1; \
+		if (y0 > y1) SWAP(y0, y1); \
+		y0 = MAX(client->view.y, y0); \
+		y1 = MIN(client->view.y + client->view.height-1, y1); \
+		line = line_get_line(client->cursor.y, y0+1); \
+		intmax_t lim = y1; \
+		for (intmax_t i = y0; i <= lim && line; i++) \
+		{ \
+			c \
+		} \
+	}
+
+#define VIDD_SELECTION_FULL_LOOP_CRSMEJ(c, r, s, m, e, J) \
 	{ \
 		intmax_t y0 = client->selection.y0; \
 		intmax_t y1 = client->selection.y1; \
@@ -82,6 +101,72 @@ enum
 		intmax_t lim = y1 + dy; \
 		for (intmax_t i = y0; i != lim && line; i += dy) \
 		{ \
+			/*if (line->number-1 < client->view.y && \
+				line->number >= client->view.y + client->view.height) \
+			{ \
+				line = line->next; \
+				continue; \
+			}*/ \
+			c \
+			if (i == y0) \
+			{ \
+				if (y0 == y1) r \
+				else s \
+			} \
+			else if (i == y1) \
+			{ \
+				last_line = line; \
+				e \
+				J \
+			} \
+			else \
+			{ \
+				m \
+			} \
+			line = line->next; \
+		} \
+		if (line) line = line->prev; \
+		(void)first_line; \
+		(void)last_line; \
+	}
+#define VIDD_SELECTION_LOOP_CRSMEJ(c, r, s, m, e, J) \
+	{ \
+		intmax_t y0 = client->selection.y0; \
+		intmax_t y1 = client->selection.y1; \
+		intmax_t x0 = client->selection.x0; \
+		intmax_t x1 = client->selection.x1; \
+		int dy = 1; \
+		if (y0 > y1) \
+		{ \
+			SWAP(y0, y1); \
+			SWAP(x0, x1); \
+		} \
+		else if (x0 > x1 && y0 == y1) \
+		{ \
+			SWAP(x0, x1); \
+		} \
+		if (y0 < client->view.y) \
+		{ \
+			y0 = client->view.y; \
+			x0 = 0; \
+		} \
+		if (y1 >= client->view.y + client->view.height) \
+		{ \
+			y1 = client->view.y + client->view.height - 1; \
+			x1 = 696969696969696969; \
+		} \
+		line = line_get_line(client->cursor.y, y0+1); \
+		struct line* first_line = line; \
+		struct line* last_line = 0; \
+		intmax_t lim = y1 + dy; \
+		for (intmax_t i = y0; i != lim && line; i += dy) \
+		{ \
+			/*if (line->number-1 < client->view.y && \
+				line->number >= client->view.y + client->view.height) \
+			{ \
+				line = line->next; \
+				continue; \
+			}*/ \
 			c \
 			if (i == y0) \
 			{ \
@@ -164,7 +249,7 @@ void getch_init(void)
 {
 	tcgetattr(STDIN_FILENO, &oldt);
 	struct termios newt = oldt;
-	newt.c_iflag &= ~(BRKINT | INPCK | ISTRIP | IXON);
+	newt.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
 	newt.c_oflag &= ~(OPOST);
 	newt.c_cflag |= (CS8);
 	newt.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);

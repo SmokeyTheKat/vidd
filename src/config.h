@@ -38,15 +38,20 @@ void vidd_test(struct vidd_client* client)
 	frame_draw(&frame);
 }
 
+VIDD_MULTI_KEY_BIND_START(vidd_delete_object_multi_key, 'a')
+	VIDD_MULTI_KEY_BIND_OPTION('w', vidd_delete_word)
+VIDD_MULTI_KEY_BIND_END(vidd_delete_object_multi_key)
+
 VIDD_MULTI_KEY_BIND_START(vidd_multi_key_delete, 'd')
-VIDD_MULTI_KEY_BIND_OPTION('d', vidd_delete_line)
-VIDD_MULTI_KEY_BIND_OPTION('j', vidd_delete_two_lines_down)
-VIDD_MULTI_KEY_BIND_OPTION('k', vidd_delete_two_lines_up)
-VIDD_MULTI_KEY_BIND_OPTION_DEFAULT(vidd_delete_movement)
+	VIDD_MULTI_KEY_BIND_OPTION('d', vidd_delete_line)
+	VIDD_MULTI_KEY_BIND_OPTION('j', vidd_delete_two_lines_down)
+	VIDD_MULTI_KEY_BIND_OPTION('k', vidd_delete_two_lines_up)
+	VIDD_MULTI_KEY_BIND_OPTION('a', vidd_delete_object_multi_key)
+	VIDD_MULTI_KEY_BIND_OPTION_DEFAULT(vidd_delete_movement)
 VIDD_MULTI_KEY_BIND_END(vidd_multi_key_delete)
 
-VIDD_MULTI_KEY_BIND_START(vidd_multi_key_copy, 'd')
-VIDD_MULTI_KEY_BIND_OPTION('y', vidd_copy_line)
+VIDD_MULTI_KEY_BIND_START(vidd_multi_key_copy, 'y')
+	VIDD_MULTI_KEY_BIND_OPTION('y', vidd_copy_line)
 VIDD_MULTI_KEY_BIND_END(vidd_multi_key_copy)
 
 void vidd_multi_key_delete_then_insert(struct vidd_client* client)
@@ -57,6 +62,7 @@ void vidd_multi_key_delete_then_insert(struct vidd_client* client)
 
 void(*vidd_normal_mode_keybinds[])(struct vidd_client*) = {
 	[0 ... 510]=vidd_void,
+	[KEY_CTRL('c')]=vidd_quit_current,
 	[':']=vidd_enter_command_mode,
 	['/']=vidd_enter_find_next_mode,
 	['?']=vidd_enter_find_prev_mode,
@@ -80,6 +86,8 @@ void(*vidd_normal_mode_keybinds[])(struct vidd_client*) = {
 	['w']=vidd_move_next_word,
 	['e']=vidd_move_next_word_end,
 	['b']=vidd_move_prev_word,
+	['f']=vidd_find_next_char,
+	['F']=vidd_find_prev_char,
 
 	[KEY_LEFT]=vidd_move_left,
 	[KEY_DOWN]=vidd_move_down,
@@ -106,14 +114,15 @@ void(*vidd_normal_mode_keybinds[])(struct vidd_client*) = {
 	['$']=vidd_move_to_line_end,
 	['0']=vidd_move_to_line_start,
 	['^']=vidd_move_to_line_start,
-	[28]=vidd_swap,
+	[KEY_RETURN]=vidd_swap,
+	[KEY_CTRL_BACKSLASH]=vidd_duplicate,
 	[KEY_CTRL('j')]=vidd_client_next,
 	[KEY_CTRL('k')]=vidd_client_prev,
-	[KEY_CTRL('h')]=vidd_client_down,
-	[KEY_CTRL('l')]=vidd_client_up,
+	[KEY_CTRL('h')]=vidd_decrease_master_size,
+	[KEY_CTRL('l')]=vidd_increase_master_size,
 	[27]=vidd_enter_normal_mode,
 	[255]=vidd_toggle_drawing,
-	['s']=vidd_toggle_drawing,
+	[443]=vidd_toggle_drawing,
 	['~']=vidd_test,
 };
 
@@ -122,10 +131,12 @@ void(*vidd_select_mode_keybinds[])(struct vidd_client*) = {
 	['x']=vidd_delete_selection,
 	['d']=vidd_delete_selection,
 	['y']=vidd_selection_copy,
+	['s']=vidd_selection_swap_cursor,
 };
 
 void(*vidd_insert_mode_keybinds[])(struct vidd_client*) = {
 	[0 ... 510]=vidd_insert_char,
+	[KEY_CTRL('c')]=vidd_enter_normal_mode,
 	[KEY_BACKSPACE]=vidd_backspace,
 	[KEY_BACKSPACE]=vidd_backspace,
 	[KEY_DELETE]=vidd_delete,

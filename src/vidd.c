@@ -51,6 +51,7 @@ struct vidd_client_pool make_vidd_client_pool(intmax_t start_size)
 	struct vidd_client_pool pool = { 0 };
 	pool.size = start_size;
 	pool.clients = malloc(sizeof(struct vidd_client) * pool.size);
+	pool.master_size = 0.5;
 	pool.active = 0;
 	return pool;
 }
@@ -77,7 +78,8 @@ struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, int
 	client.inclusiveSelection = 1;
 	client.displayOn = 1;
 	client.mode = VIDD_MODE_NORMAL;
-	client.file_name = file_name;
+	client.file_name = make_buffer(150);
+	buffer_set_data(&client.file_name, file_name, strlen(file_name));
 	client.text = new_line(0);
 	struct cursor cursor = { 0, 0, client.text };
 	client.cursor = cursor;
@@ -85,9 +87,9 @@ struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, int
 	client.view.height = client.height - 1;
 	return client;
 }
-
 void free_vidd_client(struct vidd_client* client)
 {
+	free_buffer(&client->file_name);
 	vidd_text_clear(client);
 	free_line(client->text);
 	*client = (struct vidd_client){0};
@@ -95,10 +97,10 @@ void free_vidd_client(struct vidd_client* client)
 
 void vidd_load_stdin(struct vidd_client* client)
 {
-	client->file_name = "_-=[NONE]=-_";
-	char buffer[1024] = {0};
+	buffer_set_data(&client->file_name, "_-=[NONE]=-_", strlen("_-=[NONE]=-_"));
+	char buffer[150] = {0};
 	struct line* line = client->text;
-	while (read(0, buffer, sizeof(line)) > 0)
+	while (fgets(buffer, sizeof(buffer), stdin) != 0)
 	{
 		intmax_t length = strlen(buffer);
 		for (intmax_t i = 0; i < length; i++)
@@ -107,7 +109,7 @@ void vidd_load_stdin(struct vidd_client* client)
 			{
 				line = line_insert(line);
 			}
-			else if (buffer[i] == '\t') 
+			else if (buffer[i] == '\t')
 			{
 				line_append(line, ' ');
 				line_append(line, ' ');
@@ -117,10 +119,11 @@ void vidd_load_stdin(struct vidd_client* client)
 			else line_append(line, buffer[i]);
 		}
 	}
+	freopen("/dev/tty", "rw", stdin);
 }
 void vidd_load_file(struct vidd_client* client, char* file_name)
 {
-	client->file_name = file_name;
+	buffer_set_data(&client->file_name, file_name, strlen(file_name));
 	FILE* fp = fopen(file_name, "r");
 	if (fp == 0) return;
 	char buffer[1024] = {0};
@@ -166,7 +169,7 @@ void vidd_insert_char(struct vidd_client* client)
 
 		vidd_redraw(client);
 	}
-	else if (chr == '\n')
+	else if (chr == KEY_RETURN)
 	{
 		vidd_split_at_cursor(client);
 	}
@@ -237,7 +240,7 @@ void vidd_interrupt(struct vidd_client* client, uint32_t key)
 				cursor_move(-1, 0);
 				buffer_pop(&command_input);
 			}
-			else if (key == '\n')
+			else if (key == KEY_RETURN)
 			{
 				//dbs_log(0, command_input.data);
 				char* command = strtok(command_input.data, " \n\t\0 ");
@@ -296,7 +299,7 @@ void vidd_interrupt(struct vidd_client* client, uint32_t key)
 				cursor_move(-1, 0);
 				buffer_pop(&command_input);
 			}
-			else if (key == '\n')
+			else if (key == KEY_RETURN)
 			{
 				char* word = command_input.data;
 
@@ -342,7 +345,6 @@ int main(int argc, char** argv)
 {
 	char* file_name = (argc > 1) ? (argv[1]) : ("unamed");
 	//signal(SIGINT, signal_catch);
-	getch_init();
 	screen_save();
 	setbuf(stdout, NULL);
 
@@ -357,6 +359,7 @@ int main(int argc, char** argv)
 	if (!strcmp(file_name, "-"))
 		vidd_load_stdin(vidd_get_active());
 	else vidd_load_file(vidd_get_active(), file_name);
+	getch_init();
 	vidd_redraw(vidd_get_active());
 	vidd_main();
 	screen_restore();

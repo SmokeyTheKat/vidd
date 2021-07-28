@@ -1,7 +1,7 @@
 PREFIX=~/.local
 
 CC=gcc
-CFLAGS=-Wall -g
+CFLAGS=-Wall -g -Wno-pointer-sign
 CSRCS=$(shell find ./src/ -name '*.c')
 
 all:

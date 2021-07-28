@@ -10,33 +10,60 @@ char* current_color = "";
 void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buffer, struct line* line);
 void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i, bool colored);
 
+void vidd_syntax_ftdetect(struct vidd_client* client)
+{
+	if (*(uint16_t*)".c" == *(uint16_t*)(&client->file_name.data[client->file_name.length-2]));
+}
+
 void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i, bool colored)
 {
+/*
 	if (!IS_PRINTABLE(line->buffer.data[*i]))
 	{
-		if ((*i) + 3 < line->buffer.length &&
-			!IS_PRINTABLE(line->buffer.data[(*i)+1]) &&
-			!IS_PRINTABLE(line->buffer.data[(*i)+2]))
+		uint8_t val = line->buffer.data[*i];
+		int mclen = 0;
+		if (val >= 0xc0 && val <= 0xdf) mclen = 2;
+		else if (val >= 0xe0 && val <= 0xef) mclen = 3;
+		else if (val >= 0xf0 && val <= 0xf7) mclen = 4;
+
+		if (mclen > 1)
 		{
-			buffer_push_cstring(buffer, &line->buffer.data[*i], 3);
-			(*i) += 3;
-			if (colored) buffer_push_cstring(buffer, FRGB("100", "100", "100") "··" NOSTYLE, sizeof(FRGB("100", "100", "100") "··" NOSTYLE)-1);
-			else
+			bool printgood = true;
+			for (int j = 0; j < mclen; j++)
 			{
-				buffer_push_cstring(buffer, FRGB("100", "100", "100") "··" NOSTYLE, sizeof(FRGB("100", "100", "100") "··" NOSTYLE)-1);
-				buffer_push_cstring(buffer, current_color, strlen(current_color));
+				if ((*i) + j >= line->buffer.length && IS_PRINTABLE(line->buffer.data[(*i) + j]))
+				{
+					printgood = false;
+					break;
+				}
 			}
+			if (printgood)
+			{
+				buffer_push_cstring(buffer, &line->buffer.data[(*i)], mclen);
+				for (int j = 0; j < mclen-1; j++)
+				{
+					if (colored) buffer_push_cstring(buffer, FRGB("100", "100", "100") "·" NOSTYLE, sizeof(FRGB("100", "100", "100") "·" NOSTYLE)-1);
+					else
+					{
+						buffer_push_cstring(buffer, FRGB("100", "100", "100") "·" NOSTYLE, sizeof(FRGB("100", "100", "100") "·" NOSTYLE)-1);
+						buffer_push_cstring(buffer, current_color, strlen(current_color));
+					}
+				}
+				(*i) += mclen;
+			}
+			else buffer_push(buffer, line->buffer.data[(*i)++]);
 		}
+	}
+*/
+	if (!IS_PRINTABLE(line->buffer.data[*i]))
+	{
+		if (colored) buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
 		else
 		{
-			if (colored) buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
-			else
-			{
-				buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
-				buffer_push_cstring(buffer, current_color, strlen(current_color));
-			}
-			(*i)++;
+			buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
+			buffer_push_cstring(buffer, current_color, strlen(current_color));
 		}
+		(*i)++;
 	}
 	else buffer_push(buffer, line->buffer.data[(*i)++]);
 }

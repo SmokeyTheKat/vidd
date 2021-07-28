@@ -89,11 +89,19 @@ void buffer_printf(struct buffer* buffer, const char* fmt, ...)
 	va_list args;
 	va_start(args, fmt);
 
-	char fmtbuf[150] = {0};
-	intmax_t fmtbuf_length = vsprintf(fmtbuf, fmt, args);
+	va_list cpyargs;
+	va_copy(cpyargs, args);
+
+	intmax_t fmtbuf_length = vsnprintf(0, 0, fmt, args);
+	char* fmtbuf = malloc(fmtbuf_length + 1);
+	vsnprintf(fmtbuf, fmtbuf_length + 1, fmt, cpyargs);
+
 	buffer_push_cstring(buffer, fmtbuf, fmtbuf_length);
 
+	free(fmtbuf);
+
 	va_end(args);
+	va_end(cpyargs);
 }
 
 void buffer_insert_at(struct buffer* buffer, char value, intmax_t pos)

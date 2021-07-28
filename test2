@@ -1,0 +1,18 @@
+#include <stdio.h>
+ 
+int main(void)
+{
+  char buf[BUFSIZ];
+ 
+  puts("Reading from stdin...");
+  while(fgets(buf, sizeof(buf), stdin))
+    fputs(buf, stdout);
+ 
+  freopen("/dev/tty", "rw", stdin);
+ 
+  puts("Reading from stdin again...");
+  while(fgets(buf, sizeof(buf), stdin))
+    fputs(buf, stdout);
+ 
+  return 0;
+}

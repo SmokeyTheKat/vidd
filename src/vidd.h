@@ -8,6 +8,7 @@
 #include <pthread.h>
 
 #include "./line.h"
+#include "./buffer.h"
 #include "./list.h"
 #include "./utils.h"
 
@@ -96,7 +97,7 @@ struct marker
 
 struct vidd_client
 {
-	char* file_name;
+	struct buffer file_name;
 	intmax_t x, y;
 	intmax_t width, height;
 	uint32_t key;
@@ -127,6 +128,7 @@ struct vidd_client_pool
 {
 	intmax_t active;
 	struct vidd_client* clients;
+	float master_size;
 	intmax_t length;
 	intmax_t size;
 };
