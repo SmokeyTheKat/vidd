@@ -18,6 +18,7 @@ void buffer_copy(struct buffer* dest, struct buffer* src);
 void buffer_copy_inverse(struct buffer* dest, struct buffer* src);
 
 void buffer_printf(struct buffer* buffer, const char* fmt, ...);
+void buffer_print(struct buffer* buffer, char* data);
 void buffer_insert_at(struct buffer* buffer, char value, intmax_t pos);
 void buffer_set_data(struct buffer* buffer, char* data, intmax_t length);
 
@@ -84,6 +85,11 @@ void buffer_copy_inverse(struct buffer* dest, struct buffer* src)
 	dest->data[dest->length] = 0;
 }
 
+void buffer_print(struct buffer* buffer, char* data)
+{
+	intmax_t length = strlen(data);
+	buffer_push_cstring(buffer, data, length);
+}
 void buffer_printf(struct buffer* buffer, const char* fmt, ...)
 {
 	va_list args;

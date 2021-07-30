@@ -1,6 +1,11 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
+#define STYLE_EMPTY_LINE FRGB("255", "255", "0") "*"
+#define STYLE_HIGHLIGHT STYLE_REVERSE
+#define STYLE_LINE_NUMBER_COLOR FRGB("255", "255", "0")
+#define STYLE_LINE_NUMBER "%d│"
+
 #define KEY_CTRL(c) ((int)(c-96))
 
 #define VIDD_MULTI_KEY_BIND_START(n, k) \
@@ -102,7 +107,10 @@ void(*vidd_normal_mode_keybinds[])(struct vidd_client*) = {
 	['L']=vidd_view_move_right,
 	['K']=vidd_view_move_up,
 	['J']=vidd_view_move_down,
-	['n']=vidd_frame_move_right,
+	['n']=vidd_repeat_last_find,
+	['N']=vidd_repeat_last_find_reverse,
+	['*']=vidd_find_next_word_under_cursor,
+	['#']=vidd_find_prev_word_under_cursor,
 	['M']=vidd_set_marker,
 	['m']=vidd_goto_marker,
 	['z']=vidd_view_center,
@@ -120,6 +128,14 @@ void(*vidd_normal_mode_keybinds[])(struct vidd_client*) = {
 	[KEY_CTRL('k')]=vidd_client_prev,
 	[KEY_CTRL('h')]=vidd_decrease_master_size,
 	[KEY_CTRL('l')]=vidd_increase_master_size,
+	[KEY_CTRL('u')]=vidd_move_floating_down,
+	[KEY_CTRL('i')]=vidd_move_floating_up,
+	[KEY_CTRL('o')]=vidd_move_floating_right,
+	[KEY_CTRL('y')]=vidd_move_floating_left,
+	[KEY_CTRL('r')]=vidd_floating_increase_width,
+	[KEY_CTRL('q')]=vidd_floating_decrease_width,
+	[KEY_CTRL('w')]=vidd_floating_increase_height,
+	[KEY_CTRL('e')]=vidd_floating_decrease_height,
 	[27]=vidd_enter_normal_mode,
 	[255]=vidd_toggle_drawing,
 	[443]=vidd_toggle_drawing,
@@ -141,17 +157,22 @@ void(*vidd_insert_mode_keybinds[])(struct vidd_client*) = {
 	[KEY_BACKSPACE]=vidd_backspace,
 	[KEY_DELETE]=vidd_delete,
 	[KEY_CTRL_BACKSPACE]=vidd_delete,
+	[KEY_LEFT]=vidd_move_left,
+	[KEY_DOWN]=vidd_move_down,
+	[KEY_UP]=vidd_move_up,
+	[KEY_RIGHT]=vidd_move_right,
 };
 
 struct command vidd_commands[] = {
-	{ "!f", vidd_run_command_in_frame },
 	{ "w", vidd_write },
 	{ "q", vidd_client_quit },
 	{ "qa", vidd_exit },
 	{ "wq", vidd_write_quit },
 	{ "e", vidd_edit },
 	{ "vs", vidd_vsplit },
-	{ "s", vidd_split },
+	{ "!vs", vidd_run_command_in_vsplit },
+	{ "f", vidd_open_in_floating_window },
+	{ "!f", vidd_run_command_in_floating_window },
 };
 
 #endif

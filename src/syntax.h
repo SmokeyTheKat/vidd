@@ -12,7 +12,22 @@ void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i
 
 void vidd_syntax_ftdetect(struct vidd_client* client)
 {
-	if (*(uint16_t*)".c" == *(uint16_t*)(&client->file_name.data[client->file_name.length-2]));
+	char* file_name = client->file_name.data;
+	for (intmax_t i = 0; i < sizeof(syntaxes) / sizeof(char**); i++)
+	{
+		char** syntax = syntaxes[i];
+		for (intmax_t j = 1; j < 1+(intmax_t)syntax[0]; j++)
+		{
+			char* ext = syntax[j];
+			if (!strcmp(&file_name[strlen(file_name)-strlen(ext)], ext))
+			{
+				client->syntaxOn = true;
+				client->syntax = syntaxes[i];
+				return;
+			}
+		}
+	}
+	client->syntaxOn = false;
 }
 
 void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i, bool colored)
@@ -82,7 +97,7 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 				buffer_push_cstring(buffer, NOSTYLE, sizeof(NOSTYLE)-1);
 				continue;
 			}
-			for (intmax_t j = 0; client->syntax[j]; j++)
+			for (intmax_t j = 1+(intmax_t)client->syntax[0]; client->syntax[j]; j++)
 			{
 				if (client->syntax[j][0] == SCID_RANGE)
 				{
@@ -135,7 +150,7 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 			
 			intmax_t word_length = strspn(&text[i], CSET_CHARACTERS);
 			if (word_length == 0) word_length = 1;
-			for (intmax_t j = 0; client->syntax[j]; j++)
+			for (intmax_t j = 1+(intmax_t)client->syntax[0]; client->syntax[j]; j++)
 			{
 				if (strlen(client->syntax[j]+1) == word_length && !strncmp(&text[i], client->syntax[j]+1, word_length))
 				{

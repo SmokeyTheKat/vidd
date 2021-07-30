@@ -25,7 +25,8 @@
 #define BRGB(r, g, b) "\x1b[48;2;" r ";" g ";" b "m"
 
 #define NOSTYLE "\x1b[0m"
-#define STYLE_UNDERLINE "\x1b[7m"
+#define STYLE_UNDERLINE "\x1b[4m"
+#define STYLE_REVERSE "\x1b[7m"
 #define STYLE_ITALIC "\x1b[3m"
 
 #define CURSOR_HIDE "\x1b[?25l"
@@ -221,6 +222,7 @@ enum
 void getch_exit(void);
 void getch_init(void);
 char cstring_is_n_number(char* cstr, intmax_t n);
+char* strlstr(char* src, char* find, intmax_t src_length);
 intmax_t number_get_length(intmax_t num);
 void screen_get_size(intmax_t * width, intmax_t* height);
 void screen_save(void);
@@ -265,6 +267,13 @@ char cstring_is_n_number(char* cstr, intmax_t n)
 		if (!IS_NUMBER(cstr[i]))
 			return false;
 	return i == n;
+}
+char* strlstr(char* src, char* find, intmax_t src_length)
+{
+	intmax_t find_length = strlen(find);
+	for (intmax_t i = src_length - 1; i >= 0; i--)
+		if (!strncmp(&src[i], find, find_length)) return &src[i];
+	return 0;
 }
 
 intmax_t number_get_length(intmax_t num)

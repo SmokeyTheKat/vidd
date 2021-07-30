@@ -75,10 +75,12 @@ struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, int
 	client.syntax = syntax_c;
 	client.numbersOn = 1;
 	client.syntaxOn = 1;
+	client.isFloating = 0;
 	client.inclusiveSelection = 1;
 	client.displayOn = 1;
 	client.mode = VIDD_MODE_NORMAL;
 	client.file_name = make_buffer(150);
+	client.last_find = make_buffer(150);
 	buffer_set_data(&client.file_name, file_name, strlen(file_name));
 	client.text = new_line(0);
 	struct cursor cursor = { 0, 0, client.text };
@@ -95,36 +97,8 @@ void free_vidd_client(struct vidd_client* client)
 	*client = (struct vidd_client){0};
 }
 
-void vidd_load_stdin(struct vidd_client* client)
+void vidd_load_from_fp(struct vidd_client* client, FILE* fp)
 {
-	buffer_set_data(&client->file_name, "_-=[NONE]=-_", strlen("_-=[NONE]=-_"));
-	char buffer[150] = {0};
-	struct line* line = client->text;
-	while (fgets(buffer, sizeof(buffer), stdin) != 0)
-	{
-		intmax_t length = strlen(buffer);
-		for (intmax_t i = 0; i < length; i++)
-		{
-			if (buffer[i] == '\n')
-			{
-				line = line_insert(line);
-			}
-			else if (buffer[i] == '\t')
-			{
-				line_append(line, ' ');
-				line_append(line, ' ');
-				line_append(line, ' ');
-				line_append(line, ' ');
-			}
-			else line_append(line, buffer[i]);
-		}
-	}
-	freopen("/dev/tty", "rw", stdin);
-}
-void vidd_load_file(struct vidd_client* client, char* file_name)
-{
-	buffer_set_data(&client->file_name, file_name, strlen(file_name));
-	FILE* fp = fopen(file_name, "r");
 	if (fp == 0) return;
 	char buffer[1024] = {0};
 	struct line* line = client->text;
@@ -147,7 +121,24 @@ void vidd_load_file(struct vidd_client* client, char* file_name)
 			else line_append(line, buffer[i]);
 		}
 	}
-	fclose(fp);
+
+}
+void vidd_load_stdin(struct vidd_client* client)
+{
+	buffer_set_data(&client->file_name, "_-=[NONE]=-_", strlen("_-=[NONE]=-_"));
+	vidd_load_from_fp(client, stdin);
+	freopen("/dev/tty", "rw", stdin);
+}
+void vidd_load_file(struct vidd_client* client, char* file_name)
+{
+	buffer_set_data(&client->file_name, file_name, strlen(file_name));
+	FILE* fp = fopen(file_name, "r");
+	if (fp)
+	{
+		vidd_load_from_fp(client, fp);
+		vidd_syntax_ftdetect(client);
+		fclose(fp);
+	}
 }
 
 
@@ -283,6 +274,7 @@ void vidd_interrupt(struct vidd_client* client, uint32_t key)
 			}
 		} break;
 		case VIDD_MODE_FIND:
+		case VIDD_MODE_FIND_REVERSE:
 		{
 			if (key == 27)
 			{
@@ -301,13 +293,16 @@ void vidd_interrupt(struct vidd_client* client, uint32_t key)
 			}
 			else if (key == KEY_RETURN)
 			{
+				buffer_copy(&client->last_find, &command_input);
 				char* word = command_input.data;
 
 				cursor_restore();
 				client->mode = VIDD_MODE_NORMAL;
 				vidd_set_status(client);
 
-				vidd_find_next_word(client, word, strlen(word));
+				if (client->mode == VIDD_MODE_FIND)
+					vidd_find_next_word(client, word, strlen(word));
+				else vidd_find_prev_word(client, word, strlen(word));
 
 				buffer_clear(&command_input);
 			}
@@ -343,7 +338,7 @@ void signal_catch(int ipar)
 
 int main(int argc, char** argv)
 {
-	char* file_name = (argc > 1) ? (argv[1]) : ("unamed");
+	char* file_name = (argc > 1) ? (argv[1]) : ("_-=[NONE]=-_");
 	//signal(SIGINT, signal_catch);
 	screen_save();
 	setbuf(stdout, NULL);

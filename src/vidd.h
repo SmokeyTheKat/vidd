@@ -33,6 +33,7 @@ void vidd_interrupt(struct vidd_client* client, uint32_t key);
 void vidd_continue_input(struct vidd_client* client);
 struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, intmax_t width, intmax_t height);
 void free_vidd_client(struct vidd_client* client);
+void vidd_load_from_fp(struct vidd_client* client, FILE* fp);
 void vidd_load_file(struct vidd_client* client, char* file_name);
 void vidd_load_stdin(struct vidd_client* client);
 struct vidd_client* vidd_client_pool_add(struct vidd_client_pool* pool, struct vidd_client client);
@@ -46,6 +47,7 @@ enum
 	VIDD_MODE_NORMAL=0,
 	VIDD_MODE_COMMAND,
 	VIDD_MODE_FIND,
+	VIDD_MODE_FIND_REVERSE,
 	VIDD_MODE_INSERT,
 	VIDD_MODE_REPLACE,
 	VIDD_MODE_SELECT,
@@ -107,8 +109,8 @@ struct vidd_client
 	struct viewport view;
 	struct marker marker;
 	struct selection selection;
+	struct buffer last_find;
 	char** syntax;
-
 
 	union
 	{
@@ -118,6 +120,7 @@ struct vidd_client
 			intmax_t numbersOn : 1;
 			intmax_t displayOn : 1;
 			intmax_t syntaxOn : 1;
+			intmax_t isFloating : 1;
 			intmax_t inclusiveSelection : 1;
 		};
 	};
