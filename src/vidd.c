@@ -431,6 +431,12 @@ int main(int argc, char** argv)
 	else vidd_load_file(vidd_get_active(), file_name);
 	getch_init();
 	vidd_redraw(vidd_get_active());
+
+	for (int i = 2; i < argc; i++)
+	{
+		vidd_vsplit(vidd_get_active(), argv[i]);
+	}
+
 	vidd_main();
 	screen_restore();
 	return 0;
