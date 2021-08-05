@@ -67,6 +67,9 @@ void vidd_goto_bottom(struct vidd_client* client);
 void vidd_move_to(struct vidd_client* client, intmax_t x, intmax_t y);
 void vidd_move_to_x(struct vidd_client* client, intmax_t x);
 
+void vidd_macro_toggle(struct vidd_client* client);
+void vidd_macro_run(struct vidd_client* client);
+
 void vidd_frame_move_right(struct vidd_client* client);
 
 void vidd_insert_char(struct vidd_client* client);
@@ -299,7 +302,10 @@ void vidd_set_status(struct vidd_client* client)
 	vidd_line_clear(client, client->height - 1);
 
 	cursor_move_to(client->x, client->y + client->height - 1);
-	printf("%s%s" NOSTYLE, fmt, VIDD_MODE_TEXTS[client->mode]);
+
+	printf("%s%s%s" NOSTYLE, fmt,
+							 (macro_recording == true) ? ("@") : (""),
+							 VIDD_MODE_TEXTS[client->mode]);
 
 	cursor_move_to(client->x + client->width - strlen(client->file_name.data) - 1, client->y + client->height - 1);
 
@@ -776,6 +782,22 @@ void vidd_move_to(struct vidd_client* client, intmax_t x, intmax_t y)
 
 
 
+void vidd_macro_toggle(struct vidd_client* client)
+{
+	if (macro_recording == false)
+		buffer_clear(&macro_buffer);
+	macro_recording = !macro_recording;
+	vidd_set_status(client);
+}
+void vidd_macro_run(struct vidd_client* client)
+{
+	buffer_copy_inverse(&run_buffer, &macro_buffer);
+	buffer_pop_front(&run_buffer);
+}
+
+
+
+
 
 void vidd_frame_move_right(struct vidd_client* client)
 {
@@ -1124,7 +1146,7 @@ void vidd_selection_copy(struct vidd_client* client)
 	{
 		buffer_push(&copy_buffer, 'o');
 
-		VIDD_LINE_SELECTION_LOOP({
+		VIDD_LINE_SELECTION_FULL_LOOP({
 			buffer_push_cstring(&copy_buffer, line->buffer.data, line->buffer.length);
 			if (i + 1 <= lim) buffer_push(&copy_buffer, 13);
 			line = line->next;
@@ -1135,7 +1157,7 @@ void vidd_selection_copy(struct vidd_client* client)
 	{
 		buffer_push(&copy_buffer, 'a');
 
-		VIDD_SELECTION_LOOP_CRSMEJ(
+		VIDD_SELECTION_FULL_LOOP_CRSMEJ(
 		{}, {//range
 			buffer_push_cstring(&copy_buffer, &line->buffer.data[x0], x1-x0);
 		}, {//start
@@ -1158,7 +1180,10 @@ void vidd_selection_copy(struct vidd_client* client)
 
 void vidd_paste(struct vidd_client* client)
 {
-	buffer_copy_inverse(&run_buffer, &copy_buffer);
+	for (intmax_t i = 0; i < copy_buffer.length; i++)
+	{
+		vidd_interrupt(client, copy_buffer.data[i]);
+	}
 }
 
 

@@ -143,5 +143,7 @@ struct vidd_client_pool client_pool;
 struct buffer command_input;
 struct buffer copy_buffer;
 struct buffer run_buffer;
+struct buffer macro_buffer;
+bool macro_recording = false;
 
 #endif

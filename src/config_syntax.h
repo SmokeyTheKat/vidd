@@ -2,7 +2,7 @@
 #define __VIDD_CONFIG_SYNTAX_H__
 
 #define ACTIVE_CLIENT_COLOR BRGB("255", "255", "0") FRGB("0", "0", "0")
-#define INACTIVE_CLIENT_COLOR BRGB("120", "120", "120") FRGB("255", "255", "255")
+#define INACTIVE_CLIENT_COLOR BRGB("255", "255", "255") FRGB("0", "0", "0")
 
 #define SSID_KEYWORD "#"
 #define SSID_OPERATOR "+"

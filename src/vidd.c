@@ -12,6 +12,9 @@ uint32_t getch(void)
 	}
 	uint64_t output = 0;
 	read(STDIN_FILENO, &output, 8);
+
+	if (macro_recording) buffer_push(&macro_buffer, output);
+
 	return ((output > 255) * 255) + (output % 255);
 }
 
@@ -402,6 +405,7 @@ void vidd_main(void)
 	command_input = make_buffer(150);
 	copy_buffer = make_buffer(2048);
 	run_buffer = make_buffer(2048);
+	macro_buffer = make_buffer(2048);
 	while (1) vidd_continue_input(vidd_get_active());
 }
 
