@@ -223,6 +223,65 @@ void vidd_interrupt(struct vidd_client* client, uint32_t key)
 				client->mode = VIDD_MODE_NORMAL;
 				vidd_set_status(client);
 			}
+			else if (key == '\t')
+			{
+				int skip = 0;
+				char curdir_carray[1024] = {0};
+				char* curdir = curdir_carray;
+				strcpy(curdir, strchr(command_input.data, ' ') + 1);
+				int curdir_len = strlen(curdir);
+				if (*(uint16_t*)curdir == *(uint16_t*)"./")
+				{
+					curdir_len -= 2;
+					curdir = curdir + 2;
+				}
+#include <dirent.h>
+				DIR *d;
+				struct dirent* dir;
+				key = 0;
+				char finddir_carray[1024] = {0};
+				char* finddir = finddir_carray;
+				char* findlslash = strrchr(curdir, '/');
+				if (!findlslash) finddir = ".";
+				else
+				{
+					strncpy(finddir, curdir, curdir_len - strlen(findlslash));
+					skip = curdir_len - strlen(findlslash) + 1;
+					curdir = findlslash + 1;
+				}
+TAB_FETCH_REDO:
+				d = opendir(finddir);
+				if (d)
+				{
+					while ((dir = readdir(d)) != NULL)
+					{
+						if (!strncmp(curdir, dir->d_name, strlen(curdir)))
+						{
+							char* mcpos = strchr(command_input.data, ' ') + 1 + skip;
+							int mcpos_len = strlen(mcpos);
+							buffer_delete_n_at(&command_input, mcpos_len,
+									   (uint64_t)mcpos - (uint64_t)command_input.data);
+							buffer_push_cstring(&command_input, dir->d_name, strlen(dir->d_name));
+
+							cursor_move(-mcpos_len, 0);
+							for (int i = 0; i < mcpos_len; i++)
+								printf(" ");
+							cursor_move(-mcpos_len, 0);
+
+							printf("%s", dir->d_name);
+
+							key = getch();
+							if (key != '\t')
+							{
+								vidd_interrupt(client, key);
+								break;
+							}
+						}
+					}
+					closedir(d);
+				}
+				if (key == '\t') goto TAB_FETCH_REDO;
+			}
 			else if (key == 127)
 			{
 				if (command_input.length == 0) break;
@@ -297,12 +356,13 @@ void vidd_interrupt(struct vidd_client* client, uint32_t key)
 				char* word = command_input.data;
 
 				cursor_restore();
-				client->mode = VIDD_MODE_NORMAL;
-				vidd_set_status(client);
 
 				if (client->mode == VIDD_MODE_FIND)
 					vidd_find_next_word(client, word, strlen(word));
 				else vidd_find_prev_word(client, word, strlen(word));
+
+				client->mode = VIDD_MODE_NORMAL;
+				vidd_set_status(client);
 
 				buffer_clear(&command_input);
 			}

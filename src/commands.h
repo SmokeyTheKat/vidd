@@ -1027,11 +1027,11 @@ void vidd_selection_draw(struct vidd_client* client)
 						vidd_view_get_absolute_x_offset(client) + 1);
 		}, {// range 
 			if (x0 != 0)
-				buffer_printf(&toprint, CURSOR_RIGHT("%d"), x0);
+				buffer_printf(&toprint, CURSOR_RIGHT("%d"), x0 - client->view.x);
 			buffer_printf(&toprint, STYLE_HIGHLIGHT "%.*s" NOSTYLE, (int)MIN(client->view.width, x1-x0), &line->buffer.data[x0]);
 		}, {// start
 			if (x0 != 0)
-				buffer_printf(&toprint, CURSOR_RIGHT("%d"), x0);
+				buffer_printf(&toprint, CURSOR_RIGHT("%d"), x0 - client->view.x);
 			buffer_printf(&toprint, STYLE_HIGHLIGHT "%.*s" NOSTYLE, (int)MIN(client->view.width, line->buffer.length-x0+1), &line->buffer.data[x0]);
 		}, {// middle
 			buffer_printf(&toprint, STYLE_HIGHLIGHT "%.*s" NOSTYLE, (int)MIN(client->view.width, line->buffer.length), line->buffer.data);
