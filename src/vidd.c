@@ -65,13 +65,23 @@ struct vidd_client* vidd_client_pool_add(struct vidd_client_pool* pool, struct v
 	return &pool->clients[pool->length++];
 }
 
-struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, intmax_t width, intmax_t height)
+struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, intmax_t width, intmax_t height, int* open_buffers)
 {
 	struct vidd_client client = {0};
 	client.width = width;
 	client.height = height;
 	client.x = x;
 	client.y = y;
+	if (open_buffers)
+	{
+		client.open_buffers = open_buffers;
+		(*client.open_buffers)++;
+	}
+	else
+	{
+		client.open_buffers = malloc(sizeof(int));
+		*client.open_buffers = 1;
+	}
 	client.syntax = syntax_c;
 	client.numbersOn = 1;
 	client.syntaxOn = 1;
@@ -91,9 +101,14 @@ struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, int
 }
 void free_vidd_client(struct vidd_client* client)
 {
-	free_buffer(&client->file_name);
-	vidd_text_clear(client);
-	free_line(client->text);
+	if (*client->open_buffers == 1)
+	{
+		free_buffer(&client->file_name);
+		vidd_text_clear(client);
+		free_line(client->text);
+		free(client->open_buffers);
+	}
+	else (*client->open_buffers)--;
 	*client = (struct vidd_client){0};
 }
 
@@ -407,7 +422,7 @@ int main(int argc, char** argv)
 
 	intmax_t width, height;
 	screen_get_size(&width, &height);
-	struct vidd_client initial_client = make_vidd_client(file_name, 0, 0, width, height);
+	struct vidd_client initial_client = make_vidd_client(file_name, 0, 0, width, height, 0);
 
 	vidd_client_pool_add(&client_pool, initial_client);
 

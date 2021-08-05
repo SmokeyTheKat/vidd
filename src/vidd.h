@@ -31,7 +31,7 @@ void vidd_main(void);
 struct vidd_client* vidd_get_active(void);
 void vidd_interrupt(struct vidd_client* client, uint32_t key);
 void vidd_continue_input(struct vidd_client* client);
-struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, intmax_t width, intmax_t height);
+struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, intmax_t width, intmax_t height, int* open_buffers);
 void free_vidd_client(struct vidd_client* client);
 void vidd_load_from_fp(struct vidd_client* client, FILE* fp);
 void vidd_load_file(struct vidd_client* client, char* file_name);
@@ -103,6 +103,7 @@ struct vidd_client
 	intmax_t x, y;
 	intmax_t width, height;
 	uint32_t key;
+	int* open_buffers;
 
 	struct line* text;
 	struct cursor cursor;
@@ -136,27 +137,11 @@ struct vidd_client_pool
 	intmax_t size;
 };
 
+
+ 
 struct vidd_client_pool client_pool;
 struct buffer command_input;
 struct buffer copy_buffer;
 struct buffer run_buffer;
-
-uint32_t getch(void);
-struct vidd_client* vidd_get_active(void);
-intmax_t vidd_client_pool_get_client_index(struct vidd_client_pool* pool, struct vidd_client* client);
-void vidd_client_pool_set_active(struct vidd_client_pool* pool, struct vidd_client* client);
-void vidd_client_pool_prev_client(struct vidd_client_pool* pool);
-void vidd_client_pool_next_client(struct vidd_client_pool* pool);
-struct vidd_client_pool make_vidd_client_pool(intmax_t start_size);
-struct vidd_client* vidd_client_pool_add(struct vidd_client_pool* pool, struct vidd_client client);
-struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, intmax_t width, intmax_t height);
-void free_vidd_client(struct vidd_client* client);
-void vidd_load_stdin(struct vidd_client* client);
-void vidd_load_file(struct vidd_client* client, char* file_name);
-void vidd_insert_char(struct vidd_client* client);
-void vidd_interrupt(struct vidd_client* client, uint32_t key);
-void vidd_continue_input(struct vidd_client* client);
-void vidd_main(void);
-void signal_catch(int ipar);
 
 #endif

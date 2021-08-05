@@ -1419,7 +1419,7 @@ void vidd_edit(struct vidd_client* client, char* args)
 
 	struct vidd_client tmp = *client;
 	free_vidd_client(client);
-	*client = make_vidd_client(file_name, tmp.x, tmp.y, tmp.width, tmp.height);
+	*client = make_vidd_client(file_name, tmp.x, tmp.y, tmp.width, tmp.height, 0);
 	vidd_load_file(client, file_name);
 	client->view.xo = tmp.view.xo;
 	client->view.yo = tmp.view.yo;
@@ -1643,8 +1643,12 @@ void vidd_vsplit(struct vidd_client* client, char* args)
 	{
 		file_name = client->file_name.data;
 	}
+
+	struct vidd_client new_client;
 	
-	struct vidd_client new_client = make_vidd_client(file_name, 0, 0, 0, 0);
+	if (client->file_name.data == file_name)
+		new_client = make_vidd_client(file_name, 0, 0, 0, 0, client->open_buffers);
+	else new_client = make_vidd_client(file_name, 0, 0, 0, 0, 0);
 
 	struct vidd_client* new_client_ptr = vidd_client_pool_add(&client_pool, new_client);
 
@@ -1653,6 +1657,7 @@ void vidd_vsplit(struct vidd_client* client, char* args)
 		new_client_ptr->text = client->text;
 		new_client_ptr->cursor.y = client->cursor.y;
 		new_client_ptr->cursor.x = client->cursor.x;
+		new_client_ptr->settings = client->settings;
 	}
 	else vidd_load_file(new_client_ptr, file_name);
 
@@ -1676,12 +1681,22 @@ void vidd_open_in_floating_window(struct vidd_client* client, char* args)
 		file_name = client->file_name.data;
 	}
 
-	vidd_client_pool_add(&client_pool,
-				make_vidd_client(
-					file_name,
-					10, 10,
-					client->view.width / 2,
-					client->view.height / 2));
+	if (client->file_name.data == file_name)
+		vidd_client_pool_add(&client_pool,
+					make_vidd_client(
+						file_name,
+						10, 10,
+						client->view.width / 2,
+						client->view.height / 2,
+						client->open_buffers));
+	else
+		vidd_client_pool_add(&client_pool,
+					make_vidd_client(
+						file_name,
+						10, 10,
+						client->view.width / 2,
+						client->view.height / 2,
+						0));
 
 	struct vidd_client* new_client = &client_pool.clients[client_pool.length-1];
 
@@ -1705,7 +1720,7 @@ void vidd_run_command_in_floating_window(struct vidd_client* client, char* args)
 					"_-=[NONE]=-_",
 					(client->x + borderw), (client->y + borderh),
 					client->view.width - (2 * borderw),
-					client->view.height - (2 * borderh)));
+					client->view.height - (2 * borderh), 0));
 
 	struct vidd_client* new_client = &client_pool.clients[client_pool.length-1];
 
