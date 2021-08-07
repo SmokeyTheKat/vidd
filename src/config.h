@@ -79,7 +79,6 @@ void(*vidd_normal_mode_keybinds[])(struct vidd_client*) = {
 	['a']=vidd_enter_insert_mode_right,
 	['o']=vidd_insert_on_new_line,
 	['O']=vidd_insert_on_new_line_up,
-	[KEY_CTRL('o')]=vidd_new_line,
 	['x']=vidd_delete,
 	[KEY_DELETE]=vidd_delete,
 	['X']=vidd_backspace,
