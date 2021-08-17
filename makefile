@@ -1,6 +1,14 @@
+PREFIX=~/.local
+
+CC=gcc
+CFLAGS=-Wall -g -Wno-pointer-sign
+CSRCS=$(shell find ./src/ -name '*.c')
+
 all:
-	gcc ./src/vidd.c -o ./vidd -Wall -lm -lpthread
-install:
-	sudo cp ./vidd /usr/bin/
+	$(CC) ${CSRCS} -o ./vidd ${CFLAGS}
+install: all
+	cp ./vidd ${PREFIX}/bin/
 tc: all
 	./vidd ./test
+edit:
+	vim -p ./src/*.h ./src/*.c

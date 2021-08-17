@@ -1,1252 +1,448 @@
-#ifndef __vidd_h__
-#define __vidd_h__
+#include <signal.h>
 
-#include <ddcDef.h>
-#include <ddcBits.h>
-#include <ddcString.h>
-#include <ddcColors.h>
-#include <ddcKeyboard.h>
-#include <ddcPrint.h>
-#include <ddcMem.h>
+#include "./vidd.h"
 
-#include "utils.h"
-#include "file.h"
-#include "line.h"
+#include "./config_syntax.h"
 
-enum
+uint32_t getch(void)
 {
-	VIDD_MODE_NORMAL=0,
-	VIDD_MODE_COMMAND,
-	VIDD_MODE_INSERT,
-	VIDD_MODE_REPLACE,
-	VIDD_MODE_SELECT,
-	VIDD_MODE_LINE_SELECT,
-};
-
-struct style;
-struct status;
-struct buffer;
-struct cursor;
-struct selecter;
-struct client;
-struct command;
-
-void vidd_void(struct client* c);
-
-int vidd_main(void);
-void vidd_run_command(struct client* c, char* com);
-void vidd_handel_key(char key);
-
-void vidd_write(struct client* c, char* dat);
-void vidd_exit(struct client* c, char* dat);
-void vidd_write_exit(struct client* c, char* dat);
-void vidd_force_exit(struct client* c, char* dat);
-
-void vidd_draw_status_start(struct client* c);
-void vidd_draw_status(struct client* c);
-
-void vidd_start_macro(struct client* c);
-void vidd_run_macro(struct client* c);
-
-void vidd_enter_normal_mode(struct client* c);
-void vidd_enter_command_mode(struct client* c);
-void vidd_enter_insert_mode(struct client* c);
-void vidd_enter_select_mode(struct client* c);
-void vidd_enter_line_select_mode(struct client* c);
-void vidd_enter_replace_mode(struct client* c);
-void vidd_right_insert(struct client* c);
-
-void vidd_move_to(struct client* c, int x, int y);
-void vidd_move_to_line_pos(struct client* c, int x, struct line* y);
-void vidd_move_up(struct client* c);
-void vidd_move_down(struct client* c);
-void vidd_move_left(struct client* c);
-void vidd_move_right(struct client* c);
-void vidd_move_force_right(struct client* c);
-
-void vidd_pos_up(struct client* c);
-void vidd_pos_down(struct client* c);
-void vidd_pos_left(struct client* c);
-void vidd_pos_right(struct client* c);
-
-void vidd_goto_top(struct client* c);
-void vidd_goto_bottom(struct client* c);
-void vidd_goto_end(struct client* c);
-void vidd_goto_start(struct client* c);
-void vidd_skip_word(struct client* c);
-void vidd_skip_word_back(struct client* c);
-
-void vidd_indent(struct client* c);
-void vidd_deindent(struct client* c);
-
-void vidd_insert_at_start(struct client* c);
-void vidd_insert_at_end(struct client* c);
-void vidd_insert_line_down(struct client* c);
-void vidd_insert_line_up(struct client* c);
-void vidd_replace_once(struct client* c);
-void vidd_delete(struct client* c);
-void vidd_delete_line(struct client* c);
-void vidd_delete_commands(struct client* c);
-void vidd_backspace(struct client* c);
-
-void vidd_start_select(struct client* c);
-void vidd_stop_select(struct client* c);
-void vidd_copy(struct client* c);
-void vidd_copy_line(struct client* c);
-void vidd_paste_line(struct client* c);
-
-void vidd_adjust_x(struct client* c);
-
-void vidd_cursor_refresh(struct client* c);
-
-void vidd_center(struct client* c);
-
-void vidd_print_buffer(struct client c);
-void vidd_print(struct client c);
-void vidd_redraw(struct client c);
-void vidd_redraw_line(struct client c);
-
-struct client cmaster;
-
-struct keyword
-{
-	char* word;
-	long len;
-	char* style;
-	bool embedded;
-};
-
-struct style
-{
-	char* extensions[5];
-	struct keyword keywords[100];
-};
-
-struct status
-{
-	bool changed;
-};
-
-struct command
-{
-	char* com;
-	void(*function)(struct client*,char*);
-};
-
-struct selecter
-{
-	struct line* y1;
-	long x1;
-	struct line* y2;
-	long x2;
-};
-
-struct cursor
-{
-	int x, lx;
-	struct line* y;
-};
-
-struct buffer
-{
-	char* data;
-	long len;
-};
-
-struct macro
-{
-	char* data;
-	long len, cap;
-	bool recording;
-};
-
-struct client
-{
-	char* filename;
-	int width, height;
-	int sx, x, y;
-	char key;
-	int mode;
-	int spos;
-	int vpos;
-	struct cursor cur;
-	struct buffer buf;
-	struct macro mac;
-	struct selecter sel;
-	struct status sts;
-	struct style sty;
-};
-
-#include "../config.h"
-
-void vidd_void(struct client* c)
-{
-	return;
-}
-
-void vidd_show_message(struct client* c, char* msg)
-{
-	cursor_save();
-	vidd_draw_status_start(c);
-	ddPrintf(" %s"CWHITE, msg);
-	cursor_restore();
-}
-
-void vidd_force_exit(struct client* c, char* dat)
-{
-	system("tput rmcup");
-	exit(0);
-}
-void vidd_write_exit(struct client* c, char* dat)
-{
-	vidd_write(c, dat);
-	vidd_exit(c, dat);
-}
-void vidd_exit(struct client* c, char* dat)
-{
-	if (c->sts.changed)
-		vidd_show_message(c, CRED"UNSAVED CHANGED");
-	else
-		vidd_force_exit(c, "");
-}
-
-void vidd_write(struct client* c, char* dat)
-{
-	ddString data = make_ddString_capacity("", line_get_last(c->cur.y)->num*100);
-	struct line* l = line_get_first(c->cur.y);
-	struct line* o = l;
-	while (l)
+	if (run_buffer.length > 0)
 	{
-		bool notext = true;
-		for (int i = 0; i < l->len; i++)
-		{
-				if (notext && *(int*)&l->text[i] == *(int*)"    ")
-				{
-					ddString_push_char_back(&data, '	');
-					i += 3;
-				}
-				else
-				{
-					ddString_push_char_back(&data, l->text[i]);
-					notext = false;
-				}
-		}
-		ddString_push_char_back(&data, '\n');
-		o = l;
-		l = l->next;
+		return run_buffer.data[--run_buffer.length];
 	}
-	write_file(c->filename, data);
-	c->sts.changed = false;
-	data.length--;
-	raze_ddString(&data);
-	ddString mes = make_format_ddString(CGREEN"%dL WRITEN TO \"%s\"", o->num, c->filename);
-	vidd_show_message(c, mes.cstr);
-	raze_ddString(&mes);
+	uint64_t output = 0;
+	read(STDIN_FILENO, &output, 8);
+
+	if (macro_recording) buffer_push(&macro_buffer, output);
+
+	return ((output > 255) * 255) + (output % 255);
 }
 
-void vidd_enter_normal_mode(struct client* c)
-	{ c->mode = VIDD_MODE_NORMAL; vidd_draw_status(c); };
-void vidd_enter_command_mode(struct client* c)
+#include "./commands.h"
+
+struct vidd_client* vidd_get_active(void)
 {
-		c->mode = VIDD_MODE_COMMAND;
-		cursor_save();
-		vidd_draw_status_start(c);
-		ddPrint_char(':');
+	return &client_pool.clients[client_pool.active];
 }
-void vidd_enter_insert_mode(struct client* c)
-	{ c->mode = VIDD_MODE_INSERT; vidd_draw_status(c); };
-void vidd_enter_replace_mode(struct client* c)
-	{ c->mode = VIDD_MODE_REPLACE; vidd_draw_status(c); };
-void vidd_enter_line_select_mode(struct client* c)
+
+intmax_t vidd_client_pool_get_client_index(struct vidd_client_pool* pool, struct vidd_client* client)
 {
-	c->mode = VIDD_MODE_LINE_SELECT;
-	vidd_draw_status(c);
-	c->sel.y1 = c->cur.y;
-	c->sel.x1 = c->cur.x;
+	for (intmax_t i = 0; i < pool->length; i++)
+		if (client == &pool->clients[i]) return i;
+	return -1;
 }
-void vidd_center(struct client* c)
+
+void vidd_client_pool_set_active(struct vidd_client_pool* pool, struct vidd_client* client)
 {
-	if (c->cur.y->num > c->height/2)
+	pool->active = vidd_client_pool_get_client_index(pool, client);
+}
+
+void vidd_client_pool_prev_client(struct vidd_client_pool* pool)
+{
+	pool->active--;
+	if (pool->active < 0) pool->active = pool->length-1;
+}
+
+void vidd_client_pool_next_client(struct vidd_client_pool* pool)
+{
+	pool->active++;
+	if (pool->active >= pool->length) pool->active = 0;
+}
+
+struct vidd_client_pool make_vidd_client_pool(intmax_t start_size)
+{
+	struct vidd_client_pool pool = { 0 };
+	pool.size = start_size;
+	pool.clients = malloc(sizeof(struct vidd_client) * pool.size);
+	pool.master_size = 0.5;
+	pool.active = 0;
+	return pool;
+}
+
+struct vidd_client* vidd_client_pool_add(struct vidd_client_pool* pool, struct vidd_client client)
+{
+	if (pool->length + 1 > pool->size)
+		pool->clients = realloc(pool->clients, ++pool->size);
+
+	pool->clients[pool->length] = client;
+	return &pool->clients[pool->length++];
+}
+
+struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, intmax_t width, intmax_t height, int* open_buffers)
+{
+	struct vidd_client client = {0};
+	client.width = width;
+	client.height = height;
+	client.x = x;
+	client.y = y;
+	if (open_buffers)
 	{
-		long linecount = line_get_last(c->cur.y)->num+1;
-		c->spos = c->cur.y->num-(c->height/2);
-		if (c->spos > linecount)
-		{
-			c->spos = linecount;
-		}
-		else
-		{
-			vidd_redraw(*c);
-			cursor_move_to(c->x + c->cur.x - c->vpos, c->height/2);
-		}
+		client.open_buffers = open_buffers;
+		(*client.open_buffers)++;
 	}
 	else
 	{
-		c->spos = 0;
-		vidd_redraw(*c);
+		client.open_buffers = malloc(sizeof(int));
+		*client.open_buffers = 1;
+	}
+	client.syntax = syntax_c;
+	client.numbersOn = 1;
+	client.syntaxOn = 1;
+	client.isFloating = 0;
+	client.inclusiveSelection = 1;
+	client.displayOn = 1;
+	client.mode = VIDD_MODE_NORMAL;
+	client.file_name = make_buffer(150);
+	client.last_find = make_buffer(150);
+	buffer_set_data(&client.file_name, file_name, strlen(file_name));
+	client.text = new_line(0);
+	struct cursor cursor = { 0, 0, client.text };
+	client.cursor = cursor;
+	client.view.width = client.width;
+	client.view.height = client.height - 1;
+	return client;
+}
+void free_vidd_client(struct vidd_client* client)
+{
+	if (*client->open_buffers == 1)
+	{
+		free_buffer(&client->file_name);
+		vidd_text_clear(client);
+		free_line(client->text);
+		free(client->open_buffers);
+	}
+	else (*client->open_buffers)--;
+	*client = (struct vidd_client){0};
+}
+
+void vidd_load_from_fp(struct vidd_client* client, FILE* fp)
+{
+	if (fp == 0) return;
+	char buffer[1024] = {0};
+	struct line* line = client->text;
+	while (fgets(buffer, sizeof(line), fp))
+	{
+		intmax_t length = strlen(buffer);
+		for (intmax_t i = 0; i < length; i++)
+		{
+			if (buffer[i] == '\n')
+			{
+				line = line_insert(line);
+			}
+			else if (buffer[i] == '\t') 
+			{
+				line_append(line, ' ');
+				line_append(line, ' ');
+				line_append(line, ' ');
+				line_append(line, ' ');
+			}
+			else line_append(line, buffer[i]);
+		}
+	}
+
+}
+void vidd_load_stdin(struct vidd_client* client)
+{
+	buffer_set_data(&client->file_name, "_-=[NONE]=-_", strlen("_-=[NONE]=-_"));
+	vidd_load_from_fp(client, stdin);
+	freopen("/dev/tty", "rw", stdin);
+}
+void vidd_load_file(struct vidd_client* client, char* file_name)
+{
+	buffer_set_data(&client->file_name, file_name, strlen(file_name));
+	FILE* fp = fopen(file_name, "r");
+	if (fp)
+	{
+		vidd_load_from_fp(client, fp);
+		vidd_syntax_ftdetect(client);
+		fclose(fp);
 	}
 }
-void vidd_indent(struct client* c)
-{
-	line_insert(c->cur.y, 0, ' ');
-	line_insert(c->cur.y, 0, ' ');
-	line_insert(c->cur.y, 0, ' ');
-	line_insert(c->cur.y, 0, ' ');
 
-	vidd_move_right(c);
-	vidd_move_right(c);
-	vidd_move_right(c);
-	vidd_move_right(c);
 
-	vidd_redraw_line(*c);
-}
-void vidd_deindent(struct client* c)
+void vidd_insert_char(struct vidd_client* client)
 {
-	if (*((int*)(c->cur.y->text)) != *((int*)"    ")) return;
-	line_delete(c->cur.y, 0);
-	line_delete(c->cur.y, 0);
-	line_delete(c->cur.y, 0);
-	line_delete(c->cur.y, 0);
-
-	vidd_move_left(c);
-	vidd_move_left(c);
-	vidd_move_left(c);
-	vidd_move_left(c);
-
-	vidd_redraw_line(*c);
-}
-void vidd_goto_top(struct client* c)
-{
-	vidd_move_to(c, 0, 0);
-}
-void vidd_goto_bottom(struct client* c)
-{
-	vidd_move_to_line_pos(c, 0, line_get_last(c->cur.y));
-}
-
-void vidd_replace_once(struct client* c)
-{
-	char key = ddKey_getch_noesc();
-	if (key == 27) return;
-	c->cur.y->text[c->cur.x] = key;
-	ddPrint_char(key);
-	cursor_left();
-}
-
-void vidd_insert_at_start(struct client* c)
-{
-	vidd_goto_start(c);
-	vidd_enter_insert_mode(c);
-}
-void vidd_insert_at_end(struct client* c)
-{
-	vidd_goto_end(c);
-	vidd_right_insert(c);
-}
-void vidd_start_macro(struct client* c)
-{
-	if (!c->mac.recording)
+	uint32_t chr = client->key;
+	if (chr == 27)
 	{
-		c->mac.recording = true;
-		if (c->mac.data) free(c->mac.data);
-		c->mac.data = malloc(100);
-		c->mac.cap = 100;
-		c->mac.len = 0;
-		c->mac.recording = true;
+		client->mode = VIDD_MODE_NORMAL;
+		vidd_move_left(client);
+		vidd_set_status(client);
+	}
+	else if (chr == '\t')
+	{
+		line_insert_at(client->cursor.y, ' ', client->cursor.x++);
+		line_insert_at(client->cursor.y, ' ', client->cursor.x++);
+		line_insert_at(client->cursor.y, ' ', client->cursor.x++);
+		line_insert_at(client->cursor.y, ' ', client->cursor.x++);
+
+		vidd_redraw(client);
+	}
+	else if (chr == KEY_RETURN)
+	{
+		vidd_split_at_cursor(client);
+	}
+	else if (chr == 8)
+	{
+		struct buffer tmpbuf = { "\x1b" "bdexi", 6, 6 };
+		buffer_copy_inverse(&run_buffer, &tmpbuf);
 	}
 	else
 	{
-		c->mac.recording = false;
-		if (c->mac.data[c->mac.len-1] == 'q')
-		{
-			c->mac.data[c->mac.len-1] = 0;
-			c->mac.len--;
-		}
+		line_insert_at(client->cursor.y, chr, client->cursor.x++);
+
+		vidd_redraw(client);
 	}
-	vidd_draw_status(c);
-}
-void vidd_run_macro(struct client* c)
-{
-	for (int i = 0; i < c->mac.len; i++)
-		vidd_handel_key(c->mac.data[i]);
-	vidd_enter_normal_mode(c);
-}
-void vidd_enter_select_mode(struct client* c)
-{
-	c->mode = VIDD_MODE_SELECT;
-	vidd_draw_status(c);
-	c->sel.y1 = c->cur.y;
-	c->sel.x1 = c->cur.x;
 }
 
-void vidd_draw_status(struct client* c)
+void vidd_interrupt(struct vidd_client* client, uint32_t key)
 {
-	cursor_save();
-	vidd_draw_status_start(c);
-	cursor_restore();
-	cursor_save();
-	ddString fst = make_constant_ddString(c->filename);
-	cursor_move_to(c->width - fst.length, c->height);
-	ddPrints(fst.cstr);
-	cursor_restore();
-
-}
-void vidd_draw_status_start(struct client* c)
-{
-	cursor_move_to(0, c->height);
-	cursor_erase_line();
-	if (c->mac.recording)
-		ddPrints("@");
-	switch (c->mode)
+	client->key = key;
+	switch (client->mode)
 	{
 		case VIDD_MODE_NORMAL:
 		{
-			ddPrintf("[NORMAL]");
-		} break;
-		case VIDD_MODE_COMMAND:
-		{
-			ddPrintf("[COMMAND]");
-		} break;
-		case VIDD_MODE_INSERT:
-		{
-			ddPrintf("[INSERT]");
-		} break;
-		case VIDD_MODE_REPLACE:
-		{
-			ddPrintf("[REPLACE]");
-		} break;
-		case VIDD_MODE_SELECT:
-		{
-			ddPrintf("[SELECT]");
+			vidd_normal_mode_keybinds[key](client);
 		} break;
 		case VIDD_MODE_LINE_SELECT:
 		{
-			ddPrintf("[LSELECT]");
+			if (vidd_select_mode_keybinds[key]) vidd_select_mode_keybinds[key](client);
+			else vidd_normal_mode_keybinds[key](client);
 		} break;
-	}
-}
-
-
-
-void vidd_goto_end(struct client* c)
-{
-	vidd_move_to_line_pos(c, c->cur.y->len-1, c->cur.y);
-}
-void vidd_goto_start(struct client* c)
-{
-	vidd_move_to_line_pos(c, 0, c->cur.y);
-	if (*((int*)(c->cur.y->text)) == *((int*)"    "))
-	{
-		vidd_skip_word(c);
-	}
-}
-void vidd_delete_line(struct client* c)
-{
-	c->sts.changed = true;
-	struct line* n = c->cur.y->next;
-	if (c->cur.y->prev)
-	{
-		c->cur.y->prev->next = c->cur.y->next;
-	}
-	if (c->cur.y->next)
-	{
-		c->cur.y->next->prev = c->cur.y->prev;
-	}
-	if (c->cur.y->next)
-	{
-		line_adjust_num_after(n, -1);
-		c->cur.y = n;
-		ddPrintf("\x1b[J");
-		vidd_redraw(*c);
-	}
-	else
-	{
-		vidd_move_up(c);
-		ddPrintf("\x1b[J");
-		vidd_redraw(*c);
-	}
-	vidd_adjust_x(c);
-}
-void vidd_delete_commands(struct client* c)
-{
-	char key = ddKey_getch_noesc();
-	switch (key)
-	{
-		case 'd':
+		case VIDD_MODE_SELECT:
 		{
-			vidd_delete_line(c);
+			if (vidd_select_mode_keybinds[key]) vidd_select_mode_keybinds[key](client);
+			else vidd_normal_mode_keybinds[key](client);
 		} break;
-		case 'w':
+		case VIDD_MODE_INSERT:
 		{
-			if (IS_LETTER(c->cur.y->text[c->cur.x]))
+			vidd_insert_mode_keybinds[key](client);
+		} break;
+		case VIDD_MODE_REPLACE:
+		{
+			if (key == 27)
 			{
-				while (c->cur.x+1 < c->cur.y->len && IS_LETTER(c->cur.y->text[c->cur.x]))
-					vidd_delete(c);
+				client->mode = VIDD_MODE_NORMAL;
+				vidd_move_left(client);
+				vidd_set_status(client);
 			}
 			else
 			{
-				char on = c->cur.y->text[c->cur.x];
-				while (c->cur.x+1 < c->cur.y->len && c->cur.y->text[c->cur.x] == on)
-					vidd_delete(c);
+				client->cursor.y->buffer.data[client->cursor.x++] = key;
+				vidd_redraw(client);
 			}
-			if (c->cur.x+1 >= c->cur.y->len)
-				vidd_delete(c);
 		} break;
-		case 'k':
+		case VIDD_MODE_COMMAND:
 		{
-			vidd_move_up(c);
-			vidd_delete_line(c);
-			vidd_delete_line(c);
-		} break;
-		case 'j':
-		{
-			vidd_delete_line(c);
-			vidd_delete_line(c);
-		} break;
-	}
-}
-void vidd_skip_word(struct client* c)
-{
-	int pos = c->cur.x;
-	if (!IS_LETTER(c->cur.y->text[pos]))
-		while (!IS_LETTER(c->cur.y->text[pos])) pos++;
-	else while (IS_LETTER(c->cur.y->text[pos])) pos++;
-	while (c->cur.y->text[pos] == ' ') pos++;
-
-	if (pos > c->cur.y->len) pos = c->cur.y->len-1;
-
-	c->cur.x = pos;
-	vidd_move_to_line_pos(c, pos, c->cur.y);
-}
-void vidd_skip_word_back(struct client* c)
-{
-	int pos = c->cur.x;
-	pos--;
-	while (!IS_LETTER(c->cur.y->text[pos])) pos--;
-	while (IS_LETTER(c->cur.y->text[pos])) pos--;
-	pos++;
-
-	if (pos < 0) pos = 0;
-
-	c->cur.x = pos;
-	vidd_move_to_line_pos(c, pos, c->cur.y);
-}
-void vidd_insert_line_down(struct client* c)
-{
-	c->cur.x = c->cur.y->len;
-	line_split(c->cur.y, c->cur.x);
-	vidd_redraw(*c);
-	vidd_enter_insert_mode(c);
-	vidd_move_down(c);
-	cursor_move_to(c->x - c->vpos, c->y + c->cur.y->num - c->spos);
-	c->cur.x = 0;
-}
-void vidd_insert_line_up(struct client* c)
-{
-	cursor_move_to(c->x - c->vpos, c->y + c->cur.y->num - c->spos);
-	c->cur.x = 0;
-	line_split(cmaster.cur.y, cmaster.cur.x);
-	vidd_redraw(*c);
-	vidd_enter_insert_mode(c);
-}
-void vidd_right_insert(struct client* c)
-{
-	vidd_enter_insert_mode(c);
-	vidd_move_force_right(c);
-}
-
-void vidd_copy_line(struct client* c)
-{
-	if (!c->buf.data) free(c->buf.data);
-	c->buf.data = malloc(c->cur.y->len+1);
-	c->buf.len = c->cur.y->len+1;
-	mem_copy(c->buf.data+1, c->cur.y->text, c->cur.y->len);
-	c->buf.data[0] = 'o';
-}
-void vidd_copy(struct client* c)
-{
-	if (c->mode == VIDD_MODE_NORMAL)
-	{
-		vidd_copy_line(c);
-	}
-	else
-	{
-		c->sel.y2 = c->cur.y;
-		c->sel.x2 = c->cur.x;
-		ddString v;
-		if (c->mode == VIDD_MODE_SELECT)
-		{
-			v = make_ddString_capacity("a", ABS(c->sel.y1->num-c->sel.y2->num)*100);
-			if (c->sel.y2->num == c->sel.y1->num)
+			if (key == 27)
 			{
-				struct line* l = c->sel.y1;
-				for (int i = c->sel.x1; i < c->sel.x2; i++)
-					ddString_push_char_back(&v, l->text[i]);
+				buffer_clear(&command_input);
+				cursor_restore();
+				client->mode = VIDD_MODE_NORMAL;
+				vidd_set_status(client);
 			}
-			else if (c->sel.y2->num > c->sel.y1->num)
+			else if (key == '\t')
 			{
-				struct line* l = c->sel.y1;
-				for (int i = c->sel.x1; i < l->len; i++)
-					ddString_push_char_back(&v, l->text[i]);
-				ddString_push_char_back(&v, '\n');
-				l = l->next;
-				while (l->num != c->sel.y2->num)
+				int skip = 0;
+				char curdir_carray[1024] = {0};
+				char* curdir = curdir_carray;
+				strcpy(curdir, strchr(command_input.data, ' ') + 1);
+				int curdir_len = strlen(curdir);
+				if (*(uint16_t*)curdir == *(uint16_t*)"./")
 				{
-					for (int i = 0; i < l->len; i++)
-						ddString_push_char_back(&v, l->text[i]);
-					ddString_push_char_back(&v, '\n');
-					l = l->next;
+					curdir_len -= 2;
+					curdir = curdir + 2;
 				}
-				for (int i = 0; i < c->sel.x2; i++)
-					ddString_push_char_back(&v, l->text[i]);
-			}
-			else
-			{
-				struct line* l = c->sel.y2;
-				for (int i = c->sel.x2; i < l->len; i++)
-					ddString_push_char_back(&v, l->text[i]);
-				ddString_push_char_back(&v, '\n');
-				l = l->next;
-				while (l->num != c->sel.y1->num)
+#include <dirent.h>
+				DIR *d;
+				struct dirent* dir;
+				key = 0;
+				char finddir_carray[1024] = {0};
+				char* finddir = finddir_carray;
+				char* findlslash = strrchr(curdir, '/');
+				if (!findlslash) finddir = ".";
+				else
 				{
-					for (int i = 0; i < l->len; i++)
-						ddString_push_char_back(&v, l->text[i]);
-					ddString_push_char_back(&v, '\n');
-					l = l->next;
+					strncpy(finddir, curdir, curdir_len - strlen(findlslash));
+					skip = curdir_len - strlen(findlslash) + 1;
+					curdir = findlslash + 1;
 				}
-				for (int i = 0; i < c->sel.x1; i++)
-					ddString_push_char_back(&v, l->text[i]);
-			}
-		}
-		else if (c->mode == VIDD_MODE_LINE_SELECT)
-		{
-			v = make_ddString("o");
-			if (c->sel.y2->num == c->sel.y1->num)
-			{
-				struct line* l = c->sel.y1;
-				for (int i = 0; i < l->len; i++)
-					ddString_push_char_back(&v, l->text[i]);
-			}
-			else if (c->sel.y2->num > c->sel.y1->num)
-			{
-				struct line* l = c->sel.y1;
-				for (int i = 0; i < l->len; i++)
-					ddString_push_char_back(&v, l->text[i]);
-				ddString_push_char_back(&v, '\n');
-				l = l->next;
-				while (l->num != c->sel.y2->num)
+TAB_FETCH_REDO:
+				d = opendir(finddir);
+				if (d)
 				{
-					for (int i = 0; i < l->len; i++)
-						ddString_push_char_back(&v, l->text[i]);
-					ddString_push_char_back(&v, '\n');
-					l = l->next;
-				}
-				for (int i = 0; i < l->len; i++)
-					ddString_push_char_back(&v, l->text[i]);
-			}
-			else
-			{
-				struct line* l = c->sel.y2;
-				for (int i = c->sel.x2; i < l->len; i++)
-					ddString_push_char_back(&v, l->text[i]);
-				ddString_push_char_back(&v, '\n');
-				l = l->next;
-				while (l->num != c->sel.y1->num)
-				{
-					for (int i = 0; i < l->len; i++)
-						ddString_push_char_back(&v, l->text[i]);
-					ddString_push_char_back(&v, '\n');
-					l = l->next;
-				}
-				for (int i = 0; i < c->sel.x1; i++)
-					ddString_push_char_back(&v, l->text[i]);
-			}
-		}
-		if (!c->buf.data) free(c->buf.data);
-		c->buf.len = v.length;
-		c->buf.data = v.cstr;
-		vidd_enter_normal_mode(c);
-	}
-}
-void vidd_paste_line(struct client* c)
-{
-	if (c->buf.data)
-	{
-		for (int i = 0; i < c->buf.len; i++)
-			vidd_handel_key(c->buf.data[i]);
-		vidd_enter_normal_mode(c);
-		vidd_move_left(c);
-	}
-}
-
-void vidd_adjust_x(struct client* c)
-{
-	/*if (c->cur.x == 0) return;*/
-	if (c->cur.y->len == 0)
-	{
-		vidd_goto_start(c);
-		return;
-	}
-	if (c->cur.x >= c->cur.y->len)
-	{
-		vidd_goto_end(c);
-	}
-	else
-	{
-		vidd_move_to_line_pos(c, c->cur.x, c->cur.y);
-	}
-}
-
-void vidd_move_to(struct client* c, int x, int y)
-{
-	struct line* l = line_get_line(c->cur.y, y);
-	vidd_move_to_line_pos(c, x, l);
-}
-void vidd_move_to_line_pos(struct client* c, int x, struct line* l)
-{
-	int y = l->num;
-	bool redraw = false;
-	if (x > l->len) x = l->len;
-	c->cur.y = l;
-	c->cur.x = x;
-	if (y > c->spos+c->height || y < c->spos)
-	{
-		c->spos = y - (c->height/2);
-		if (c->spos < 0) c->spos = 0;
-		redraw = true;
-	}
-	if (x > c->vpos+c->width || x < c->vpos)
-	{
-		c->vpos = x - (c->width/2);
-		if (c->vpos < 0) c->vpos = 0;
-		redraw = true;
-	}
-	if (redraw) vidd_redraw(*c);
-	cursor_move_to(c->x + x - c->vpos, c->y + y - c->spos);
-}
-
-void vidd_move_force_right(struct client* c)
-{
-	c->cur.x++;
-	if (c->cur.x-c->vpos >= c->width)
-	{
-		c->vpos++;
-		vidd_redraw(*c);
-	}
-	else cursor_right();
-}
-void vidd_move_up(struct client* c)
-{
-	if (c->cur.y->prev)
-	{
-		if (c->cur.y->num == c->spos)
-		{
-			c->spos--;
-			vidd_redraw(*c);
-		}
-		c->cur.y = c->cur.y->prev;
-		cursor_up();
-		vidd_adjust_x(c);
-	}
-}
-void vidd_move_down(struct client* c)
-{
-	if (c->cur.y->next)
-	{
-		if (c->cur.y->num == c->spos+c->height-2)
-		{
-			c->spos++;
-			vidd_redraw(*c);
-			cursor_up();
-		}
-		c->cur.y = c->cur.y->next;
-		cursor_down();
-		vidd_adjust_x(c);
-	}
-}
-void vidd_move_right(struct client* c)
-{
-	if (c->cur.x+1 < c->cur.y->len)
-	{
-		c->cur.x++;
-		if (c->cur.x-c->vpos >= c->width)
-		{
-			c->vpos++;
-			vidd_redraw(*c);
-		}
-		else cursor_right();
-	}
-}
-void vidd_move_left(struct client* c)
-{
-	if (c->cur.x > 0)
-	{
-		c->cur.x--;
-		if (c->cur.x-c->vpos < 0)
-		{
-			c->vpos--;
-			cursor_right();
-			vidd_redraw(*c);
-		}
-		cursor_left();
-	}
-}
-
-void vidd_delete(struct client* c)
-{
-	if (c->cur.y->len == 0) return;
-	c->sts.changed = true;
-	line_delete(c->cur.y, c->cur.x);
-	vidd_adjust_x(c);
-	vidd_redraw_line(*c);
-}
-void vidd_backspace(struct client* c)
-{
-	if (c->cur.x == 0) return;
-	c->sts.changed = true;
-	line_delete(c->cur.y, c->cur.x-1);
-	vidd_redraw_line(*c);
-	vidd_move_left(c);
-}
-
-void vidd_redraw_line(struct client c)
-{
-	cursor_save();
-
-	long linecount = line_get_last(c.cur.y)->num+1;
-	ddString linestr = make_ddString_from_int(linecount);
-	ddString_push_char_back(&linestr, ' ');
-	ddString lempty = make_multi_ddString_cstring(" ", linestr.length);
-
-	c.x = c.sx;
-
-	ddString ro = make_format_ddString("\x1b[%d;%dH", c.y+1, c.x+1);
-	struct line* l = c.cur.y;
-	long len = c.width * c.height * 4;
-	char* buf = malloc(len);
-	long pos = 0;
-
-	if (c.x != 0)
-	{
-		mem_copy(&buf[pos], ro.cstr, ro.length);
-		pos += ro.length;
-	}
-
-	char linebuf[10] = {0};
-	ddString ln = make_ddString_buf_from_int(linebuf, 10, l->num+1);
-	mem_copy(&buf[pos], lnum_color, sizeof(lnum_color));
-	pos += sizeof(lnum_color);
-	mem_copy(&buf[pos], lempty.cstr, lempty.length);
-	pos += (lempty.length-1) - number_length(l->num+1);
-	mem_copy(&buf[pos], ln.cstr, ln.length);
-	pos += number_length(l->num+1)+1;
-	mem_copy(&buf[pos], "\x1b[0m", cstring_length("\x1b[0m"));
-	pos += cstring_length("\x1b[0m");
-	if (c.vpos < l->len)
-	{
-		for (int i = 0; i < CLAMP(l->len-c.vpos, c.width); i++)
-		{
-			bool syntax_found = false;
-			for (int s = 0; c.sty.keywords[s].len != 0; s++)
-			{
-				if (( ( (!IS_LETTER(l->text[i+c.vpos+c.sty.keywords[s].len]) || i+c.vpos+c.sty.keywords[s].len >= l->len) &&
-					(i == 0 || !IS_LETTER(l->text[i+c.vpos-1]))) ||
-					 !c.sty.keywords[s].embedded) &&
-					cstring_compare_length(c.sty.keywords[s].word, &l->text[i+c.vpos], c.sty.keywords[s].len))
-				{
-					syntax_found = true;
-					unsigned long stylelen;
-					unsigned long cwhitelen;
-					cstring_get_length(CWHITE, &cwhitelen);
-					cstring_get_length(c.sty.keywords[s].style, &stylelen);
-
-					if (stylelen + c.sty.keywords[s].len + cwhitelen + pos + 20 > len)
-						realloc(buf, stylelen + c.sty.keywords[s].len + cwhitelen + pos + 200);
-
-					mem_copy(&buf[pos], c.sty.keywords[s].style, stylelen);
-					pos += stylelen;
-					if (i+c.vpos + c.sty.keywords[s].len > c.width)
+					while ((dir = readdir(d)) != NULL)
 					{
-						mem_copy(&buf[pos], &l->text[i+c.vpos], c.width-(i+c.vpos));
-						pos += c.width-(i+c.vpos);
-					}
-					else
-					{
-						mem_copy(&buf[pos], &l->text[i+c.vpos], c.sty.keywords[s].len);
-						pos += c.sty.keywords[s].len;
-					}
-					mem_copy(&buf[pos], CWHITE, cwhitelen);
-					pos += cwhitelen;
-					i += c.sty.keywords[s].len;
-					i--;
-					break;
-				}
-			}
-			if (!syntax_found && i < CLAMP(l->len-c.vpos, c.width)) buf[pos++] = l->text[i+c.vpos];
-		}
-	}
-	cursor_move_to(c.x, c.cur.y->num - c.spos);
-	ddString multi = make_multi_ddString_cstring(" ", c.width);
-	ddPrint(multi.cstr, multi.length);
-	cursor_move_to(c.x, c.cur.y->num - c.spos);
-	ddPrint(buf, pos);
-	cursor_restore();
-	vidd_draw_status(&c);
-	raze_ddString(&multi);
-	raze_ddString(&ro);
-	raze_ddString(&linestr);
-	raze_ddString(&lempty);
-	free(buf);
-}
-void vidd_redraw(struct client c)
-{
-	vidd_print(c);
-}
-void vidd_print(struct client c)
-{
-	cursor_save();
-	cursor_clear();
-
-	long linecount = line_get_last(c.cur.y)->num+1;
-	ddString linestr = make_ddString_from_int(linecount);
-	ddString_push_char_back(&linestr, ' ');
-	ddString lempty = make_multi_ddString_cstring(" ", linestr.length);
-
-	c.x = c.sx;
-
-	cursor_move_to(c.x, c.y);
-
-
-	ddString returnseq;
-	if (c.x-1 < 0)
-		returnseq = make_constant_ddString("\x1b[B\r");
-	else
-		returnseq = make_format_ddString("\x1b[B\r\x1b[%dC", c.x-1);
-
-	ddString ro = make_format_ddString("\x1b[%d;%dH", c.y+1, c.x+1);
-	struct line* l = line_get_line(c.cur.y, c.spos);
-	long len = c.width * c.height * 4;
-	char* buf = malloc(len);
-	long pos = 0;
-
-	if (c.x != 0)
-	{
-		mem_copy(&buf[pos], ro.cstr, ro.length);
-		pos += ro.length;
-	}
-
-	
-	for (int h = 0; h < c.height-1 && l; h++)
-	{
-		char linebuf[10] = {0};
-		ddString ln = make_ddString_buf_from_int(linebuf, 10, l->num+1);
-		mem_copy(&buf[pos], lnum_color, sizeof(lnum_color));
-		pos += sizeof(lnum_color);
-		mem_copy(&buf[pos], lempty.cstr, lempty.length);
-		pos += (lempty.length-1) - number_length(l->num+1);
-		mem_copy(&buf[pos], ln.cstr, ln.length);
-		pos += number_length(l->num+1)+1;
-		mem_copy(&buf[pos], "\x1b[0m", cstring_length("\x1b[0m"));
-		pos += cstring_length("\x1b[0m");
-		if (c.vpos < l->len)
-		{
-			for (int i = 0; i < CLAMP(l->len-c.vpos, c.width); i++)
-			{
-				bool syntax_found = false;
-				for (int s = 0; c.sty.keywords[s].len != 0; s++)
-				{
-					if (( ( (!IS_LETTER(l->text[i+c.vpos+c.sty.keywords[s].len]) || i+c.vpos+c.sty.keywords[s].len >= l->len) &&
-						(i == 0 || !IS_LETTER(l->text[i+c.vpos-1]))) ||
-						 !c.sty.keywords[s].embedded) &&
-						cstring_compare_length(c.sty.keywords[s].word, &l->text[i+c.vpos], c.sty.keywords[s].len))
-					{
-						syntax_found = true;
-						unsigned long stylelen;
-						unsigned long cwhitelen;
-						cstring_get_length(CWHITE, &cwhitelen);
-						cstring_get_length(c.sty.keywords[s].style, &stylelen);
-
-						if (stylelen + c.sty.keywords[s].len + cwhitelen + pos + 20 > len)
-							realloc(buf, stylelen + c.sty.keywords[s].len + cwhitelen + pos + 200);
-
-						mem_copy(&buf[pos], c.sty.keywords[s].style, stylelen);
-						pos += stylelen;
-						if (i+c.vpos + c.sty.keywords[s].len > c.width)
+						if (!strncmp(curdir, dir->d_name, strlen(curdir)))
 						{
-							mem_copy(&buf[pos], &l->text[i+c.vpos], c.width-(i+c.vpos));
-							pos += c.width-(i+c.vpos);
+							char* mcpos = strchr(command_input.data, ' ') + 1 + skip;
+							int mcpos_len = strlen(mcpos);
+							buffer_delete_n_at(&command_input, mcpos_len,
+									   (uint64_t)mcpos - (uint64_t)command_input.data);
+							buffer_push_cstring(&command_input, dir->d_name, strlen(dir->d_name));
+
+							cursor_move(-mcpos_len, 0);
+							for (int i = 0; i < mcpos_len; i++)
+								printf(" ");
+							cursor_move(-mcpos_len, 0);
+
+							printf("%s", dir->d_name);
+
+							key = getch();
+							if (key != '\t')
+							{
+								vidd_interrupt(client, key);
+								break;
+							}
 						}
-						else
-						{
-							mem_copy(&buf[pos], &l->text[i+c.vpos], c.sty.keywords[s].len);
-							pos += c.sty.keywords[s].len;
-						}
-						mem_copy(&buf[pos], CWHITE, cwhitelen);
-						pos += cwhitelen;
-						i += c.sty.keywords[s].len;
-						i--;
+					}
+					closedir(d);
+				}
+				if (key == '\t') goto TAB_FETCH_REDO;
+			}
+			else if (key == 127)
+			{
+				if (command_input.length == 0) break;
+				cursor_move(-1, 0);
+				printf(" ");
+				cursor_move(-1, 0);
+				buffer_pop(&command_input);
+			}
+			else if (key == KEY_RETURN)
+			{
+				//dbs_log(0, command_input.data);
+				char* command = strtok(command_input.data, " \n\t\0 ");
+				bool command_found = false;
+				for (intmax_t i = 0; i < sizeof(vidd_commands)/sizeof(struct command); i++)
+				{
+					if (!strcmp(command, vidd_commands[i].name))
+					{
+						command_found = true;
+						vidd_commands[i].func(client, &command[strlen(command)+1]);
 						break;
 					}
 				}
-				if (!syntax_found && i < CLAMP(l->len-c.vpos, c.width)) buf[pos++] = l->text[i+c.vpos];
-			}
-		}
-		mem_copy(&buf[pos], returnseq.cstr, returnseq.length);
-		pos += returnseq.length;
-		l = l->next;
-	}
-	ddPrint(buf, pos);
-	cursor_restore();
-	vidd_draw_status(&c);
-	raze_ddString(&ro);
-	raze_ddString(&returnseq);
-	raze_ddString(&linestr);
-	raze_ddString(&lempty);
-	free(buf);
-}
 
-void vidd_handel_key(char key)
-{
-	cmaster.key = key;
-	switch (cmaster.mode)
-	{
-		case VIDD_MODE_SELECT:
-		case VIDD_MODE_LINE_SELECT:
-		case VIDD_MODE_NORMAL:
-		{
-			if (IS_NUMBER(key))
-			{
-				static char num[8] = {0};
-				static int pos = 0;
-				do
+				cursor_restore();
+
+				if (vidd_get_active() != client)
 				{
-					num[pos++] = key;
-					key = ddKey_getch_noesc();
-				} while (IS_NUMBER(key));
-				if (key != 27)
-				{
-					long count = ddString_to_int(make_constant_ddString(num));
-					for (int i = 0; i < count; i++)
-						vidd_handel_key(key);
+					buffer_clear(&command_input);
+					break;
 				}
-				*(long*)num = 0;
-				pos = 0;
-				break;
-			}
-			mode_normal_functions[(int)key](&cmaster);
-		} break;
-		case VIDD_MODE_COMMAND:
-		{
-			static char com[100];
-			static int len;
 
-			switch (key)
-			{
-				case 27:
-				{
-					cursor_restore();
-					vidd_enter_normal_mode(&cmaster);
+				client->mode = VIDD_MODE_NORMAL;
+				vidd_set_status(client);
 
-					for (int i = 0; i < 100; i++)
-						com[i] = 0;
-					len = 0;
-				} break;
-				case '\n':
+				if (!command_found)
 				{
-					cursor_restore();
-					vidd_enter_normal_mode(&cmaster);
-					vidd_run_command(&cmaster, com);
-
-					for (int i = 0; i < 100; i++)
-						com[i] = 0;
-					len = 0;
-				} break;
-				case DDK_BACKSPACE:
-				{
-					com[--len] = 0;
-					cursor_left();
-					ddPrint_char(' ');
-					cursor_left();
-					if (len == -1)
+					intmax_t line;
+					if (sscanf(command_input.data, "%ld", &line) >= 0)
 					{
-						cursor_restore();
-						vidd_enter_normal_mode(&cmaster);
-
-						for (int i = 0; i < 100; i++)
-							com[i] = 0;
-						len = 0;
+						vidd_move_to(client, client->cursor.x, line);
 					}
-				} break;
-				default:
-				{
-					ddPrint_char(key);
-					com[len++] = key;
-				} break;
+				}
+				buffer_clear(&command_input);
+			}
+			else
+			{
+				buffer_push(&command_input, key);
+				printf("%c", key);
 			}
 		} break;
-		case VIDD_MODE_REPLACE:
+		case VIDD_MODE_FIND:
+		case VIDD_MODE_FIND_REVERSE:
 		{
 			if (key == 27)
 			{
-				vidd_move_left(&cmaster);
-				vidd_enter_normal_mode(&cmaster);
-				break;
+				buffer_clear(&command_input);
+				cursor_restore();
+				client->mode = VIDD_MODE_NORMAL;
+				vidd_set_status(client);
 			}
-			cmaster.sts.changed = true;
-			line_replace(cmaster.cur.y, cmaster.cur.x, key);
-			ddPrint_char(key);
-			cursor_left();
-			vidd_move_right(&cmaster);
-		} break;
-		case VIDD_MODE_INSERT:
-		{
-			if (key == 27)
+			else if (key == 127)
 			{
-				vidd_move_left(&cmaster);
-				vidd_enter_normal_mode(&cmaster);
-				break;
+				if (command_input.length == 0) break;
+				cursor_move(-1, 0);
+				printf(" ");
+				cursor_move(-1, 0);
+				buffer_pop(&command_input);
 			}
-			else if (key == '\n')
+			else if (key == KEY_RETURN)
 			{
-				line_split(cmaster.cur.y, cmaster.cur.x);
-				vidd_redraw(cmaster);
-				vidd_move_down(&cmaster);
-				cursor_move_to(cmaster.x - cmaster.vpos, cmaster.y + cmaster.cur.y->num - cmaster.spos);
-				cmaster.cur.x = 0;
-				break;
+				buffer_copy(&client->last_find, &command_input);
+				char* word = command_input.data;
+
+				cursor_restore();
+
+				if (client->mode == VIDD_MODE_FIND)
+					vidd_find_next_word(client, word, strlen(word));
+				else vidd_find_prev_word(client, word, strlen(word));
+
+				client->mode = VIDD_MODE_NORMAL;
+				vidd_set_status(client);
+
+				buffer_clear(&command_input);
 			}
-			else if (key == DDK_BACKSPACE)
+			else
 			{
-				vidd_backspace(&cmaster);
-				break;
-			}
-			cmaster.sts.changed = true;
-			line_insert(cmaster.cur.y, cmaster.cur.x, key);
-			vidd_redraw_line(cmaster);
-			vidd_move_force_right(&cmaster);
-			if (key == '	')
-			{
-				vidd_move_force_right(&cmaster);
-				vidd_move_force_right(&cmaster);
-				vidd_move_force_right(&cmaster);
+				buffer_push(&command_input, key);
+				printf("%c", key);
 			}
 		} break;
+		default: vidd_normal_mode_keybinds[key](client);
 	}
 }
-
-void vidd_run_command(struct client* c, char* com)
+void vidd_continue_input(struct vidd_client* client)
 {
-	if (cstring_is_number(com))
-	{
-		vidd_move_to(c, 0, ddString_to_int(make_constant_ddString(com)));
-		return;
-	}
-	for (int i = 0; i < sizeof(commands)/sizeof(struct command); i++)
-	{
-		if (cstring_compare(com, commands[i].com))
-			commands[i].function(c, com);
-	}
+	uint32_t key = key = getch();
+	vidd_interrupt(client, key);
 }
 
-void vidd_macro_insert(struct client* c, char key)
+void vidd_main(void)
 {
-	if (c->mac.len+1 > c->mac.cap)
-	{
-		c->mac.data = realloc(c->mac.data, c->mac.len+10);
-		c->mac.cap = c->mac.len+10;
-	}
-	c->mac.data[c->mac.len++] = key;
+	//dbs_start(0, "127.0.0.1");
+	command_input = make_buffer(150);
+	copy_buffer = make_buffer(2048);
+	run_buffer = make_buffer(2048);
+	macro_buffer = make_buffer(2048);
+	while (1) vidd_continue_input(vidd_get_active());
 }
 
-int vidd_main(void)
+
+void signal_catch(int ipar)
 {
-	vidd_move_to(&cmaster, 0, 0);
-	for (;;)
-	{
-		char key = ddKey_getch_noesc();
-		if (cmaster.mac.recording) vidd_macro_insert(&cmaster, key);
-		vidd_handel_key(key);
-	}
+
 }
 
 int main(int argc, char** argv)
 {
-	system("tput smcup");
-	ddString data = read_file(argv[1]);
-	data.length++;
+	char* file_name = (argc > 1) ? (argv[1]) : ("_-=[NONE]=-_");
+	//signal(SIGINT, signal_catch);
+	screen_save();
+	setbuf(stdout, NULL);
 
-	cmaster.filename = argv[1];
+	client_pool = make_vidd_client_pool(20);
 
-	cmaster.sx = 0;
-	cmaster.y = 0;
-	cmaster.width = (cursor_get_width()) - cmaster.sx;
-	cmaster.height = cursor_get_height();
+	intmax_t width, height;
+	screen_get_size(&width, &height);
+	struct vidd_client initial_client = make_vidd_client(file_name, 0, 0, width, height, 0);
 
-	cmaster.mac.recording = false;
+	vidd_client_pool_add(&client_pool, initial_client);
 
-	cmaster.mode = VIDD_MODE_NORMAL;
+	if (!strcmp(file_name, "-"))
+		vidd_load_stdin(vidd_get_active());
+	else vidd_load_file(vidd_get_active(), file_name);
+	getch_init();
+	vidd_redraw(vidd_get_active());
 
-	cmaster.buf.data = 0;
-
-	cmaster.sty = styles[0];
-	for (int i = 0; i < sizeof(styles)/sizeof(struct style); i++)
+	for (int i = 2; i < argc; i++)
 	{
-		for (int j = 0; styles[i].extensions[j]; j++)
-		{
-			if (cstring_compare_length(styles[i].extensions[j], 
-				argv[1]+cstring_length(argv[1])-cstring_length(styles[i].extensions[j]),
-				cstring_length(styles[i].extensions[j])))
-			{
-				cmaster.sty = styles[i];
-				goto STYLE_FIND_LOOP_EXIT;
-			}
-		}
+		vidd_vsplit(vidd_get_active(), argv[i]);
 	}
-STYLE_FIND_LOOP_EXIT:
-
-	cmaster.sts.changed = false;
-
-	cmaster.cur.x = 0;
-	cmaster.cur.y = make_line(0, 0, 0, 100);
-	cmaster.spos = 0;
-	cmaster.vpos = 0;
-
-	int newline_count = 0;
-	for (int i = 0; i < data.length; i++)
-		if (data.cstr[i] == '\n') 
-			newline_count++;
-
-	int pos = 0;
-	for (int i = 0; i < data.length; i++)
-	{
-		if (data.cstr[i] == '\n')
-		{
-			cmaster.cur.y->next = make_line(0, cmaster.cur.y, cmaster.cur.y->num+1, 100);
-			cmaster.cur.y = cmaster.cur.y->next;
-			pos++;
-			continue;
-		}
-		line_append(cmaster.cur.y, data.cstr[i]);
-	}
-	cmaster.cur.y->next = (0);
-	cmaster.cur.y->text[--cmaster.cur.y->len] = 0;
-
-	cmaster.cur.y = line_get_line(cmaster.cur.y, cmaster.spos);
-
-
-	cmaster.x = cmaster.sx + number_length(line_get_last(cmaster.cur.y)->num)+1;
-	cmaster.width = cursor_get_width() - cmaster.x;
-
-	vidd_print(cmaster);
-
-	vidd_enter_normal_mode(&cmaster);
-	cursor_home();
 
 	vidd_main();
-
-	
-
+	screen_restore();
 	return 0;
 }
 
-#endif
