@@ -1683,6 +1683,7 @@ void vidd_vsplit(struct vidd_client* client, char* args)
 		new_client_ptr->cursor.y = client->cursor.y;
 		new_client_ptr->cursor.x = client->cursor.x;
 		new_client_ptr->settings = client->settings;
+		new_client_ptr->syntax = client->syntax;
 	}
 	else vidd_load_file(new_client_ptr, file_name);
 
