@@ -338,17 +338,12 @@ bool vidd_cursor_fix_overflow(struct vidd_client* client)
 {
 	bool redraw = false;
 
-	if (client->cursor.x >= client->cursor.y->buffer.length)
 	{
-		if (client->mode == VIDD_MODE_NORMAL && client->cursor.x >= client->cursor.y->buffer.length)
-		{
-			client->cursor.x = client->cursor.y->buffer.length-1;
-		}
-		else
-		{
-			client->cursor.x = client->cursor.y->buffer.length;
-		}
+		intmax_t last_movable = vidd_last_movable(client);
+		if (client->cursor.x >= last_movable)
+			client->cursor.x = last_movable;
 	}
+
 	if (client->cursor.x < 0)
 		client->cursor.x = 0;
 
@@ -1804,7 +1799,7 @@ void vidd_write(struct vidd_client* client, char* args)
 		bool nontabs_found = false;
 		for (intmax_t i = 0; i < line->buffer.length; i++)
 		{
-	    		if (!nontabs_found && *(uint32_t*)&line->buffer.data[i] == *(uint32_t*)"    ")
+				if (!nontabs_found && *(uint32_t*)&line->buffer.data[i] == *(uint32_t*)"    ")
 			{
 				fputc('\t', fp);
 				i += 3;

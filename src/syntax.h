@@ -162,7 +162,7 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 				}
 			}
 			vidd_syntax_push_next(buffer, line, &i, true);
-VIDD_SYNTAX_APPLY_TO_BUFFER_TEXT_LOOP:
+VIDD_SYNTAX_APPLY_TO_BUFFER_TEXT_LOOP:;
 		}
 	}
 	else
