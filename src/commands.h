@@ -120,6 +120,7 @@ void vidd_goto_prev_paragraph(struct vidd_client* client);
 void vidd_repeat_last_find(struct vidd_client* client);
 void vidd_repeat_last_find_reverse(struct vidd_client* client);
 
+void vidd_mode_swap(struct vidd_client* client, int com);
 void vidd_enter_normal_mode(struct vidd_client* client);
 void vidd_enter_insert_mode(struct vidd_client* client);
 void vidd_enter_insert_mode_right(struct vidd_client* client);
@@ -1406,6 +1407,14 @@ void vidd_goto_prev_paragraph(struct vidd_client* client)
 
 
 
+void vidd_mode_swap(struct vidd_client* client, int com)
+{
+	static int mode = 0;
+	if (com == 1)
+		client->mode = mode;
+	else if (com == 0)
+		mode = client->mode;
+}
 void vidd_enter_normal_mode(struct vidd_client* client)
 {
 	if (client->mode == VIDD_MODE_LINE_SELECT || client->mode == VIDD_MODE_SELECT)
@@ -1446,6 +1455,7 @@ void vidd_enter_find_next_mode(struct vidd_client* client)
 	cursor_move_to(client->x + strlen(VIDD_MODE_TEXTS[client->mode]), client->y + client->height);
 	printf(ACTIVE_CLIENT_COLOR);
 	printf("/");
+	vidd_mode_swap(client, 0);
 	client->mode = VIDD_MODE_FIND;
 }
 void vidd_enter_find_prev_mode(struct vidd_client* client)
@@ -1454,6 +1464,7 @@ void vidd_enter_find_prev_mode(struct vidd_client* client)
 	cursor_move_to(client->x + strlen(VIDD_MODE_TEXTS[client->mode]), client->y + client->height);
 	printf(ACTIVE_CLIENT_COLOR);
 	printf("?");
+	vidd_mode_swap(client, 0);
 	client->mode = VIDD_MODE_FIND_REVERSE;
 }
 void vidd_enter_select_mode(struct vidd_client* client)

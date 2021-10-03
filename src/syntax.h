@@ -106,7 +106,8 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 			}
 			for (intmax_t j = 1+(intmax_t)client->syntax[0]; client->syntax[j]; j++)
 			{
-				if (client->syntax[j][0] == SCID_RANGE)
+				if (client->syntax[j][0] == SCID_RANGE
+					|| client->syntax[j][0] == SCID_RANGE_NI)
 				{
 					char stype = client->syntax[j][1];
 					char* key_start = client->syntax[j]+2;
@@ -121,7 +122,7 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 						{
 							if (!strncmp(&text[k], key_end, key_end_length))
 							{
-								exists = true;	
+								exists = true;    
 								break;
 							}
 						}
@@ -138,7 +139,7 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 						{
 							vidd_syntax_push_next(buffer, line, &i, false);
 						}
-						if (i < line->buffer.length && i < client->view.x + client->view.width && key_end[0] != '\0')
+						if (client->syntax[j][0] != SCID_RANGE_NI && i < line->buffer.length && i < client->view.x + client->view.width && key_end[0] != '\0')
 						{
 							buffer_push_cstring(buffer, &text[i], key_end_length);
 							i += key_end_length;

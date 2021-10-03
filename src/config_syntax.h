@@ -13,6 +13,7 @@
 #define SSID_STRING "\""
 #define SSID_CHARACTER_LITERAL "'"
 #define SSID_RANGE "~"
+#define SSID_RANGE_NI "`"
 #define SSID_NUMBER "$"
 
 #define SCID_KEYWORD '#'
@@ -24,6 +25,7 @@
 #define SCID_STRING '"'
 #define SCID_CHARACTER_LITERAL '\''
 #define SCID_RANGE '~'
+#define SCID_RANGE_NI '`'
 #define SCID_NUMBER '$'
 
 #define SYNTAX_KEYWORD_COLOR FRGB("255", "255", "0")
@@ -61,6 +63,8 @@ char* SYNTAX_COLORS[] = {
 	name,
 #define SYNTAX_ADD_RANGE(start, end) \
 	SSID_RANGE start "\0" end,
+#define SYNTAX_ADD_RANGE_NI(start, end) \
+	SSID_RANGE_NI start "\0" end,
 #define SYNTAX_END(name) \
 	0 };
 
@@ -1817,7 +1821,26 @@ SYNTAX_NEW(syntax_html)
 	SYNTAX_ADD_RANGE(SSID_CHARACTER_LITERAL "'", "'")
 SYNTAX_END(syntax_html)
 
-
+SYNTAX_NEW(syntax_sast)
+	SYNTAX_EXT_COUNT(1)
+	SYNTAX_ADD_EXT(".s")
+	SYNTAX_ADD(SSID_OPERATOR "*")
+	SYNTAX_ADD(SSID_OPERATOR "+")
+	SYNTAX_ADD_RANGE(SSID_KEYWORD ".", " ")
+	SYNTAX_ADD_RANGE(SSID_KEYWORD ".", "\0")
+	SYNTAX_ADD_RANGE_NI(SSID_TYPE "%", "*")
+	SYNTAX_ADD_RANGE(SSID_TYPE "%", " ")
+	SYNTAX_ADD_RANGE(SSID_TYPE "%", "\0")
+	SYNTAX_ADD_RANGE(SSID_MACRO "!", " ")
+	SYNTAX_ADD_RANGE(SSID_MACRO "!", "\0")
+	SYNTAX_ADD_RANGE_NI(SSID_CONST "@", "*")
+	SYNTAX_ADD_RANGE(SSID_CONST "@", " ")
+	SYNTAX_ADD_RANGE_NI(SSID_CONST "@", "\0")
+	SYNTAX_ADD_RANGE(SSID_NUMBER "$", " ")
+	SYNTAX_ADD_RANGE(SSID_NUMBER "$", "\0")
+	SYNTAX_ADD_RANGE(SSID_STRING "\"", "\"")
+	SYNTAX_ADD_RANGE_NI(SSID_CHARACTER_LITERAL "'", " ")
+SYNTAX_END(syntax_sast)
 
 char** syntaxes[] = {
 	SYNTAXES_ADD(syntax_c)
@@ -1827,6 +1850,7 @@ char** syntaxes[] = {
 	SYNTAXES_ADD(syntax_java)
 	SYNTAXES_ADD(syntax_css)
 	SYNTAXES_ADD(syntax_html)
+	SYNTAXES_ADD(syntax_sast)
 };
 
 #endif

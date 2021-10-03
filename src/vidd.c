@@ -397,8 +397,9 @@ TAB_FETCH_REDO:
 					vidd_find_next_word(client, word, strlen(word));
 				else vidd_find_prev_word(client, word, strlen(word));
 
-				client->mode = VIDD_MODE_NORMAL;
-				vidd_set_status(client);
+				vidd_mode_swap(client, 1);
+				vidd_redraw(client);
+				//vidd_set_status(client);
 
 				buffer_clear(&command_input);
 			}
