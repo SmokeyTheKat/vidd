@@ -1166,13 +1166,13 @@ void vidd_line_selection_draw(struct vidd_client* client)
 
 void vidd_save_copy(void)
 {
-	FILE* fp = fopen("/home/william/.local/share/vidd/cpybuf.data", "w");
+	FILE* fp = fopen(PREFIX "/share/vidd/cpybuf.data", "w");
 	fwrite(copy_buffer.data, 1, copy_buffer.length, fp);
 	fclose(fp);
 }
 void vidd_load_copy(void)
 {
-	FILE* fp = fopen("/home/william/.local/share/vidd/cpybuf.data", "r");
+	FILE* fp = fopen(PREFIX "/share/vidd/cpybuf.data", "r");
 	char buffer[150];
 	while (fread(buffer, 1, sizeof(buffer), fp) != 0)
 		buffer_print(&copy_buffer, buffer);

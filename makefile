@@ -1,7 +1,8 @@
 PREFIX=~/.local
+RPREFIX=$(shell realpath ${PREFIX})
 
 CC=gcc
-CFLAGS=-Wall -g -Wno-pointer-sign
+CFLAGS=-Wall -g -Wno-pointer-sign -DPREFIX=\"${RPREFIX}\"
 CSRCS=$(shell find ./src/ -name '*.c')
 
 all:
