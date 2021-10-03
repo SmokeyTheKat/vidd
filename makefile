@@ -12,6 +12,6 @@ all:
 install: all
 	cp ./vidd ${PREFIX}/bin/
 tc: all
-	./vidd ./test
+	./vidd ./test.c
 edit:
 	vim -p ./src/*.h ./src/*.c
