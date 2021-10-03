@@ -21,6 +21,7 @@ struct line* line_get_last(struct line* line);
 struct line* line_get_line_in_direction(struct line* line, int dy);
 struct line* line_skip(struct line* line, intmax_t count);
 
+bool line_is_empty(struct line* line);
 
 void line_set_text(struct line* line, char* text, intmax_t length);
 void line_insert_at(struct line* line, char chr, intmax_t pos);
@@ -134,6 +135,18 @@ struct line* line_skip(struct line* line, intmax_t count)
 	for (intmax_t i = 0; line->next && i < count; i++)
 		line = line->next;
 	return line;
+}
+
+bool line_is_empty(struct line* line)
+{
+	for (intmax_t i = 0; i < line->buffer.length; i++)
+	{
+		if (line->buffer.data[i] != ' ')
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 void line_set_text(struct line* line, char* text, intmax_t length)

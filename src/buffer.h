@@ -27,6 +27,7 @@ void buffer_clear(struct buffer* buffer);
 void buffer_push(struct buffer* buffer, char value);
 void buffer_push_repeat(struct buffer* buffer, char value, intmax_t rept);
 void buffer_push_cstring(struct buffer* buffer, char* cstr, intmax_t length);
+void buffer_push_cstring_front(struct buffer* buffer, char* cstr, intmax_t length);
 void buffer_push_cstring_repeat(struct buffer* buffer, char* value, intmax_t length, intmax_t rept);
 
 char buffer_pop_front(struct buffer* buffer);
@@ -44,6 +45,13 @@ struct buffer
 	intmax_t capacity;
 };
 
+struct buffer make_buffer_from_cstring(char* cstr)
+{
+	intmax_t length = strlen(cstr);
+	struct buffer output = make_buffer(length + 10);
+	buffer_set_data(&output, cstr, length);
+	return output;
+}
 struct buffer make_buffer(intmax_t capacity)
 {
 	struct buffer output;
@@ -160,6 +168,20 @@ void buffer_push_repeat(struct buffer* buffer, char value, intmax_t rept)
 	for (intmax_t i = 0; i < rept; i++) buffer_push(buffer, value);
 }
 
+void buffer_push_cstring_front(struct buffer* buffer, char* cstr, intmax_t length)
+{
+	if (buffer->length + length >= buffer->capacity)
+	{
+		buffer->capacity += length + BUFFER_SPACER;
+		buffer->data = realloc(buffer->data, buffer->capacity);
+	}
+	for (intmax_t i = buffer->length; i >= 0; i--)
+		buffer->data[i + length] = buffer->data[i];
+	for (intmax_t i = 0; i < length; i++)
+		buffer->data[i] = cstr[i];
+	buffer->length += length;
+	
+}
 void buffer_push_cstring(struct buffer* buffer, char* cstr, intmax_t length)
 {
 	if (buffer->length + length >= buffer->capacity)

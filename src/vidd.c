@@ -4,18 +4,29 @@
 
 #include "./config_syntax.h"
 
-uint32_t getch(void)
+uint32_t getch(bool raw)
 {
 	if (run_buffer.length > 0)
 	{
 		return run_buffer.data[--run_buffer.length];
 	}
-	uint64_t output = 0;
-	read(STDIN_FILENO, &output, 8);
+	uint64_t retval = 0;
+	if (raw)
+	{
+		uint64_t output = 0;
+		read(STDIN_FILENO, &output, 1);
+		retval = output;
+	}
+	else
+	{
+		uint64_t output = 0;
+		read(STDIN_FILENO, &output, 8);
+		retval = ((output > 255) * 255) + (output % 255);
+	}
 
-	if (macro_recording) buffer_push(&macro_buffer, output);
+	if (macro_recording) buffer_push(&macro_buffer, retval);
 
-	return ((output > 255) * 255) + (output % 255);
+	return retval;
 }
 
 #include "./commands.h"
@@ -288,7 +299,7 @@ TAB_FETCH_REDO:
 
 							printf("%s", dir->d_name);
 
-							key = getch();
+							key = getch(false);
 							if (key != '\t')
 							{
 								vidd_interrupt(client, key);
@@ -302,7 +313,14 @@ TAB_FETCH_REDO:
 			}
 			else if (key == 127)
 			{
-				if (command_input.length == 0) break;
+				if (command_input.length == 0)
+				{
+					buffer_clear(&command_input);
+					cursor_restore();
+					client->mode = VIDD_MODE_NORMAL;
+					vidd_set_status(client);
+					break;
+				}
 				cursor_move(-1, 0);
 				printf(" ");
 				cursor_move(-1, 0);
@@ -395,7 +413,7 @@ TAB_FETCH_REDO:
 }
 void vidd_continue_input(struct vidd_client* client)
 {
-	uint32_t key = key = getch();
+	uint32_t key = key = getch(client->mode == VIDD_MODE_INSERT);
 	vidd_interrupt(client, key);
 }
 
@@ -406,6 +424,7 @@ void vidd_main(void)
 	copy_buffer = make_buffer(2048);
 	run_buffer = make_buffer(2048);
 	macro_buffer = make_buffer(2048);
+	vidd_load_copy();
 	while (1) vidd_continue_input(vidd_get_active());
 }
 

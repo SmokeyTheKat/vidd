@@ -11,7 +11,7 @@
 #define VIDD_MULTI_KEY_BIND_START(n, k) \
 	void n (struct vidd_client* client) \
 	{ \
-		uint32_t nkey = getch(); \
+		uint32_t nkey = getch(false); \
 		switch (nkey) \
 		{
 #define VIDD_MULTI_KEY_BIND_OPTION(k, f) \
@@ -92,6 +92,8 @@ void(*vidd_normal_mode_keybinds[])(struct vidd_client*) = {
 	['b']=vidd_move_prev_word,
 	['f']=vidd_find_next_char,
 	['F']=vidd_find_prev_char,
+	['}']=vidd_goto_next_paragraph,
+	['{']=vidd_goto_prev_paragraph,
 
 	[KEY_LEFT]=vidd_move_left,
 	[KEY_DOWN]=vidd_move_down,
@@ -139,7 +141,10 @@ void(*vidd_normal_mode_keybinds[])(struct vidd_client*) = {
 	[KEY_CTRL('e')]=vidd_floating_decrease_height,
 	[27]=vidd_enter_normal_mode,
 	[255]=vidd_toggle_drawing,
+	[253]=vidd_save_spot,
+	[254]=vidd_load_spot,
 	[443]=vidd_toggle_drawing,
+	[0]=vidd_floating_toggle,
 	['~']=vidd_test,
 };
 
@@ -149,6 +154,8 @@ void(*vidd_select_mode_keybinds[])(struct vidd_client*) = {
 	['d']=vidd_delete_selection,
 	['y']=vidd_selection_copy,
 	['s']=vidd_selection_swap_cursor,
+	['>']=vidd_selection_indent,
+	['<']=vidd_selection_deindent,
 };
 
 void(*vidd_insert_mode_keybinds[])(struct vidd_client*) = {
@@ -174,6 +181,9 @@ struct command vidd_commands[] = {
 	{ "!vs", vidd_run_command_in_vsplit },
 	{ "f", vidd_open_in_floating_window },
 	{ "!f", vidd_run_command_in_floating_window },
+	{ "!", vidd_run_command },
+	{ "syntax", vidd_load_syntax },
+	{ "man", vidd_man },
 };
 
 #endif

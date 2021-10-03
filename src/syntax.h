@@ -10,9 +10,11 @@ char* current_color = "";
 void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buffer, struct line* line);
 void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i, bool colored);
 
-void vidd_syntax_ftdetect(struct vidd_client* client)
+void vidd_syntax_ftdetect_cstring(struct vidd_client* client, char* rfile_name)
 {
-	char* file_name = client->file_name.data;
+	struct buffer bfile_name = make_buffer_from_cstring(rfile_name);
+	buffer_insert_at(&bfile_name, '.', 0);
+	char* file_name = bfile_name.data;
 	for (intmax_t i = 0; i < sizeof(syntaxes) / sizeof(char**); i++)
 	{
 		char** syntax = syntaxes[i];
@@ -28,6 +30,11 @@ void vidd_syntax_ftdetect(struct vidd_client* client)
 		}
 	}
 	client->syntaxOn = false;
+	free_buffer(&bfile_name);
+}
+void vidd_syntax_ftdetect(struct vidd_client* client)
+{
+	vidd_syntax_ftdetect_cstring(client, client->file_name.data);
 }
 
 void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i, bool colored)

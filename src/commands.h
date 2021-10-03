@@ -19,6 +19,8 @@ void vidd_move_floating_up(struct vidd_client* client);
 void vidd_move_floating_down(struct vidd_client* client);
 void vidd_move_floating_right(struct vidd_client* client);
 void vidd_move_floating_left(struct vidd_client* client);
+void vidd_floating_center(struct vidd_client* client);
+void vidd_floating_toggle(struct vidd_client* client);
 
 void vidd_check_for_window_size_change(struct vidd_client* client);
 
@@ -61,6 +63,8 @@ void vidd_view_move_down(struct vidd_client* client);
 
 void vidd_set_marker(struct vidd_client* client);
 void vidd_goto_marker(struct vidd_client* client);
+void vidd_save_spot(struct vidd_client* client);
+void vidd_load_spot(struct vidd_client* client);
 
 void vidd_goto_top(struct vidd_client* client);
 void vidd_goto_bottom(struct vidd_client* client);
@@ -96,6 +100,8 @@ void vidd_replace_character(struct vidd_client* client);
 
 void vidd_line_selection_draw(struct vidd_client* client);
 void vidd_selection_draw(struct vidd_client* client);
+void vidd_selection_indent(struct vidd_client* client);
+void vidd_selection_deindent(struct vidd_client* client);
 void vidd_selection_swap_cursor(struct vidd_client* client);
 
 void vidd_copy_line(struct vidd_client* client);
@@ -109,6 +115,8 @@ void vidd_find_next_word(struct vidd_client* client, char* word, intmax_t length
 void vidd_find_prev_word(struct vidd_client* client, char* word, intmax_t length);
 void vidd_find_next_word_under_cursor(struct vidd_client* client);
 void vidd_find_prev_word_under_cursor(struct vidd_client* client);
+void vidd_goto_next_paragraph(struct vidd_client* client);
+void vidd_goto_prev_paragraph(struct vidd_client* client);
 void vidd_repeat_last_find(struct vidd_client* client);
 void vidd_repeat_last_find_reverse(struct vidd_client* client);
 
@@ -134,8 +142,11 @@ void vidd_swap(struct vidd_client* client);
 
 void vidd_open_empty(struct vidd_client* client);
 
+void vidd_load_syntax(struct vidd_client* client, char* args);
+void vidd_man(struct vidd_client* client, char* args);
 void vidd_edit(struct vidd_client* client, char* args);
 void vidd_run_command_in_frame(struct vidd_client* client, char* args);
+void vidd_run_command(struct vidd_client* client, char* args);
 void vidd_run_command_in_vsplit(struct vidd_client* client, char* args);
 void vidd_run_command_in_floating_window(struct vidd_client* client, char* args);
 void vidd_open_in_floating_window(struct vidd_client* client, char* args);
@@ -234,7 +245,7 @@ void vidd_redraw(struct vidd_client* client)
 	{
 		buffer_print(&toprint, FRGB("255", "255", "0"));
 		buffer_push(&toprint, '*');
-		buffer_push_repeat(&toprint, ' ', client->view.width - 1);
+		buffer_push_repeat(&toprint, ' ', client->view.width + 2);
 		if (i + 1 < visable_line_count)
 			buffer_printf(&toprint, ((client->x != 0) ? ("\r" CURSOR_DOWN() CURSOR_RIGHT("%d")) : ("\r" CURSOR_DOWN())), client->x);
 		buffer_print(&toprint, NOSTYLE);
@@ -499,7 +510,7 @@ void vidd_move_right(struct vidd_client* client)
 {
 	if (client->cursor.x == vidd_last_movable(client))
 	{
-		printf("\a");
+		//printf("\a");
 		return;
 	}
 	client->cursor.x++;
@@ -510,7 +521,7 @@ void vidd_move_left(struct vidd_client* client)
 {
 	if (client->cursor.x == 0)
 	{
-		printf("\a");
+		//printf("\a");
 		return;
 	}
 	client->cursor.x--;
@@ -738,14 +749,23 @@ void vidd_view_move_down(struct vidd_client* client)
 
 void vidd_set_marker(struct vidd_client* client)
 {
-	uint32_t c = getch();
+	uint32_t c = getch(true);
 	client->marker.positions[c].x = client->cursor.x;
 	client->marker.positions[c].y = client->cursor.y->number;
 }
 void vidd_goto_marker(struct vidd_client* client)
 {
-	uint32_t c = getch();
+	uint32_t c = getch(true);
 	vidd_move_to(client, client->marker.positions[c].x, client->marker.positions[c].y);
+}
+void vidd_save_spot(struct vidd_client* client)
+{
+	client->marker.positions[0].x = client->cursor.x;
+	client->marker.positions[0].y = client->cursor.y->number;
+}
+void vidd_load_spot(struct vidd_client* client)
+{
+	vidd_move_to(client, client->marker.positions[0].x, client->marker.positions[0].y);
 }
 
 
@@ -1007,7 +1027,7 @@ void vidd_delete_two_lines_down(struct vidd_client* client)
 
 void vidd_replace_character(struct vidd_client* client)
 {
-	char key = getch();
+	char key = getch(true);
 	client->cursor.y->buffer.data[client->cursor.x] = key;
 	vidd_redraw(client);
 }
@@ -1016,6 +1036,31 @@ void vidd_replace_character(struct vidd_client* client)
 
 
 
+void vidd_selection_indent(struct vidd_client* client)
+{
+	vidd_toggle_drawing(client);
+	struct cursor old_cursor = client->cursor;
+	struct line* line;
+	VIDD_LINE_SELECTION_FULL_LOOP({
+		vidd_move_to(client, 0, i+1);
+		vidd_indent(client);
+	});
+	client->cursor = old_cursor;
+	vidd_toggle_drawing(client);
+}
+void vidd_selection_deindent(struct vidd_client* client)
+{
+	vidd_toggle_drawing(client);
+	struct cursor old_cursor = client->cursor;
+	struct line* line;
+	VIDD_LINE_SELECTION_FULL_LOOP({
+		vidd_move_to(client, 0, i+1);
+		vidd_deindent(client);
+	});
+	client->cursor = old_cursor;
+	vidd_toggle_drawing(client);
+
+}
 void vidd_selection_draw(struct vidd_client* client)
 {
 	if (!client->displayOn) return;
@@ -1118,17 +1163,29 @@ void vidd_line_selection_draw(struct vidd_client* client)
 
 
 
-
+void vidd_save_copy(void)
+{
+	FILE* fp = fopen("/home/william/.local/share/vidd/cpybuf.data", "w");
+	fwrite(copy_buffer.data, 1, copy_buffer.length, fp);
+	fclose(fp);
+}
+void vidd_load_copy(void)
+{
+	FILE* fp = fopen("/home/william/.local/share/vidd/cpybuf.data", "r");
+	char buffer[150];
+	while (fread(buffer, 1, sizeof(buffer), fp) != 0)
+		buffer_print(&copy_buffer, buffer);
+	fclose(fp);
+}
 void vidd_copy_line(struct vidd_client* client)
 {
 	buffer_clear(&copy_buffer);
 	buffer_push(&copy_buffer, 27);
-	buffer_push(&copy_buffer, 255);
 	buffer_push(&copy_buffer, 'o');
 	buffer_push_cstring(&copy_buffer, client->cursor.y->buffer.data, client->cursor.y->buffer.length);
 	buffer_push(&copy_buffer, 27);
 	buffer_push(&copy_buffer, '^');
-	buffer_push(&copy_buffer, 255);
+	vidd_save_copy();
 }
 void vidd_selection_copy(struct vidd_client* client)
 {
@@ -1136,9 +1193,9 @@ void vidd_selection_copy(struct vidd_client* client)
 
 	buffer_clear(&copy_buffer);
 	buffer_push(&copy_buffer, 27);
-	buffer_push(&copy_buffer, 255);
 	if (client->mode == VIDD_MODE_LINE_SELECT)
 	{
+		buffer_push(&copy_buffer, 253);
 		buffer_push(&copy_buffer, 'o');
 
 		VIDD_LINE_SELECTION_FULL_LOOP({
@@ -1147,6 +1204,9 @@ void vidd_selection_copy(struct vidd_client* client)
 			line = line->next;
 		});
 		buffer_push(&copy_buffer, 27);
+		buffer_push(&copy_buffer, 254);
+		buffer_push(&copy_buffer, 'j');
+		buffer_push(&copy_buffer, '^');
 	}
 	else
 	{
@@ -1166,7 +1226,7 @@ void vidd_selection_copy(struct vidd_client* client)
 		}, {});
 		buffer_push(&copy_buffer, 27);
 	}
-	buffer_push(&copy_buffer, 255);
+	vidd_save_copy();
 }
 
 
@@ -1175,10 +1235,12 @@ void vidd_selection_copy(struct vidd_client* client)
 
 void vidd_paste(struct vidd_client* client)
 {
+	vidd_toggle_drawing(client);
 	for (intmax_t i = 0; i < copy_buffer.length; i++)
 	{
 		vidd_interrupt(client, copy_buffer.data[i]);
 	}
+	vidd_toggle_drawing(client);
 }
 
 
@@ -1187,7 +1249,7 @@ void vidd_paste(struct vidd_client* client)
 
 void vidd_find_next_char(struct vidd_client* client)
 {
-	unsigned char to_find = getch();
+	unsigned char to_find = getch(true);
 	intmax_t new_x = client->cursor.x+1;
 	for (intmax_t i = new_x; i < client->cursor.y->buffer.length; i++)
 	{
@@ -1201,7 +1263,7 @@ void vidd_find_next_char(struct vidd_client* client)
 }
 void vidd_find_prev_char(struct vidd_client* client)
 {
-	unsigned char to_find = getch();
+	unsigned char to_find = getch(true);
 	intmax_t new_x = client->cursor.x-1;
 	for (intmax_t i = new_x; i >= 0; i--)
 	{
@@ -1292,6 +1354,52 @@ void vidd_find_prev_word_under_cursor(struct vidd_client* client)
 
 	buffer_set_data(&client->last_find, &client->cursor.y->buffer.data[start], end - start);
 	vidd_repeat_last_find_reverse(client);
+}
+void vidd_goto_next_paragraph(struct vidd_client* client)
+{
+	struct line* line = client->cursor.y;
+	if (!line_is_empty(line))
+	{
+		while (line->next && !line_is_empty(line))
+			line = line->next;
+	}
+	else
+	{
+		line = line->next;
+		if (!line) return;
+		while (line->next && line_is_empty(line))
+			line = line->next;
+		while (line->next && (!line_is_empty(line) == !line_is_empty(line->next)))
+			line = line->next;
+		if (!line_is_empty(line))
+			while (line->next && !line_is_empty(line))
+				line = line->next;
+	}
+	client->cursor.y = line;
+	vidd_cursor_adjust(client);
+}
+void vidd_goto_prev_paragraph(struct vidd_client* client)
+{
+	struct line* line = client->cursor.y;
+	if (!line_is_empty(line))
+	{
+		while (line->prev && !line_is_empty(line))
+			line = line->prev;
+	}
+	else
+	{
+		line = line->prev;
+		if (!line) return;
+		while (line->prev && line_is_empty(line))
+			line = line->prev;
+		while (line->prev && (!line_is_empty(line) == !line_is_empty(line->prev)))
+			line = line->prev;
+		if (!line_is_empty(line))
+			while (line->next && !line_is_empty(line))
+				line = line->prev;
+	}
+	client->cursor.y = line;
+	vidd_cursor_adjust(client);
 }
 
 
@@ -1547,6 +1655,22 @@ void vidd_move_floating_left(struct vidd_client* client)
 		vidd_redraw(client);
 	}
 }
+void vidd_floating_center(struct vidd_client* client)
+{
+	intmax_t width, height;
+	screen_get_size(&width, &height);
+	client->width = width - 2 * (width / 10);
+	client->height = height - 2 * (height / 10);
+	client->x = width / 10;
+	client->y = height / 10;
+}
+void vidd_floating_toggle(struct vidd_client* client)
+{
+	client->isFloating = !client->isFloating;
+	if (client->isFloating)
+		vidd_floating_center(client);
+	vidd_reorganize_clients(&client_pool);
+}
 void vidd_increase_master_size(struct vidd_client* client)
 {
 	if (client_pool.master_size + 0.05 < 1)
@@ -1678,6 +1802,7 @@ void vidd_vsplit(struct vidd_client* client, char* args)
 		new_client_ptr->cursor.y = client->cursor.y;
 		new_client_ptr->cursor.x = client->cursor.x;
 		new_client_ptr->settings = client->settings;
+		new_client_ptr->isFloating = false;
 		new_client_ptr->syntax = client->syntax;
 	}
 	else vidd_load_file(new_client_ptr, file_name);
@@ -1749,11 +1874,29 @@ void vidd_run_command_in_floating_window(struct vidd_client* client, char* args)
 
 	vidd_client_pool_set_active(&client_pool, new_client);
 
-	FILE* fp = popen(args, "r");
+	intmax_t comlen = strlen(args) + 6;
+	char* com = malloc(comlen);
+	memcpy(com, args, comlen-6);
+	memcpy(com + comlen-6, " 2>&1", 5);
+	com[comlen] = 0;
+	FILE* fp = popen(com, "r");
 	vidd_load_from_fp(new_client, fp);
-	pclose(fp);
+	fclose(fp);
+	free(com);
+
 	vidd_redraw(new_client);
 	vidd_enter_normal_mode(client);
+}
+void vidd_run_command(struct vidd_client* client, char* args)
+{
+	intmax_t comlen = strlen(args) + 20;
+	char* com = malloc(comlen);
+	memcpy(com, args, comlen-19);
+	memcpy(com + comlen-19, " 2>&1 > /dev/null &", 19);
+	com[comlen] = 0;
+	FILE* fp = popen(com, "r");
+	fclose(fp);
+	free(com);
 }
 void vidd_run_command_in_frame(struct vidd_client* client, char* args)
 {
@@ -1840,7 +1983,7 @@ void vidd_quit_current(struct vidd_client* client)
 	vidd_client_pool_remove(&client_pool, client);
 
 	vidd_client_pool_next_client(&client_pool);
-	
+
 	vidd_reorganize_clients(&client_pool);
 }
 void vidd_client_quit(struct vidd_client* client, char* args)
@@ -1850,7 +1993,7 @@ void vidd_client_quit(struct vidd_client* client, char* args)
 	vidd_client_pool_remove(&client_pool, client);
 
 	vidd_client_pool_next_client(&client_pool);
-	
+
 	vidd_reorganize_clients(&client_pool);
 }
 void vidd_exit(struct vidd_client* client, char* args)
@@ -1858,6 +2001,18 @@ void vidd_exit(struct vidd_client* client, char* args)
 	getch_exit();
 	screen_restore();
 	exit(0);
+}
+void vidd_load_syntax(struct vidd_client* client, char* args)
+{
+	vidd_syntax_ftdetect_cstring(client, args);
+	vidd_redraw(client);
+}
+void vidd_man(struct vidd_client* client, char* args)
+{
+	struct buffer bcom = make_buffer_from_cstring(args);
+	buffer_push_cstring_front(&bcom, "man ", 4);
+	vidd_run_command_in_floating_window(client, bcom.data);
+	free_buffer(&bcom);
 }
 
 
