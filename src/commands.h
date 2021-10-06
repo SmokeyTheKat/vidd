@@ -123,6 +123,7 @@ void vidd_repeat_last_find_reverse(struct vidd_client* client);
 void vidd_mode_swap(struct vidd_client* client, int com);
 void vidd_enter_normal_mode(struct vidd_client* client);
 void vidd_enter_insert_mode(struct vidd_client* client);
+void vidd_exit_insert_mode(struct vidd_client* client);
 void vidd_enter_insert_mode_right(struct vidd_client* client);
 void vidd_enter_select_mode(struct vidd_client* client);
 void vidd_enter_line_select_mode(struct vidd_client* client);
@@ -155,10 +156,14 @@ void vidd_split(struct vidd_client* client, char* args);
 void vidd_duplicate(struct vidd_client* client);
 void vidd_vsplit(struct vidd_client* client, char* args);
 void vidd_write(struct vidd_client* client, char* args);
+void vidd_write_all(struct vidd_client* client, char* args);
+void vidd_write_quit_all(struct vidd_client* client, char* args);
 void vidd_write_quit(struct vidd_client* client, char* args);
 void vidd_quit_current(struct vidd_client* client);
 void vidd_client_quit(struct vidd_client* client, char* args);
-void vidd_exit(struct vidd_client* client, char* args);
+void vidd_client_force_quit(struct vidd_client* client, char* args);
+void vidd_force_exit_all(struct vidd_client* client, char* args);
+void vidd_exit_all(struct vidd_client* client, char* args);
 
 void vidd_void(struct vidd_client* client);
 
@@ -319,9 +324,9 @@ void vidd_set_status(struct vidd_client* client)
 							 (macro_recording == true) ? ("@") : (""),
 							 VIDD_MODE_TEXTS[client->mode]);
 
-	cursor_move_to(client->x + client->width - strlen(client->file_name.data) - 1, client->y + client->height - 1);
+	cursor_move_to(client->x + client->width - strlen(client->file_name.data) - 1 + client->unsavedChanges, client->y + client->height - 1);
 
-	printf("%s%s" NOSTYLE, fmt, client->file_name.data);
+	printf(client->unsavedChanges ? "%s*%s" : "%s%s" NOSTYLE, fmt, client->file_name.data);
 
 	cursor_restore();
 }
@@ -1337,6 +1342,7 @@ void vidd_find_next_word_under_cursor(struct vidd_client* client)
 
 	i = client->cursor.x;
 	while (i < client->cursor.y->buffer.length && IS_CHARACTER(client->cursor.y->buffer.data[i])) i++;
+	if (i < client->cursor.y->buffer.length && client->cursor.y->buffer.data[i] == '(') i++;
 	intmax_t end = i;
 
 	buffer_set_data(&client->last_find, &client->cursor.y->buffer.data[start], end - start);
@@ -1351,6 +1357,7 @@ void vidd_find_prev_word_under_cursor(struct vidd_client* client)
 
 	i = client->cursor.x;
 	while (i < client->cursor.y->buffer.length && IS_CHARACTER(client->cursor.y->buffer.data[i])) i++;
+	if (i < client->cursor.y->buffer.length && client->cursor.y->buffer.data[i] == '(') i++;
 	intmax_t end = i;
 
 	buffer_set_data(&client->last_find, &client->cursor.y->buffer.data[start], end - start);
@@ -1428,6 +1435,12 @@ void vidd_enter_normal_mode(struct vidd_client* client)
 void vidd_enter_insert_mode(struct vidd_client* client)
 {
 	client->mode = VIDD_MODE_INSERT;
+	vidd_set_status(client);
+}
+void vidd_exit_insert_mode(struct vidd_client* client)
+{
+	client->mode = VIDD_MODE_NORMAL;
+	vidd_move_left(client);
 	vidd_set_status(client);
 }
 void vidd_enter_insert_mode_right(struct vidd_client* client)
@@ -1909,29 +1922,6 @@ void vidd_run_command(struct vidd_client* client, char* args)
 	fclose(fp);
 	free(com);
 }
-void vidd_run_command_in_frame(struct vidd_client* client, char* args)
-{
-	intmax_t comlen = strlen(args) + 6;
-	char* com = malloc(comlen);
-	memcpy(com, args, comlen-6);
-	memcpy(com + comlen-6, " 2>&1", 5);
-	com[comlen] = 0;
-
-	intmax_t borderw = client->width / 23;
-	intmax_t borderh = client->height / 10;
-
-	struct frame frame = { client->x + borderw, client->y + borderh, client->view.width - (2 * borderw), client->view.height - (2 * borderh), { 0 }, 0, 0 };
-	frame.buffer = make_buffer(150);
-	char line[2048] = {0};
-	FILE* fp = popen(com, "r");
-	while (fgets(line, sizeof(line), fp))
-	{
-		buffer_push_cstring(&frame.buffer, line, strlen(line));
-	}
-	frame_draw(&frame);
-	free_buffer(&frame.buffer);
-	free(com);
-}
 void vidd_write(struct vidd_client* client, char* args)
 {
 	char* file_name = client->file_name.data;
@@ -1968,6 +1958,19 @@ void vidd_write(struct vidd_client* client, char* args)
 		line = line->next;
 	}
 	fclose(fp);
+	client->unsavedChanges = false;
+}
+void vidd_write_all(struct vidd_client* client, char* args)
+{
+	for (intmax_t i = 0; i < client_pool.length; i++)
+		vidd_write(&client_pool.clients[i], "");
+}
+void vidd_write_quit_all(struct vidd_client* client, char* args)
+{
+	if (client_pool.length == 0) return;
+	vidd_write(&client_pool.clients[0], "");
+	vidd_client_quit(&client_pool.clients[0], "");
+	vidd_write_quit_all(client, args);
 }
 void vidd_client_pool_remove(struct vidd_client_pool* pool, struct vidd_client* client)
 {
@@ -1982,14 +1985,13 @@ void vidd_client_pool_remove(struct vidd_client_pool* pool, struct vidd_client* 
 void vidd_write_quit(struct vidd_client* client, char* args)
 {
 	vidd_write(client, args);
-	getch_exit();
-	screen_restore();
-	exit(0);
+	vidd_quit_current(client);
 }
 
 void vidd_quit_current(struct vidd_client* client)
 {
-	if (client_pool.length == 1) vidd_exit(client, 0);
+	if (client->unsavedChanges) return;
+	if (client_pool.length == 1) vidd_force_exit_all(client, 0);
 
 	vidd_client_pool_remove(&client_pool, client);
 
@@ -1999,7 +2001,8 @@ void vidd_quit_current(struct vidd_client* client)
 }
 void vidd_client_quit(struct vidd_client* client, char* args)
 {
-	if (client_pool.length == 1) vidd_exit(client, 0);
+	if (client->unsavedChanges) return;
+	if (client_pool.length == 1) vidd_force_exit_all(client, 0);
 
 	vidd_client_pool_remove(&client_pool, client);
 
@@ -2007,7 +2010,27 @@ void vidd_client_quit(struct vidd_client* client, char* args)
 
 	vidd_reorganize_clients(&client_pool);
 }
-void vidd_exit(struct vidd_client* client, char* args)
+void vidd_client_force_quit(struct vidd_client* client, char* args)
+{
+	if (client_pool.length == 1) vidd_force_exit_all(client, 0);
+
+	vidd_client_pool_remove(&client_pool, client);
+
+	vidd_client_pool_next_client(&client_pool);
+
+	vidd_reorganize_clients(&client_pool);
+}
+void vidd_exit_all(struct vidd_client* client, char* args)
+{
+	for (intmax_t i = 0; i < client_pool.length;)
+	{
+		intmax_t olen = client_pool.length;
+		vidd_client_quit(&client_pool.clients[i], "");
+		intmax_t nlen = client_pool.length;
+		if (olen == nlen) i++;
+	}
+}
+void vidd_force_exit_all(struct vidd_client* client, char* args)
 {
 	getch_exit();
 	screen_restore();

@@ -54,6 +54,12 @@ enum
 	VIDD_MODE_LINE_SELECT,
 };
 
+enum
+{
+	VIDD_ACTION_MOVEMENT=0,
+	VIDD_ACTION_EDIT,
+};
+
 const char* VIDD_MODE_TEXTS[] = {
 	[VIDD_MODE_NORMAL]="[NORMAL]",
 	[VIDD_MODE_COMMAND]="[COMMAND]",
@@ -67,6 +73,12 @@ struct command
 {
 	char* name;
 	void(*func)(struct vidd_client*, char*);
+};
+
+struct vidd_keybind
+{
+	void(*func)(struct vidd_client*);
+	int type;
 };
 
 struct cursor
@@ -123,6 +135,14 @@ struct vidd_client
 			intmax_t syntaxOn : 1;
 			intmax_t isFloating : 1;
 			intmax_t inclusiveSelection : 1;
+		};
+	};
+	union
+	{
+		intmax_t status;
+		struct
+		{
+			intmax_t unsavedChanges : 1;
 		};
 	};
 	int mode;

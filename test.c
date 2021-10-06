@@ -7,6 +7,7 @@ wow i am doing soooooo good haha
 16 17 18 19 20 21
 10 11 12 13 14 15
 1 2 3 4 5 6 7 8 9
+
 Ó
 static struct person a = { "omg", 69 };
 int main(int argc, char** argv)
