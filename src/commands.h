@@ -246,7 +246,7 @@ void vidd_redraw(struct vidd_client* client)
 	{
 		buffer_print(&toprint, FRGB("255", "255", "0"));
 		buffer_push(&toprint, '*');
-		buffer_push_repeat(&toprint, ' ', client->view.width + 2);
+		buffer_push_repeat(&toprint, ' ', client->view.width - line_number_gap);
 		if (i + 1 < visable_line_count)
 			buffer_printf(&toprint, ((client->x != 0) ? ("\r" CURSOR_DOWN() CURSOR_RIGHT("%d")) : ("\r" CURSOR_DOWN())), client->x);
 		buffer_print(&toprint, NOSTYLE);
@@ -1396,7 +1396,7 @@ void vidd_goto_prev_paragraph(struct vidd_client* client)
 		while (line->prev && (!line_is_empty(line) == !line_is_empty(line->prev)))
 			line = line->prev;
 		if (!line_is_empty(line))
-			while (line->next && !line_is_empty(line))
+			while (line->prev && !line_is_empty(line))
 				line = line->prev;
 	}
 	client->cursor.y = line;
