@@ -2032,6 +2032,7 @@ void vidd_exit_all(struct vidd_client* client, char* args)
 }
 void vidd_force_exit_all(struct vidd_client* client, char* args)
 {
+	printf("\x1b[0m");
 	getch_exit();
 	screen_restore();
 	exit(0);
