@@ -33,6 +33,11 @@ uint32_t getch(bool raw)
 
 #include "./mode_command.h"
 
+char vidd_is_real_file(struct vidd_client* client)
+{
+	return strcmp(client->file_name.data, "_-=[NONE]=-_");
+}
+
 struct vidd_client* vidd_get_active(void)
 {
 	return &client_pool.clients[client_pool.active];
@@ -169,6 +174,7 @@ void vidd_load_file(struct vidd_client* client, char* file_name)
 		vidd_load_from_fp(client, fp);
 		vidd_syntax_ftdetect(client);
 		fclose(fp);
+		vidd_load_file_data(client);
 	}
 }
 

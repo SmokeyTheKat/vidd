@@ -38,6 +38,8 @@
 #define CURSOR_RIGHT(v) "\x1b[" v "C"
 #define CURSOR_LEFT(v) "\x1b[" v "D"
 
+#define PATH_MAX 4096
+
 enum
 {
 	KEY_UP=438,

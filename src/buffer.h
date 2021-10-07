@@ -12,6 +12,8 @@
 struct buffer;
 
 struct buffer make_buffer(intmax_t capacity);
+struct buffer make_buffer_format(char* fmt, ...);
+struct buffer make_buffer_from_cstring(char* cstr);
 void free_buffer(struct buffer* buffer);
 
 void buffer_copy(struct buffer* dest, struct buffer* src);
@@ -45,6 +47,15 @@ struct buffer
 	intmax_t capacity;
 };
 
+struct buffer make_buffer(intmax_t capacity)
+{
+	struct buffer output;
+	output.data = calloc(sizeof(char), capacity);
+	output.capacity = capacity;
+	output.length = 0;
+	return output;
+}
+
 struct buffer make_buffer_from_cstring(char* cstr)
 {
 	intmax_t length = strlen(cstr);
@@ -52,12 +63,28 @@ struct buffer make_buffer_from_cstring(char* cstr)
 	buffer_set_data(&output, cstr, length);
 	return output;
 }
-struct buffer make_buffer(intmax_t capacity)
+
+struct buffer make_buffer_format(char* fmt, ...)
 {
-	struct buffer output;
-	output.data = calloc(sizeof(char), capacity);
-	output.capacity = capacity;
-	output.length = 0;
+	struct buffer output = make_buffer(50);
+
+	va_list args;
+	va_start(args, fmt);
+
+	va_list cpyargs;
+	va_copy(cpyargs, args);
+
+	intmax_t fmtbuf_length = vsnprintf(0, 0, fmt, args);
+	char* fmtbuf = malloc(fmtbuf_length + 1);
+	vsnprintf(fmtbuf, fmtbuf_length + 1, fmt, cpyargs);
+
+	buffer_push_cstring(&output, fmtbuf, fmtbuf_length);
+
+	free(fmtbuf);
+
+	va_end(args);
+	va_end(cpyargs);
+
 	return output;
 }
 

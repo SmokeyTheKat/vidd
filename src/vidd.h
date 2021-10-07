@@ -30,6 +30,7 @@ struct vidd_client_pool;
 void vidd_main(void);
 struct vidd_client* vidd_get_active(void);
 void vidd_interrupt(struct vidd_client* client, uint32_t key);
+char vidd_is_real_file(struct vidd_client* client);
 void vidd_continue_input(struct vidd_client* client);
 struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, intmax_t width, intmax_t height, int* open_buffers);
 void free_vidd_client(struct vidd_client* client);

@@ -144,6 +144,9 @@ void vidd_swap(struct vidd_client* client);
 
 void vidd_open_empty(struct vidd_client* client);
 
+void vidd_load_file_data(struct vidd_client* client);
+void vidd_save_file_data(struct vidd_client* client);
+
 void vidd_load_syntax(struct vidd_client* client, char* args);
 void vidd_man(struct vidd_client* client, char* args);
 void vidd_edit(struct vidd_client* client, char* args);
@@ -1593,7 +1596,6 @@ void vidd_floating_increase_height(struct vidd_client* client)
 			client->height = sheight - client->y - 2 - 4;
 		client->height += 4;
 		vidd_reorganize_clients(&client_pool);
-		vidd_redraw(client);
 	}
 }
 void vidd_floating_decrease_height(struct vidd_client* client)
@@ -1604,7 +1606,6 @@ void vidd_floating_decrease_height(struct vidd_client* client)
 			client->height = 9;
 		client->height -= 4;
 		vidd_reorganize_clients(&client_pool);
-		vidd_redraw(client);
 	}
 }
 void vidd_floating_increase_width(struct vidd_client* client)
@@ -1617,7 +1618,6 @@ void vidd_floating_increase_width(struct vidd_client* client)
 			client->width = swidth - client->x - 2 - 4;
 		client->width += 4;
 		vidd_reorganize_clients(&client_pool);
-		vidd_redraw(client);
 	}
 }
 void vidd_floating_decrease_width(struct vidd_client* client)
@@ -1628,7 +1628,6 @@ void vidd_floating_decrease_width(struct vidd_client* client)
 			client->width = 9;
 		client->width -= 4;
 		vidd_reorganize_clients(&client_pool);
-		vidd_redraw(client);
 	}
 }
 void vidd_move_floating_up(struct vidd_client* client)
@@ -1639,7 +1638,6 @@ void vidd_move_floating_up(struct vidd_client* client)
 			client->y = 2 + 2;
 		client->y -= 2;
 		vidd_reorganize_clients(&client_pool);
-		vidd_redraw(client);
 	}
 }
 void vidd_move_floating_down(struct vidd_client* client)
@@ -1652,7 +1650,6 @@ void vidd_move_floating_down(struct vidd_client* client)
 			client->y = sheight - client->height - 2 - 2;
 		client->y += 2;
 		vidd_reorganize_clients(&client_pool);
-		vidd_redraw(client);
 	}
 }
 void vidd_move_floating_right(struct vidd_client* client)
@@ -1665,7 +1662,6 @@ void vidd_move_floating_right(struct vidd_client* client)
 			client->x = swidth - client->width - 2 - 4;
 		client->x += 4;
 		vidd_reorganize_clients(&client_pool);
-		vidd_redraw(client);
 	}
 }
 void vidd_move_floating_left(struct vidd_client* client)
@@ -1676,7 +1672,6 @@ void vidd_move_floating_left(struct vidd_client* client)
 			client->x = 2 + 4;
 		client->x -= 4;
 		vidd_reorganize_clients(&client_pool);
-		vidd_redraw(client);
 	}
 }
 void vidd_floating_center(struct vidd_client* client)
@@ -1988,9 +1983,52 @@ void vidd_write_quit(struct vidd_client* client, char* args)
 	vidd_quit_current(client);
 }
 
+struct buffer vidd_get_file_data_path(struct vidd_client* client)
+{
+	char real_path_buf[PATH_MAX+1];
+	char* real_path = realpath(client->file_name.data, real_path_buf);
+	for (int i = 0; real_path[i]; i++)
+		if (real_path[i] == '/')
+			real_path[i] = '+';
+	return make_buffer_format(PREFIX "/share/vidd/filedata/%s", real_path);
+}
+
+void vidd_save_file_data(struct vidd_client* client)
+{
+	if (!vidd_is_real_file(client)) return;
+	struct buffer file_path = vidd_get_file_data_path(client);
+
+	FILE* fp = fopen(file_path.data, "w");
+	fwrite(&client->cursor.x, sizeof(client->cursor.x), 1, fp);
+	fwrite(&client->cursor.y->number, sizeof(client->cursor.x), 1, fp);
+	fclose(fp);
+	free_buffer(&file_path);
+}
+void vidd_load_file_data(struct vidd_client* client)
+{
+	if (!vidd_is_real_file(client)) return;
+	struct buffer file_path = vidd_get_file_data_path(client);
+
+	intmax_t y = 0;
+	FILE* fp = fopen(file_path.data, "r");
+	if (fp)
+	{
+		fread(&client->cursor.x, sizeof(client->cursor.x), 1, fp);
+		fread(&y, sizeof(client->cursor.x), 1, fp);
+		fclose(fp);
+		free_buffer(&file_path);
+		client->cursor.y = line_get_line(client->cursor.y, y);
+		vidd_view_center(client);
+		vidd_redraw(client);
+	}
+}
+
 void vidd_quit_current(struct vidd_client* client)
 {
 	if (client->unsavedChanges) return;
+
+	vidd_save_file_data(client);
+
 	if (client_pool.length == 1) vidd_force_exit_all(client, 0);
 
 	vidd_client_pool_remove(&client_pool, client);
