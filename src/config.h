@@ -1,8 +1,6 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#include "./mode_command.h"
-
 #define STYLE_EMPTY_LINE FRGB("255", "255", "0") "*"
 #define STYLE_HIGHLIGHT STYLE_REVERSE
 #define STYLE_LINE_NUMBER_COLOR FRGB("255", "255", "0")
@@ -182,7 +180,6 @@ struct command vidd_commands[] = {
 	{ "!", vidd_run_command },
 	{ "syntax", vidd_load_syntax },
 	{ "man", vidd_man },
-	{0},
 };
 
 void vidd_run_normal_mode_keybind(struct vidd_client* client)
@@ -305,6 +302,8 @@ void vidd_run_find_mode_keybind(struct vidd_client* client)
 		printf("%c", client->key);
 	}
 }
+
+#include "./mode_command.h"
 
 void vidd_run_command_mode_keybind(struct vidd_client* client)
 {
