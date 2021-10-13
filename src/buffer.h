@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#define BUFFER_SPACER 20
+#define BUFFER_SPACER 80
 
 struct buffer;
 

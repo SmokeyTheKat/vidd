@@ -12,6 +12,8 @@ struct line;
 
 struct line* new_line(struct line* line);
 #define line_insert new_line
+struct line* new_line_dont_adjust_line_number(struct line* line);
+#define line_insert_dont_adjust_line_number new_line_dont_adjust_line_number
 struct line* free_line(struct line* line);
 #define line_remove free_line
 
@@ -45,6 +47,35 @@ struct line
 	intmax_t number;
 };
 
+struct line* new_line_dont_adjust_line_number(struct line* line)
+{
+	struct line* new_line = malloc(sizeof(struct line));
+	new_line->buffer = make_buffer(DEFAULT_LINE_LENGTH);
+
+	if (line)
+	{
+		if (line->next)
+		{
+			new_line->next = line->next;
+			line->next->prev = new_line;
+		}
+		else
+		{
+			new_line->next = 0;
+		}
+		line->next = new_line;
+		new_line->prev = line;
+		new_line->number = line->number + 1;
+	}
+	else
+	{
+		new_line->next = 0;
+		new_line->prev = 0;
+		new_line->number = 1;
+	}
+
+	return new_line;
+}
 struct line* new_line(struct line* line)
 {
 	struct line* new_line = malloc(sizeof(struct line));

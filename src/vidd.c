@@ -30,7 +30,6 @@ uint32_t getch(bool raw)
 }
 
 #include "./commands.h"
-
 #include "./mode_command.h"
 
 char vidd_is_real_file(struct vidd_client* client)
@@ -118,6 +117,7 @@ struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, int
 	client.cursor = cursor;
 	client.view.width = client.width;
 	client.view.height = client.height - 1;
+	client.keybinds = vidd_editor_keybinds;
 	return client;
 }
 void free_vidd_client(struct vidd_client* client)
@@ -136,16 +136,15 @@ void free_vidd_client(struct vidd_client* client)
 void vidd_load_from_fp(struct vidd_client* client, FILE* fp)
 {
 	if (fp == 0) return;
-	char buffer[1024] = {0};
+	char buffer[4096] = {0};
 	struct line* line = client->text;
-	while (fgets(buffer, sizeof(line), fp))
+	while (fgets(buffer, sizeof(buffer), fp))
 	{
-		intmax_t length = strlen(buffer);
-		for (intmax_t i = 0; i < length; i++)
+		for (intmax_t i = 0; buffer[i] && i < sizeof(buffer); i++)
 		{
 			if (buffer[i] == '\n')
 			{
-				line = line_insert(line);
+				line = line_insert_dont_adjust_line_number(line);
 			}
 			else if (buffer[i] == '\t') 
 			{
@@ -157,7 +156,6 @@ void vidd_load_from_fp(struct vidd_client* client, FILE* fp)
 			else line_append(line, buffer[i]);
 		}
 	}
-
 }
 void vidd_load_stdin(struct vidd_client* client)
 {
@@ -201,130 +199,7 @@ void vidd_insert_char(struct vidd_client* client)
 void vidd_interrupt(struct vidd_client* client, uint32_t key)
 {
 	client->key = key;
-	switch (client->mode)
-	{
-		case VIDD_MODE_NORMAL:
-		{
-			vidd_normal_mode_keybinds[key].func(client);
-			if (vidd_normal_mode_keybinds[key].type == VIDD_ACTION_EDIT)
-			{
-				client->unsavedChanges = true;
-				vidd_set_status(client);
-			}
-		} break;
-		case VIDD_MODE_LINE_SELECT:
-		{
-			if (vidd_select_mode_keybinds[key].func)
-			{
-				vidd_select_mode_keybinds[key].func(client);
-				if (vidd_select_mode_keybinds[key].type == VIDD_ACTION_EDIT)
-				{
-					client->unsavedChanges = true;
-					vidd_set_status(client);
-				}
-			}
-			else
-			{
-				vidd_normal_mode_keybinds[key].func(client);
-				if (vidd_normal_mode_keybinds[key].type == VIDD_ACTION_EDIT)
-				{
-					client->unsavedChanges = true;
-					vidd_set_status(client);
-				}
-			}
-		} break;
-		case VIDD_MODE_SELECT:
-		{
-			if (vidd_select_mode_keybinds[key].func)
-			{
-				vidd_select_mode_keybinds[key].func(client);
-				if (vidd_select_mode_keybinds[key].type == VIDD_ACTION_EDIT)
-				{
-					client->unsavedChanges = true;
-					vidd_set_status(client);
-				}
-			}
-			else
-			{
-				vidd_normal_mode_keybinds[key].func(client);
-				if (vidd_normal_mode_keybinds[key].type == VIDD_ACTION_EDIT)
-				{
-					client->unsavedChanges = true;
-					vidd_set_status(client);
-				}
-			}
-		} break;
-		case VIDD_MODE_INSERT:
-		{
-			vidd_insert_mode_keybinds[key].func(client);
-			if (vidd_insert_mode_keybinds[key].type == VIDD_ACTION_EDIT)
-			{
-				client->unsavedChanges = true;
-				vidd_set_status(client);
-			}
-		} break;
-		case VIDD_MODE_REPLACE:
-		{
-			if (key == 27)
-			{
-				client->mode = VIDD_MODE_NORMAL;
-				vidd_move_left(client);
-				vidd_set_status(client);
-			}
-			else
-			{
-				client->cursor.y->buffer.data[client->cursor.x++] = key;
-				client->unsavedChanges = true;
-				vidd_redraw(client);
-			}
-		} break;
-		case VIDD_MODE_COMMAND:
-		{
-			vidd_command_mode_interrupt(client, key);
-		} break;
-		case VIDD_MODE_FIND:
-		case VIDD_MODE_FIND_REVERSE:
-		{
-			if (key == 27)
-			{
-				buffer_clear(&command_input);
-				cursor_restore();
-				client->mode = VIDD_MODE_NORMAL;
-				vidd_set_status(client);
-			}
-			else if (key == 127)
-			{
-				if (command_input.length == 0) break;
-				cursor_move(-1, 0);
-				printf(" ");
-				cursor_move(-1, 0);
-				buffer_pop(&command_input);
-			}
-			else if (key == KEY_RETURN)
-			{
-				buffer_copy(&client->last_find, &command_input);
-				char* word = command_input.data;
-
-				cursor_restore();
-
-				if (client->mode == VIDD_MODE_FIND)
-					vidd_find_next_word(client, word, strlen(word));
-				else vidd_find_prev_word(client, word, strlen(word));
-
-				vidd_mode_swap(client, 1);
-				vidd_redraw(client);
-				//vidd_set_status(client);
-
-				buffer_clear(&command_input);
-			}
-			else
-			{
-				buffer_push(&command_input, key);
-				printf("%c", key);
-			}
-		} break;
-		default: vidd_normal_mode_keybinds[key].func(client);
-	}
+	client->keybinds[client->mode](client);
 }
 void vidd_continue_input(struct vidd_client* client)
 {

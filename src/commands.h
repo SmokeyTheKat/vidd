@@ -29,7 +29,7 @@ void vidd_set_status(struct vidd_client* client);
 bool vidd_view_fix_overflow(struct vidd_client* client);
 bool vidd_cursor_fix_overflow(struct vidd_client* client);
 bool vidd_selection_redraw_needed(struct vidd_client* client);
-void vidd_cursor_adjust(struct vidd_client* client);
+void vidd_cursor_adjust(struct vidd_client* client, bool can_redraw);
 void vidd_text_clear(struct vidd_client* client);
 
 intmax_t vidd_last_movable(struct vidd_client* client);
@@ -199,7 +199,7 @@ void vidd_redraw(struct vidd_client* client)
 {
 	if (!client->displayOn) return;
 
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, false);
 
 	vidd_view_adjust_offset(client);
 
@@ -281,7 +281,7 @@ void vidd_redraw_line(struct vidd_client* client)
 	printf("%.*s", (int)client->view.width, line->buffer.data + client->view.x);
 
 	vidd_set_status(client);
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_toggle_drawing(struct vidd_client* client)
 {
@@ -420,7 +420,7 @@ bool vidd_selection_redraw_needed(struct vidd_client* client)
 
 	return redraw;
 }
-void vidd_cursor_adjust(struct vidd_client* client)
+void vidd_cursor_adjust(struct vidd_client* client, bool can_redraw)
 {
 	bool redraw = false;
 
@@ -429,7 +429,7 @@ void vidd_cursor_adjust(struct vidd_client* client)
 	if (vidd_view_fix_overflow(client) && !redraw) redraw = true;
 	if (vidd_selection_redraw_needed(client) && !redraw) redraw = true;
 
-	if (redraw) vidd_redraw(client);
+	if (redraw && can_redraw) vidd_redraw(client);
 	cursor_move_to(vidd_view_get_absolute_x_offset(client) + client->cursor.x - client->view.x,
 				vidd_view_get_absolute_y_offset(client) + (client->cursor.y->number - 1) - client->view.y);
 }
@@ -506,14 +506,14 @@ void vidd_move_up(struct vidd_client* client)
 	if (client->cursor.y->prev)
 		client->cursor.y = client->cursor.y->prev;
 	client->cursor.x = client->cursor.lx;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_move_down(struct vidd_client* client)
 {
 	if (client->cursor.y->next)
 		client->cursor.y = client->cursor.y->next;
 	client->cursor.x = client->cursor.lx;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_move_right(struct vidd_client* client)
 {
@@ -524,7 +524,7 @@ void vidd_move_right(struct vidd_client* client)
 	}
 	client->cursor.x++;
 	client->cursor.lx = client->cursor.x;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_move_left(struct vidd_client* client)
 {
@@ -535,19 +535,19 @@ void vidd_move_left(struct vidd_client* client)
 	}
 	client->cursor.x--;
 	client->cursor.lx = client->cursor.x;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_move_to_line_start(struct vidd_client* client)
 {
 	client->cursor.x = 0;
 	client->cursor.lx = client->cursor.x;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_move_to_line_end(struct vidd_client* client)
 {
 	client->cursor.x = vidd_last_movable(client);
 	client->cursor.lx = 696969696969696969;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_move_next_word_end(struct vidd_client* client)
 {
@@ -573,7 +573,7 @@ void vidd_move_next_word_end(struct vidd_client* client)
 
 	client->cursor.x = i;
 	client->cursor.lx = client->cursor.x;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_move_next_word(struct vidd_client* client)
 {
@@ -625,7 +625,7 @@ void vidd_move_next_word(struct vidd_client* client)
 
 	client->cursor.x = i;
 	client->cursor.lx = client->cursor.x;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_move_prev_word(struct vidd_client* client)
 {
@@ -651,7 +651,7 @@ void vidd_move_prev_word(struct vidd_client* client)
 
 	client->cursor.x = i;
 	client->cursor.lx = client->cursor.x;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_move_to_spot_in_view_after(struct vidd_client* client, intmax_t pos)
 {
@@ -793,14 +793,14 @@ void vidd_move_to_x(struct vidd_client* client, intmax_t x)
 {
 	client->cursor.x = x;
 	client->cursor.lx = client->cursor.x;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_move_to(struct vidd_client* client, intmax_t x, intmax_t y)
 {
 	client->cursor.x = x;
 	client->cursor.y = line_get_line(client->cursor.y, y);
 	client->cursor.lx = client->cursor.x;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 
 
@@ -1134,7 +1134,7 @@ void vidd_selection_swap_cursor(struct vidd_client* client)
 	client->cursor.x = x0;
 	client->cursor.y = line_get_line(client->cursor.y, y0+1);
 
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_line_selection_draw(struct vidd_client* client)
 {
@@ -1387,7 +1387,7 @@ void vidd_goto_next_paragraph(struct vidd_client* client)
 				line = line->next;
 	}
 	client->cursor.y = line;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 void vidd_goto_prev_paragraph(struct vidd_client* client)
 {
@@ -1410,7 +1410,7 @@ void vidd_goto_prev_paragraph(struct vidd_client* client)
 				line = line->prev;
 	}
 	client->cursor.y = line;
-	vidd_cursor_adjust(client);
+	vidd_cursor_adjust(client, true);
 }
 
 
@@ -1777,7 +1777,7 @@ void vidd_reorganize_clients(struct vidd_client_pool* pool)
 			continue;
 		}
 	}
-	vidd_cursor_adjust(master);
+	vidd_cursor_adjust(master, true);
 }
 void vidd_swap(struct vidd_client* client)
 {

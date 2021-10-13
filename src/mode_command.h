@@ -2,6 +2,8 @@
 #define __VIDD_MODE_COMMAND_H__
 
 #include <dirent.h>
+#include "./config.h"
+#include "./commands.h"
 
 void vidd_command_mode_interrupt(struct vidd_client* client, uint32_t key);
 void vidd_command_mode_exit(struct vidd_client* client);

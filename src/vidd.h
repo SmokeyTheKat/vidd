@@ -124,6 +124,7 @@ struct vidd_client
 	struct marker marker;
 	struct selection selection;
 	struct buffer last_find;
+	void(**keybinds)(struct vidd_client*);
 	char** syntax;
 
 	union

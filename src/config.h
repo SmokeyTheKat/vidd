@@ -1,6 +1,8 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
+#include "./mode_command.h"
+
 #define STYLE_EMPTY_LINE FRGB("255", "255", "0") "*"
 #define STYLE_HIGHLIGHT STYLE_REVERSE
 #define STYLE_LINE_NUMBER_COLOR FRGB("255", "255", "0")
@@ -180,6 +182,145 @@ struct command vidd_commands[] = {
 	{ "!", vidd_run_command },
 	{ "syntax", vidd_load_syntax },
 	{ "man", vidd_man },
+	{0},
+};
+
+void vidd_run_normal_mode_keybind(struct vidd_client* client)
+{
+	vidd_normal_mode_keybinds[client->key].func(client);
+	if (vidd_normal_mode_keybinds[client->key].type == VIDD_ACTION_EDIT)
+	{
+		client->unsavedChanges = true;
+		vidd_set_status(client);
+	}
+}
+
+void vidd_run_line_select_mode_keybind(struct vidd_client* client)
+{
+	if (vidd_select_mode_keybinds[client->key].func)
+	{
+		vidd_select_mode_keybinds[client->key].func(client);
+		if (vidd_select_mode_keybinds[client->key].type == VIDD_ACTION_EDIT)
+		{
+			client->unsavedChanges = true;
+			vidd_set_status(client);
+		}
+	}
+	else
+	{
+		vidd_normal_mode_keybinds[client->key].func(client);
+		if (vidd_normal_mode_keybinds[client->key].type == VIDD_ACTION_EDIT)
+		{
+			client->unsavedChanges = true;
+			vidd_set_status(client);
+		}
+	}
+}
+
+void vidd_run_select_mode_keybind(struct vidd_client* client)
+{
+	if (vidd_select_mode_keybinds[client->key].func)
+	{
+		vidd_select_mode_keybinds[client->key].func(client);
+		if (vidd_select_mode_keybinds[client->key].type == VIDD_ACTION_EDIT)
+		{
+			client->unsavedChanges = true;
+			vidd_set_status(client);
+		}
+	}
+	else
+	{
+		vidd_normal_mode_keybinds[client->key].func(client);
+		if (vidd_normal_mode_keybinds[client->key].type == VIDD_ACTION_EDIT)
+		{
+			client->unsavedChanges = true;
+			vidd_set_status(client);
+		}
+	}
+}
+
+void vidd_run_insert_mode_keybind(struct vidd_client* client)
+{
+	vidd_insert_mode_keybinds[client->key].func(client);
+	if (vidd_insert_mode_keybinds[client->key].type == VIDD_ACTION_EDIT)
+	{
+		client->unsavedChanges = true;
+		vidd_set_status(client);
+	}
+}
+
+void vidd_run_replace_mode_keybind(struct vidd_client* client)
+{
+	if (client->key == 27)
+	{
+		client->mode = VIDD_MODE_NORMAL;
+		vidd_move_left(client);
+		vidd_set_status(client);
+	}
+	else
+	{
+		client->cursor.y->buffer.data[client->cursor.x++] = client->key;
+		client->unsavedChanges = true;
+		vidd_redraw(client);
+	}
+}
+
+void vidd_run_find_mode_keybind(struct vidd_client* client)
+{
+	if (client->key == 27)
+	{
+		buffer_clear(&command_input);
+		cursor_restore();
+		client->mode = VIDD_MODE_NORMAL;
+		vidd_set_status(client);
+	}
+	else if (client->key == 127)
+	{
+		if (command_input.length == 0) return;
+		cursor_move(-1, 0);
+		printf(" ");
+		cursor_move(-1, 0);
+		buffer_pop(&command_input);
+	}
+	else if (client->key == KEY_RETURN)
+	{
+		buffer_copy(&client->last_find, &command_input);
+		char* word = command_input.data;
+
+		cursor_restore();
+
+		if (client->mode == VIDD_MODE_FIND)
+			vidd_find_next_word(client, word, strlen(word));
+		else vidd_find_prev_word(client, word, strlen(word));
+
+		vidd_mode_swap(client, 1);
+		vidd_redraw(client);
+		//vidd_set_status(client);
+
+		buffer_clear(&command_input);
+	}
+	else
+	{
+		buffer_push(&command_input, client->key);
+		printf("%c", client->key);
+	}
+}
+
+void vidd_run_command_mode_keybind(struct vidd_client* client)
+{
+	vidd_command_mode_interrupt(client, client->key);
+}
+
+
+void(*vidd_editor_keybinds[])(struct vidd_client*) = {
+	[VIDD_MODE_NORMAL]=vidd_run_normal_mode_keybind,
+	[VIDD_MODE_INSERT]=vidd_run_insert_mode_keybind,
+	[VIDD_MODE_SELECT]=vidd_run_select_mode_keybind,
+	[VIDD_MODE_LINE_SELECT]=vidd_run_line_select_mode_keybind,
+	[VIDD_MODE_COMMAND]=vidd_run_command_mode_keybind,
+	[VIDD_MODE_FIND]=vidd_run_find_mode_keybind,
+	[VIDD_MODE_FIND_REVERSE]=vidd_run_find_mode_keybind,
+	[VIDD_MODE_REPLACE]=vidd_run_replace_mode_keybind,
 };
 
 #endif
