@@ -96,6 +96,7 @@ void vidd_command_mode_interrupt(struct vidd_client* client, uint32_t key)
 	{
 		//dbs_log(0, command_input.data);
 		
+		client->mode = VIDD_MODE_NORMAL;
 		char* command = strtok(command_input.data, " \n\t\0 ");
 		bool command_found = false;
 		for (intmax_t i = 0; i < sizeof(vidd_commands)/sizeof(struct command); i++)

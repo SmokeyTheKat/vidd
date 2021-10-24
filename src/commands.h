@@ -133,6 +133,7 @@ void vidd_enter_command_mode(struct vidd_client* client);
 void vidd_enter_find_next_mode(struct vidd_client* client);
 void vidd_enter_find_prev_mode(struct vidd_client* client);
 void vidd_enter_replace_mode(struct vidd_client* client);
+void vidd_enter_window_move_mode(struct vidd_client* client);
 
 void vidd_client_up(struct vidd_client* client);
 void vidd_client_down(struct vidd_client* client);
@@ -1463,6 +1464,11 @@ void vidd_enter_replace_mode(struct vidd_client* client)
 	client->mode = VIDD_MODE_REPLACE;
 	vidd_set_status(client);
 }
+void vidd_enter_window_move_mode(struct vidd_client* client)
+{
+	client->mode = VIDD_MODE_WINDOW_MOVE;
+	vidd_set_status(client);
+}
 void vidd_enter_command_mode(struct vidd_client* client)
 {
 	cursor_save();
@@ -1851,7 +1857,7 @@ void vidd_vsplit(struct vidd_client* client, char* args)
 	}
 	else vidd_load_file(new_client_ptr, file_name);
 
-	vidd_reorganize_clients(&client_pool);
+	vidd_swap(new_client_ptr);
 }
 void vidd_run_command_in_vsplit(struct vidd_client* client, char* args)
 {
@@ -2042,8 +2048,8 @@ void vidd_load_file_data(struct vidd_client* client)
 		fread(&y, sizeof(client->cursor.x), 1, fp);
 		fclose(fp);
 		free_buffer(&file_path);
+		client->cursor.x = 0;
 		client->cursor.y = line_get_line(client->cursor.y, y);
-		vidd_view_center(client);
 		vidd_redraw(client);
 	}
 }

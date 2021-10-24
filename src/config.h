@@ -122,15 +122,10 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	[KEY_CTRL('k')]={vidd_client_prev, VIDD_ACTION_MOVEMENT},
 	[KEY_CTRL('h')]={vidd_decrease_master_size, VIDD_ACTION_MOVEMENT},
 	[KEY_CTRL('l')]={vidd_increase_master_size, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('u')]={vidd_move_floating_down, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('i')]={vidd_move_floating_up, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('o')]={vidd_move_floating_right, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('y')]={vidd_move_floating_left, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('r')]={vidd_floating_increase_width, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('q')]={vidd_floating_decrease_width, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('w')]={vidd_floating_increase_height, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('e')]={vidd_floating_decrease_height, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('m')]={vidd_fuzzy_find, VIDD_ACTION_MOVEMENT},
+/*
+*/
+	[KEY_CTRL('o')]={vidd_fuzzy_find, VIDD_ACTION_MOVEMENT},
+	[KEY_CTRL('i')]={vidd_enter_window_move_mode, VIDD_ACTION_MOVEMENT},
 	[27]={vidd_enter_normal_mode, VIDD_ACTION_MOVEMENT},
 	[255]={vidd_toggle_drawing, VIDD_ACTION_MOVEMENT},
 	[253]={vidd_save_spot, VIDD_ACTION_MOVEMENT},
@@ -139,6 +134,20 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	[0]={vidd_floating_toggle, VIDD_ACTION_MOVEMENT},
 	['~']={vidd_test, VIDD_ACTION_MOVEMENT},
 	['t']={vidd_load_file_data, VIDD_ACTION_MOVEMENT},
+};
+
+struct vidd_keybind vidd_window_move_mode_keybinds[] = {
+	[0 ... 510]={0, VIDD_ACTION_MOVEMENT},
+	[KEY_ESCAPE]={vidd_enter_normal_mode, VIDD_ACTION_MOVEMENT},
+	[KEY_CTRL('i')]={vidd_enter_normal_mode, VIDD_ACTION_MOVEMENT},
+	['j']={vidd_move_floating_down, VIDD_ACTION_MOVEMENT},
+	['k']={vidd_move_floating_up, VIDD_ACTION_MOVEMENT},
+	['l']={vidd_move_floating_right, VIDD_ACTION_MOVEMENT},
+	['h']={vidd_move_floating_left, VIDD_ACTION_MOVEMENT},
+	['o']={vidd_floating_increase_width, VIDD_ACTION_MOVEMENT},
+	['y']={vidd_floating_decrease_width, VIDD_ACTION_MOVEMENT},
+	['u']={vidd_floating_increase_height, VIDD_ACTION_MOVEMENT},
+	['i']={vidd_floating_decrease_height, VIDD_ACTION_MOVEMENT},
 };
 
 struct vidd_keybind vidd_select_mode_keybinds[] = {
@@ -312,6 +321,11 @@ void vidd_run_command_mode_keybind(struct vidd_client* client)
 	vidd_command_mode_interrupt(client, client->key);
 }
 
+void vidd_run_window_move_mode_keybind(struct vidd_client* client)
+{
+	if (vidd_window_move_mode_keybinds[client->key].func)
+		vidd_window_move_mode_keybinds[client->key].func(client);
+}
 
 void(*vidd_editor_keybinds[])(struct vidd_client*) = {
 	[VIDD_MODE_NORMAL]=vidd_run_normal_mode_keybind,
@@ -322,6 +336,7 @@ void(*vidd_editor_keybinds[])(struct vidd_client*) = {
 	[VIDD_MODE_FIND]=vidd_run_find_mode_keybind,
 	[VIDD_MODE_FIND_REVERSE]=vidd_run_find_mode_keybind,
 	[VIDD_MODE_REPLACE]=vidd_run_replace_mode_keybind,
+	[VIDD_MODE_WINDOW_MOVE]=vidd_run_window_move_mode_keybind,
 };
 
 #endif

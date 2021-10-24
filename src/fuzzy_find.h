@@ -40,6 +40,7 @@ void vidd_fuzzy_find(struct vidd_client* client)
 {
 	intmax_t width, height;
 	screen_get_size(&width, &height);
+	height--;
 
 	struct list entries = make_list(100, struct filepath);
 	get_files(&entries, ".");
@@ -54,8 +55,7 @@ void vidd_fuzzy_find(struct vidd_client* client)
 		printf("\x1b[2J\x1b[1;1H");
 		if (key == KEY_ESCAPE)
 		{
-			vidd_reorganize_clients(&client_pool);
-			return;
+			goto VIDD_FUZZY_FIND_EXIT;
 		}
 		else if (key == KEY_TAB)
 		{
@@ -78,8 +78,7 @@ void vidd_fuzzy_find(struct vidd_client* client)
 					if (rpos == pos)
 					{
 						vidd_edit(client, i->path.data);
-						vidd_reorganize_clients(&client_pool);
-						return;
+						goto VIDD_FUZZY_FIND_EXIT;
 					}
 					rpos++;
 				}
@@ -89,8 +88,7 @@ void vidd_fuzzy_find(struct vidd_client* client)
 		{
 			if (typed.length == 0)
 			{
-				vidd_reorganize_clients(&client_pool);
-				return;
+				goto VIDD_FUZZY_FIND_EXIT;
 			}
 			buffer_pop(&typed);
 		}
@@ -107,6 +105,13 @@ void vidd_fuzzy_find(struct vidd_client* client)
 				rpos++;
 			}
 		}
+	}
+VIDD_FUZZY_FIND_EXIT:
+	vidd_reorganize_clients(&client_pool);
+	for (list_iterate(&entries, i, struct filepath))
+	{
+		free_buffer(&i->path);
+		free_buffer(&i->name);
 	}
 }
 
