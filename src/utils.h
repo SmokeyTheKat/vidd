@@ -305,7 +305,7 @@ intmax_t number_get_length(intmax_t num)
 	return 0;
 }
 
-void screen_get_size(intmax_t * width, intmax_t* height)
+void screen_get_size(intmax_t* width, intmax_t* height)
 {
 	struct winsize w;
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);

@@ -1,3 +1,4 @@
+#include <locale.h>
 #include <signal.h>
 
 #include "./vidd.h"
@@ -133,15 +134,15 @@ void free_vidd_client(struct vidd_client* client)
 	*client = (struct vidd_client){0};
 }
 
-void vidd_load_from_fp(struct vidd_client* client, FILE* fp)
+void vidd_load_from_fp(struct line* line, FILE* fp)
 {
 	if (fp == 0) return;
 	char buffer[4096] = {0};
-	struct line* line = client->text;
 	while (fgets(buffer, sizeof(buffer), fp))
 	{
 		for (intmax_t i = 0; buffer[i] && i < sizeof(buffer); i++)
 		{
+			if (buffer[i] == '\r') i++;
 			if (buffer[i] == '\n')
 			{
 				line = line_insert_dont_adjust_line_number(line);
@@ -160,7 +161,7 @@ void vidd_load_from_fp(struct vidd_client* client, FILE* fp)
 void vidd_load_stdin(struct vidd_client* client)
 {
 	buffer_set_data(&client->file_name, "_-=[NONE]=-_", strlen("_-=[NONE]=-_"));
-	vidd_load_from_fp(client, stdin);
+	vidd_load_from_fp(client->text, stdin);
 	freopen("/dev/tty", "rw", stdin);
 }
 void vidd_load_file(struct vidd_client* client, char* file_name)
@@ -169,7 +170,7 @@ void vidd_load_file(struct vidd_client* client, char* file_name)
 	FILE* fp = fopen(file_name, "r");
 	if (fp)
 	{
-		vidd_load_from_fp(client, fp);
+		vidd_load_from_fp(client->text, fp);
 		vidd_syntax_ftdetect(client);
 		fclose(fp);
 		vidd_load_file_data(client);
@@ -226,6 +227,7 @@ void signal_catch(int ipar)
 
 int main(int argc, char** argv)
 {
+	setlocale(LC_ALL, "en_US.utf8");
 	char* file_name = (argc > 1) ? (argv[1]) : ("_-=[NONE]=-_");
 	//signal(SIGINT, signal_catch);
 	screen_save();

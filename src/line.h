@@ -37,6 +37,8 @@ void line_delete_before(struct line* line, intmax_t pos);
 void line_split_at(struct line* line, intmax_t pos);
 void line_join_next(struct line* line);
 
+void line_join_line_strings(struct line* dest, struct line* src);
+
 void line_adjust_all_numbers(struct line* line);
 
 struct line
@@ -228,6 +230,24 @@ void line_join_next(struct line* line)
 	if (!line->next) return;
 	buffer_push_cstring(&line->buffer, line->next->buffer.data, line->next->buffer.length);
 	line_remove(line->next);
+}
+
+void line_join_line_strings(struct line* dest, struct line* src)
+{
+	struct line* dest_start = dest;
+	struct line* dest_end = dest->next;
+
+	struct line* src_start = src;
+	struct line* src_end = src;
+	while (src_end->next) src_end = src_end->next;
+
+	dest_start->next = src_start;
+	src_start->prev = dest_start;
+
+	src_end->next = dest_end;
+	dest_end->prev = src_end;
+
+	line_adjust_all_numbers(dest);
 }
 
 void line_adjust_all_numbers(struct line* line)

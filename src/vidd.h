@@ -34,7 +34,7 @@ char vidd_is_real_file(struct vidd_client* client);
 void vidd_continue_input(struct vidd_client* client);
 struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, intmax_t width, intmax_t height, int* open_buffers);
 void free_vidd_client(struct vidd_client* client);
-void vidd_load_from_fp(struct vidd_client* client, FILE* fp);
+void vidd_load_from_fp(struct line* line, FILE* fp);
 void vidd_load_file(struct vidd_client* client, char* file_name);
 void vidd_load_stdin(struct vidd_client* client);
 struct vidd_client* vidd_client_pool_add(struct vidd_client_pool* pool, struct vidd_client client);

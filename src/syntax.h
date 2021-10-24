@@ -1,6 +1,8 @@
 //#ifndef __VIDD_SYNTAX_H__
 //#define __VIDD_SYNTAX_H__
 
+#include <stdlib.h>
+
 #include "vidd.h"
 #include "line.h"
 #include "buffer.h"
@@ -79,13 +81,32 @@ void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i
 */
 	if (!IS_PRINTABLE(line->buffer.data[*i]))
 	{
-		if (colored) buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
+		mblen(0, 0);
+		int charlen = mblen(&line->buffer.data[*i], line->buffer.length - (*i));
+		if (line->buffer.data[*i] == '\x1b' || charlen == -1)
+		{
+			if (colored) buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
+			else
+			{
+				buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
+				buffer_push_cstring(buffer, current_color, strlen(current_color));
+			}
+			(*i)++;
+		}
 		else
 		{
-			buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
-			buffer_push_cstring(buffer, current_color, strlen(current_color));
+			for (int j = 0; j < charlen; j++)
+				buffer_push(buffer, line->buffer.data[(*i)++]);
+			for (int j = 0; j < charlen-1; j++)
+			{
+				if (colored) buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
+				else
+				{
+					buffer_push_cstring(buffer, FRGB("100", "100", "100") "?" NOSTYLE, sizeof(FRGB("100", "100", "100") "?" NOSTYLE)-1);
+					buffer_push_cstring(buffer, current_color, strlen(current_color));
+				}
+			}
 		}
-		(*i)++;
 	}
 	else buffer_push(buffer, line->buffer.data[(*i)++]);
 }

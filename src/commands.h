@@ -10,6 +10,8 @@ void vidd_reorganize_clients(struct vidd_client_pool* pool);
 void vidd_increase_master_size(struct vidd_client* client);
 void vidd_decrease_master_size(struct vidd_client* client);
 
+void vidd_run_line(struct vidd_client* client);
+
 void vidd_floating_window_draw_frame(struct vidd_client* client);
 void vidd_floating_increase_height(struct vidd_client* client);
 void vidd_floating_decrease_height(struct vidd_client* client);
@@ -170,6 +172,8 @@ void vidd_exit_all(struct vidd_client* client, char* args);
 
 void vidd_void(struct vidd_client* client);
 
+#include "fuzzy_find.h"
+
 
 
 
@@ -234,7 +238,9 @@ void vidd_redraw(struct vidd_client* client)
 
 		const intmax_t line_style_length = sizeof(STYLE_LINE_NUMBER) - 1 - 2;
 
-		buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR STYLE_LINE_NUMBER NOSTYLE, line->number);
+		buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR, line->number);
+		buffer_printf(&toprint, STYLE_LINE_NUMBER, line->number);
+		buffer_printf(&toprint, NOSTYLE, line->number);
 
 		if (client->view.xo > line_number_gap + line_style_length)
 			buffer_printf(&toprint, CURSOR_RIGHT("%d"), client->x);
@@ -1706,6 +1712,25 @@ void vidd_decrease_master_size(struct vidd_client* client)
 		vidd_reorganize_clients(&client_pool);
 	}
 }
+
+
+
+
+
+void vidd_run_line(struct vidd_client* client)
+{
+	struct line* output = new_line(0);
+	FILE* fp = popen(client->cursor.y->buffer.data, "r");
+	vidd_load_from_fp(output, fp);
+	pclose(fp);
+	line_join_line_strings(client->cursor.y, output);
+	vidd_redraw(client);
+}
+
+
+
+
+
 void vidd_floating_window_draw_frame(struct vidd_client* client)
 {
 	printf(BRGB("0", "0", "0") FRGB("255", "255", "255"));
@@ -1834,7 +1859,7 @@ void vidd_run_command_in_vsplit(struct vidd_client* client, char* args)
 	struct vidd_client* new_client = &client_pool.clients[client_pool.length-1];
 
 	FILE* fp = popen(args, "r");
-	vidd_load_from_fp(new_client, fp);
+	vidd_load_from_fp(new_client->text, fp);
 	pclose(fp);
 	vidd_redraw(new_client);
 }
@@ -1899,7 +1924,7 @@ void vidd_run_command_in_floating_window(struct vidd_client* client, char* args)
 	memcpy(com + comlen-6, " 2>&1", 5);
 	com[comlen] = 0;
 	FILE* fp = popen(com, "r");
-	vidd_load_from_fp(new_client, fp);
+	vidd_load_from_fp(new_client->text, fp);
 	fclose(fp);
 	free(com);
 
@@ -2087,7 +2112,6 @@ void vidd_man(struct vidd_client* client, char* args)
 	vidd_run_command_in_floating_window(client, bcom.data);
 	free_buffer(&bcom);
 }
-
 
 
 
