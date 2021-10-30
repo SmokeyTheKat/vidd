@@ -49,6 +49,12 @@ VIDD_MULTI_KEY_BIND_START(vidd_multi_key_copy, 'y')
 	VIDD_MULTI_KEY_BIND_OPTION('y', vidd_copy_line)
 VIDD_MULTI_KEY_BIND_END(vidd_multi_key_copy)
 
+VIDD_MULTI_KEY_BIND_START(vidd_multi_key_space, ' ')
+	VIDD_MULTI_KEY_BIND_OPTION('r', vidd_run_line)
+	VIDD_MULTI_KEY_BIND_OPTION('o', vidd_fuzzy_find_open)
+	VIDD_MULTI_KEY_BIND_OPTION('v', vidd_fuzzy_find_vsplit)
+VIDD_MULTI_KEY_BIND_END(vidd_multi_key_space)
+
 void vidd_multi_key_delete_then_insert(struct vidd_client* client)
 {
 	vidd_multi_key_delete(client);
@@ -57,7 +63,7 @@ void vidd_multi_key_delete_then_insert(struct vidd_client* client)
 
 struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	[0 ... 510]={vidd_void, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('c')]={vidd_quit_current, VIDD_ACTION_MOVEMENT},
+	[KEY_CTRL('c')]={vidd_client_quit, VIDD_ACTION_MOVEMENT},
 	[':']={vidd_enter_command_mode, VIDD_ACTION_MOVEMENT},
 	['/']={vidd_enter_find_next_mode, VIDD_ACTION_MOVEMENT},
 	['?']={vidd_enter_find_prev_mode, VIDD_ACTION_MOVEMENT},
@@ -73,6 +79,7 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	[KEY_DELETE]={vidd_delete, VIDD_ACTION_EDIT},
 	['X']={vidd_backspace, VIDD_ACTION_EDIT},
 	['c']={vidd_multi_key_delete_then_insert, VIDD_ACTION_EDIT},
+	[' ']={vidd_multi_key_space, VIDD_ACTION_MOVEMENT},
 	['d']={vidd_multi_key_delete, VIDD_ACTION_EDIT},
 	['D']={vidd_delete_line, VIDD_ACTION_EDIT},
 	['r']={vidd_replace_character, VIDD_ACTION_EDIT},
@@ -116,15 +123,11 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	['q']={vidd_macro_toggle, VIDD_ACTION_MOVEMENT},
 	['@']={vidd_macro_run, VIDD_ACTION_MOVEMENT},
 	[KEY_RETURN]={vidd_swap, VIDD_ACTION_MOVEMENT},
-//    [KEY_RETURN]={vidd_run_line, VIDD_ACTION_MOVEMENT},
 	[KEY_CTRL_BACKSLASH]={vidd_duplicate, VIDD_ACTION_MOVEMENT},
 	[KEY_CTRL('j')]={vidd_client_next, VIDD_ACTION_MOVEMENT},
 	[KEY_CTRL('k')]={vidd_client_prev, VIDD_ACTION_MOVEMENT},
 	[KEY_CTRL('h')]={vidd_decrease_master_size, VIDD_ACTION_MOVEMENT},
 	[KEY_CTRL('l')]={vidd_increase_master_size, VIDD_ACTION_MOVEMENT},
-/*
-*/
-	[KEY_CTRL('o')]={vidd_fuzzy_find, VIDD_ACTION_MOVEMENT},
 	[KEY_CTRL('i')]={vidd_enter_window_move_mode, VIDD_ACTION_MOVEMENT},
 	[27]={vidd_enter_normal_mode, VIDD_ACTION_MOVEMENT},
 	[255]={vidd_toggle_drawing, VIDD_ACTION_MOVEMENT},

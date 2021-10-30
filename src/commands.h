@@ -153,6 +153,7 @@ void vidd_save_file_data(struct vidd_client* client);
 void vidd_load_syntax(struct vidd_client* client, char* args);
 void vidd_man(struct vidd_client* client, char* args);
 void vidd_edit(struct vidd_client* client, char* args);
+void vidd_fuzzy_find_open(struct vidd_client* client);
 void vidd_run_command_in_frame(struct vidd_client* client, char* args);
 void vidd_run_command(struct vidd_client* client, char* args);
 void vidd_run_command_in_vsplit(struct vidd_client* client, char* args);
