@@ -84,6 +84,8 @@ void vidd_new_line(struct vidd_client* client);
 void vidd_insert_on_new_line(struct vidd_client* client);
 void vidd_insert_on_new_line_up(struct vidd_client* client);
 
+void vidd_toggle_comment(struct vidd_client* client);
+
 void vidd_indent(struct vidd_client* client);
 void vidd_deindent(struct vidd_client* client);
 
@@ -103,9 +105,11 @@ void vidd_replace_character(struct vidd_client* client);
 void vidd_line_selection_draw(struct vidd_client* client);
 void vidd_selection_draw(struct vidd_client* client);
 void vidd_selection_indent(struct vidd_client* client);
+void vidd_selection_toggle_comment(struct vidd_client* client);
 void vidd_selection_deindent(struct vidd_client* client);
 void vidd_selection_swap_cursor(struct vidd_client* client);
 
+void vidd_copy_to_clipboard(struct vidd_client* client);
 void vidd_copy_line(struct vidd_client* client);
 void vidd_selection_copy(struct vidd_client* client);
 
@@ -874,6 +878,25 @@ void vidd_insert_on_new_line_up(struct vidd_client* client)
 
 
 
+void vidd_toggle_comment(struct vidd_client* client)
+{
+	if (*(uint16_t*)client->cursor.y->buffer.data == *(uint16_t*)"//")
+	{
+		line_delete_at(client->cursor.y, 0);
+		line_delete_at(client->cursor.y, 0);
+	}
+	else
+	{
+		line_insert_at(client->cursor.y, '/', 0);
+		line_insert_at(client->cursor.y, '/', 0);
+	}
+	vidd_redraw(client);
+}
+
+
+
+
+
 void vidd_indent(struct vidd_client* client)
 {
 	line_insert_at(client->cursor.y, ' ', 0);
@@ -1052,7 +1075,18 @@ void vidd_replace_character(struct vidd_client* client)
 
 
 
-
+void vidd_selection_toggle_comment(struct vidd_client* client)
+{
+	vidd_toggle_drawing(client);
+	struct cursor old_cursor = client->cursor;
+	struct line* line;
+	VIDD_LINE_SELECTION_FULL_LOOP({
+		vidd_move_to(client, 0, i+1);
+		vidd_toggle_comment(client);
+	});
+	client->cursor = old_cursor;
+	vidd_toggle_drawing(client);
+}
 void vidd_selection_indent(struct vidd_client* client)
 {
 	vidd_toggle_drawing(client);
@@ -1193,6 +1227,32 @@ void vidd_load_copy(void)
 	while (fread(buffer, 1, sizeof(buffer), fp) != 0)
 		buffer_print(&copy_buffer, buffer);
 	fclose(fp);
+}
+void vidd_copy_to_clipboard(struct vidd_client* client)
+{
+	struct buffer transfer = make_buffer(copy_buffer.length);
+	for (int i = 0; i < copy_buffer.length; i++)
+	{
+/*
+		if (copy_buffer.data[i]))
+			buffer_push(&transfer, copy_buffer.data[i]);
+*/
+		char c = copy_buffer.data[i];
+		if (c == 'i' || c == 'o')
+		{
+			i++;
+			for (; i < copy_buffer.length && copy_buffer.data[i] != 27; i++)
+				buffer_push(&transfer, copy_buffer.data[i]);
+		}
+	}
+
+	const char* com_front = "echo '";
+	const char* com_end = "' | xclip -selection c";
+	buffer_push_cstring_front(&transfer, com_front, strlen(com_front));
+	buffer_push_cstring(&transfer, com_end, strlen(com_end));
+	FILE* fp = popen(transfer.data, "r");
+	pclose(fp);
+	free_buffer(&transfer);
 }
 void vidd_copy_line(struct vidd_client* client)
 {

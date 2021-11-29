@@ -16,6 +16,7 @@ void get_files(struct list* list, char* base_path);
 void vidd_fuzzy_find(struct vidd_client* client, void(*out_function)(struct vidd_client*, char*));
 void vidd_fuzzy_find_open(struct vidd_client* client);
 void vidd_fuzzy_find_vsplit(struct vidd_client* client);
+void vidd_fuzzy_find_float(struct vidd_client* client);
 
 void get_files(struct list* list, char* base_path)
 {
@@ -49,6 +50,11 @@ void vidd_fuzzy_find_open(struct vidd_client* client)
 void vidd_fuzzy_find_vsplit(struct vidd_client* client)
 {
 	vidd_fuzzy_find(client, vidd_vsplit);
+}
+
+void vidd_fuzzy_find_float(struct vidd_client* client)
+{
+	vidd_fuzzy_find(client, vidd_open_in_floating_window);
 }
 
 void vidd_fuzzy_find(struct vidd_client* client, void(*out_function)(struct vidd_client*, char*))

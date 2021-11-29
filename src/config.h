@@ -53,6 +53,7 @@ VIDD_MULTI_KEY_BIND_START(vidd_multi_key_space, ' ')
 	VIDD_MULTI_KEY_BIND_OPTION('r', vidd_run_line)
 	VIDD_MULTI_KEY_BIND_OPTION('o', vidd_fuzzy_find_open)
 	VIDD_MULTI_KEY_BIND_OPTION('v', vidd_fuzzy_find_vsplit)
+	VIDD_MULTI_KEY_BIND_OPTION('f', vidd_fuzzy_find_float)
 VIDD_MULTI_KEY_BIND_END(vidd_multi_key_space)
 
 void vidd_multi_key_delete_then_insert(struct vidd_client* client)
@@ -91,6 +92,7 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	['F']={vidd_find_prev_char, VIDD_ACTION_MOVEMENT},
 	['}']={vidd_goto_next_paragraph, VIDD_ACTION_MOVEMENT},
 	['{']={vidd_goto_prev_paragraph, VIDD_ACTION_MOVEMENT},
+	[KEY_CTRL('n')]={vidd_toggle_comment, VIDD_ACTION_EDIT},
 
 	[KEY_LEFT]={vidd_move_left, VIDD_ACTION_MOVEMENT},
 	[KEY_DOWN]={vidd_move_down, VIDD_ACTION_MOVEMENT},
@@ -116,6 +118,7 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	['g']={vidd_goto_top, VIDD_ACTION_MOVEMENT},
 	['G']={vidd_goto_bottom, VIDD_ACTION_MOVEMENT},
 	['y']={vidd_multi_key_copy, VIDD_ACTION_MOVEMENT},
+	[KEY_CTRL('y')]={vidd_copy_to_clipboard, VIDD_ACTION_MOVEMENT},
 	['p']={vidd_paste, VIDD_ACTION_EDIT},
 	['$']={vidd_move_to_line_end, VIDD_ACTION_MOVEMENT},
 	['0']={vidd_move_to_line_start, VIDD_ACTION_MOVEMENT},
@@ -161,6 +164,7 @@ struct vidd_keybind vidd_select_mode_keybinds[] = {
 	['s']={vidd_selection_swap_cursor, VIDD_ACTION_MOVEMENT},
 	['>']={vidd_selection_indent, VIDD_ACTION_EDIT},
 	['<']={vidd_selection_deindent, VIDD_ACTION_EDIT},
+	[KEY_CTRL('n')]={vidd_selection_toggle_comment, VIDD_ACTION_EDIT},
 };
 
 struct vidd_keybind vidd_insert_mode_keybinds[] = {
