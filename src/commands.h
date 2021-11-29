@@ -2132,6 +2132,9 @@ void vidd_quit_current(struct vidd_client* client)
 void vidd_client_quit(struct vidd_client* client, char* args)
 {
 	if (client->unsavedChanges) return;
+
+	vidd_save_file_data(client);
+
 	if (client_pool.length == 1) vidd_force_exit_all(client, 0);
 
 	vidd_client_pool_remove(&client_pool, client);
