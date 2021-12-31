@@ -109,6 +109,7 @@ struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, int
 	client.isFloating = 0;
 	client.inclusiveSelection = 1;
 	client.displayOn = 1;
+	client.outputTabs = 1;
 	client.mode = VIDD_MODE_NORMAL;
 	client.file_name = make_buffer(150);
 	client.last_find = make_buffer(150);

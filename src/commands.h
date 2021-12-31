@@ -91,6 +91,8 @@ void vidd_deindent(struct vidd_client* client);
 
 void vidd_split_at_cursor(struct vidd_client* client);
 
+void vidd_man_word(struct vidd_client* client);
+
 void vidd_delete(struct vidd_client* client);
 void vidd_delete_word(struct vidd_client* client);
 void vidd_delete_movement(struct vidd_client* client, char key);
@@ -155,6 +157,7 @@ void vidd_load_file_data(struct vidd_client* client);
 void vidd_save_file_data(struct vidd_client* client);
 
 void vidd_load_syntax(struct vidd_client* client, char* args);
+void vidd_set(struct vidd_client* client, char* args);
 void vidd_man(struct vidd_client* client, char* args);
 void vidd_edit(struct vidd_client* client, char* args);
 void vidd_fuzzy_find_open(struct vidd_client* client);
@@ -214,7 +217,7 @@ void vidd_redraw(struct vidd_client* client)
 	vidd_view_adjust_offset(client);
 
 	struct line* line = client->text;
-	intmax_t line_count = line_get_last(line)->number;
+	intmax_t line_count = line_get_last(client->cursor.y)->number;
 	intmax_t line_number_gap = number_get_length(line_count);
 	intmax_t visable_line_count = client->view.height;
 
@@ -222,9 +225,16 @@ void vidd_redraw(struct vidd_client* client)
 
 	if (client->view.y < 0)
 	{
-		buffer_printf(&toprint, CURSOR_TO("%d", "%d") STYLE_EMPTY_LINE, client->y - client->view.y + 1 - 1, client->x+1);
-		buffer_push_repeat(&toprint, ' ', client->width-1);
-		buffer_print(&toprint, CURSOR_DOWN());
+		buffer_printf(&toprint, CURSOR_TO("%d", "%d"), client->y, client->x + 1);
+		for (intmax_t i = client->view.y; i < 0; i++)
+		{
+			buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR);
+			buffer_push(&toprint, '*');
+			buffer_push_repeat(&toprint, ' ', client->view.width + line_number_gap);
+			if (i + 1 < 0)
+				buffer_printf(&toprint, ((client->x != 0) ? ("\r" CURSOR_DOWN() CURSOR_RIGHT("%d")) : ("\r" CURSOR_DOWN())), client->x);
+			buffer_print(&toprint, NOSTYLE);
+		}
 		buffer_printf(&toprint, CURSOR_TO("%d", "%d"), client->y - client->view.y + 1, client->x+1);
 		visable_line_count += client->view.y;
 	}
@@ -240,16 +250,19 @@ void vidd_redraw(struct vidd_client* client)
 	intmax_t i;
 	for (i = 0; line && i < visable_line_count; i++)
 	{
-		buffer_push_repeat(&toprint, ' ', line_number_gap - number_get_length(line->number));
-
-		const intmax_t line_style_length = sizeof(STYLE_LINE_NUMBER) - 1 - 2;
-
-		buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR, line->number);
-		buffer_printf(&toprint, STYLE_LINE_NUMBER, line->number);
-		buffer_printf(&toprint, NOSTYLE, line->number);
-
-		if (client->view.xo > line_number_gap + line_style_length)
-			buffer_printf(&toprint, CURSOR_RIGHT("%d"), client->x);
+		if (client->numbersOn)
+		{
+			buffer_push_repeat(&toprint, ' ', line_number_gap - number_get_length(line->number));
+	
+			const intmax_t line_style_length = sizeof(STYLE_LINE_NUMBER) - 1 - 2;
+	
+			buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR);
+			buffer_printf(&toprint, STYLE_LINE_NUMBER, line->number);
+			buffer_printf(&toprint, NOSTYLE, line->number);
+	
+			if (client->view.xo > line_number_gap + line_style_length)
+				buffer_printf(&toprint, CURSOR_RIGHT("%d"), client->x);
+		}
 
 		if (client->view.x < line->buffer.length)
 			vidd_syntax_apply_to_buffer(client, &toprint, line);
@@ -264,9 +277,9 @@ void vidd_redraw(struct vidd_client* client)
 	}
 	for (; i < visable_line_count; i++)
 	{
-		buffer_print(&toprint, FRGB("255", "255", "0"));
+		buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR);
 		buffer_push(&toprint, '*');
-		buffer_push_repeat(&toprint, ' ', client->view.width - line_number_gap);
+		buffer_push_repeat(&toprint, ' ', client->view.width + line_number_gap);
 		if (i + 1 < visable_line_count)
 			buffer_printf(&toprint, ((client->x != 0) ? ("\r" CURSOR_DOWN() CURSOR_RIGHT("%d")) : ("\r" CURSOR_DOWN())), client->x);
 		buffer_print(&toprint, NOSTYLE);
@@ -685,14 +698,17 @@ void vidd_move_to_spot_in_view_after(struct vidd_client* client, intmax_t pos)
 
 void vidd_view_adjust_offset(struct vidd_client* client)
 {
-	const intmax_t line_style_length = sizeof(STYLE_LINE_NUMBER) - 1 - 4;
-	client->view.height = client->height - 1;
-	intmax_t number_length = number_get_length(line_get_last(client->text)->number);
-	if (client->view.xo != number_length + line_style_length ||
-		client->view.width != client->width - number_length + line_style_length)
+	if (client->numbersOn)
 	{
-		client->view.xo = number_length + line_style_length;
-		client->view.width = client->width - client->view.xo;
+		const intmax_t line_style_length = sizeof(STYLE_LINE_NUMBER) - 1 - 4;
+		client->view.height = client->height - 1;
+		intmax_t number_length = number_get_length(line_get_last(client->text)->number);
+		if (client->view.xo != number_length + line_style_length ||
+			client->view.width != client->width - number_length + line_style_length)
+		{
+			client->view.xo = number_length + line_style_length;
+			client->view.width = client->width - client->view.xo;
+		}
 	}
 }
 
@@ -944,6 +960,28 @@ void vidd_split_at_cursor(struct vidd_client* client)
 
 
 
+void vidd_man_word(struct vidd_client* client)
+{
+	if (!IS_CHARACTER(client->cursor.y->buffer.data[client->cursor.x])) return;
+	intmax_t i = client->cursor.x;
+	while (i > 0 && IS_CHARACTER(client->cursor.y->buffer.data[i])) i--;
+	intmax_t start = i + 1;
+
+	i = client->cursor.x;
+	while (i < client->cursor.y->buffer.length && IS_CHARACTER(client->cursor.y->buffer.data[i])) i++;
+	intmax_t end = i;
+
+	struct buffer word = make_buffer(64);
+	buffer_push_cstring(&word, &client->cursor.y->buffer.data[start], end - start);
+
+	vidd_man(client, word.data);
+	free_buffer(&word);
+}
+
+
+
+
+
 void vidd_delete(struct vidd_client* client)
 {
 	if (client->cursor.x == client->cursor.y->buffer.length)
@@ -1008,10 +1046,14 @@ void vidd_delete_selection(struct vidd_client* client)
 	struct line* line;
 	if (client->mode == VIDD_MODE_LINE_SELECT)
 	{
+		bool fist_line_deleted = false;
 		VIDD_LINE_SELECTION_FULL_LOOP({
+			if (line == client->text) fist_line_deleted = true;
 			line = line_remove(line);
 		});
 		client->cursor.y = line;
+		if (fist_line_deleted)
+			client->text = line;
 	}
 	else
 	{
@@ -1824,9 +1866,18 @@ void vidd_floating_window_draw_frame(struct vidd_client* client)
 	printf("┘");
 
 }
+struct vidd_client* vidd_get_master_client(struct vidd_client_pool* pool)
+{
+	for (int i = 0; i < pool->length; i++)
+	{
+		if (pool->clients[i].isFloating == false)
+			return &pool->clients[i];
+	}
+	return &pool->clients[0];
+}
 void vidd_reorganize_clients(struct vidd_client_pool* pool)
 {
-	struct vidd_client* master = &pool->clients[0];
+	struct vidd_client* master = vidd_get_master_client(pool);
 
 	screen_get_size(&master->width, &master->height);
 	master->x = 0;
@@ -1849,10 +1900,10 @@ void vidd_reorganize_clients(struct vidd_client_pool* pool)
 
 	intmax_t extra = master->height - sw_height * sub_clients;
 
-	for (intmax_t i = 1; i < pool->length; i++)
+	for (intmax_t i = 0; i < pool->length; i++)
 	{
 		struct vidd_client* cur = &pool->clients[i];
-		if (cur->isFloating) continue;
+		if (cur->isFloating || cur == master) continue;
 		cur->x = sw_x;
 		cur->y = new_y;
 		cur->width = sw_width;
@@ -1860,14 +1911,11 @@ void vidd_reorganize_clients(struct vidd_client_pool* pool)
 		new_y += (extra-- > 0) ? (++cur->height) : (cur->height);
 		vidd_redraw(cur);
 	}
-	for (intmax_t i = 1; i < pool->length; i++)
+	for (intmax_t i = 0; i < pool->length; i++)
 	{
 		struct vidd_client* cur = &pool->clients[i];
 		if (cur->isFloating)
-		{
 			vidd_redraw(cur);
-			continue;
-		}
 	}
 	vidd_cursor_adjust(master, true);
 }
@@ -2030,7 +2078,7 @@ void vidd_write(struct vidd_client* client, char* args)
 		bool nontabs_found = false;
 		for (intmax_t i = 0; i < line->buffer.length; i++)
 		{
-				if (!nontabs_found && *(uint32_t*)&line->buffer.data[i] == *(uint32_t*)"    ")
+			if (client->outputTabs && !nontabs_found && *(uint32_t*)&line->buffer.data[i] == *(uint32_t*)"    ")
 			{
 				fputc('\t', fp);
 				i += 3;
@@ -2079,6 +2127,9 @@ struct buffer vidd_get_file_data_path(struct vidd_client* client)
 {
 	char real_path_buf[PATH_MAX+1];
 	char* real_path = realpath(client->file_name.data, real_path_buf);
+
+	if (real_path == 0) return (struct buffer){0};
+
 	for (int i = 0; real_path[i]; i++)
 		if (real_path[i] == '/')
 			real_path[i] = '+';
@@ -2089,6 +2140,7 @@ void vidd_save_file_data(struct vidd_client* client)
 {
 	if (!vidd_is_real_file(client)) return;
 	struct buffer file_path = vidd_get_file_data_path(client);
+	if (file_path.data == 0) return;
 
 	FILE* fp = fopen(file_path.data, "w");
 	fwrite(&client->cursor.x, sizeof(client->cursor.x), 1, fp);
@@ -2181,6 +2233,41 @@ void vidd_man(struct vidd_client* client, char* args)
 	buffer_push_cstring_front(&bcom, "man ", 4);
 	vidd_run_command_in_floating_window(client, bcom.data);
 	free_buffer(&bcom);
+}
+void vidd_set(struct vidd_client* client, char* args)
+{
+	char* var = strtok(args, " \n\0");
+	if (var == 0) return;
+	if (!strcmp(var, "numbers"))
+	{
+		char* value = strtok(0, " \n\0");
+		client->numbersOn = (value == 0 || !strcmp(value, "yes"));
+		if (client->numbersOn == false)
+		{
+			client->view.x = client->x;
+			client->view.y = client->y;
+			client->view.xo = 0;
+			client->view.yo = 0;
+			client->view.width = client->width;
+			client->view.height = client->height;
+		}
+		vidd_redraw(client);
+	}
+	else if (!strcmp(var, "display"))
+	{
+		char* value = strtok(0, " \n\0");
+		client->displayOn = (value == 0 || !strcmp(value, "yes"));
+	}
+	else if (!strcmp(var, "inc-sel"))
+	{
+		char* value = strtok(0, " \n\0");
+		client->inclusiveSelection = (value == 0 || !strcmp(value, "yes"));
+	}
+	else if (!strcmp(var, "output-tabs"))
+	{
+		char* value = strtok(0, " \n\0");
+		client->outputTabs = (value == 0 || !strcmp(value, "yes"));
+	}
 }
 
 

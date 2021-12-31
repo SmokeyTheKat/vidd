@@ -84,33 +84,12 @@ struct vidd_keybind
 	int type;
 };
 
-struct cursor
-{
-	intmax_t x;
-	intmax_t lx;
-	struct line* y;
-};
 
-struct viewport
-{
-	intmax_t x, y;
-	intmax_t xo, yo;
-	intmax_t width, height;
-};
 
-struct selection
-{
-	intmax_t x0, y0;
-	intmax_t x1, y1;
-};
 
-struct marker
-{
-	struct
-	{
-		intmax_t x, y;
-	} positions[510];
-};
+
+
+
 
 struct vidd_client
 {
@@ -119,12 +98,36 @@ struct vidd_client
 	intmax_t width, height;
 	uint32_t key;
 	int* open_buffers;
-
 	struct line* text;
-	struct cursor cursor;
-	struct viewport view;
-	struct marker marker;
-	struct selection selection;
+
+	struct viewport
+	{
+		intmax_t x, y;
+		intmax_t xo, yo;
+		intmax_t width, height;
+	} view;
+
+	struct cursor
+	{
+		intmax_t x;
+		intmax_t lx;
+		struct line* y;
+	} cursor;
+
+	struct marker
+	{
+		struct
+		{
+			intmax_t x, y;
+		} positions[510];
+	} marker;
+
+	struct selection
+	{
+		intmax_t x0, y0;
+		intmax_t x1, y1;
+	} selection;
+
 	struct buffer last_find;
 	void(**keybinds)(struct vidd_client*);
 	char** syntax;
@@ -137,8 +140,8 @@ struct vidd_client
 			intmax_t numbersOn : 1;
 			intmax_t displayOn : 1;
 			intmax_t syntaxOn : 1;
-			intmax_t isFloating : 1;
 			intmax_t inclusiveSelection : 1;
+			intmax_t outputTabs : 1;
 		};
 	};
 	union
@@ -147,6 +150,7 @@ struct vidd_client
 		struct
 		{
 			intmax_t unsavedChanges : 1;
+			intmax_t isFloating : 1;
 		};
 	};
 	int mode;

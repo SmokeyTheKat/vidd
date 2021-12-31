@@ -54,6 +54,7 @@ VIDD_MULTI_KEY_BIND_START(vidd_multi_key_space, ' ')
 	VIDD_MULTI_KEY_BIND_OPTION('o', vidd_fuzzy_find_open)
 	VIDD_MULTI_KEY_BIND_OPTION('v', vidd_fuzzy_find_vsplit)
 	VIDD_MULTI_KEY_BIND_OPTION('f', vidd_fuzzy_find_float)
+	VIDD_MULTI_KEY_BIND_OPTION('m', vidd_man_word)
 VIDD_MULTI_KEY_BIND_END(vidd_multi_key_space)
 
 void vidd_multi_key_delete_then_insert(struct vidd_client* client)
@@ -197,6 +198,7 @@ struct command vidd_commands[] = {
 	{ "!f", vidd_run_command_in_floating_window },
 	{ "!", vidd_run_command },
 	{ "syntax", vidd_load_syntax },
+	{ "set", vidd_set },
 	{ "man", vidd_man },
 };
 
