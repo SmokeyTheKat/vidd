@@ -84,13 +84,6 @@ struct vidd_keybind
 	int type;
 };
 
-
-
-
-
-
-
-
 struct vidd_client
 {
 	struct buffer file_name;
@@ -128,6 +121,7 @@ struct vidd_client
 		intmax_t x1, y1;
 	} selection;
 
+	struct buffer make_command;
 	struct buffer last_find;
 	void(**keybinds)(struct vidd_client*);
 	char** syntax;

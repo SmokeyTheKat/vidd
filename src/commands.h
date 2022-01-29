@@ -156,6 +156,8 @@ void vidd_open_empty(struct vidd_client* client);
 void vidd_load_file_data(struct vidd_client* client);
 void vidd_save_file_data(struct vidd_client* client);
 
+void vidd_run_make(struct vidd_client* client);
+
 void vidd_load_syntax(struct vidd_client* client, char* args);
 void vidd_set(struct vidd_client* client, char* args);
 void vidd_man(struct vidd_client* client, char* args);
@@ -173,7 +175,6 @@ void vidd_write(struct vidd_client* client, char* args);
 void vidd_write_all(struct vidd_client* client, char* args);
 void vidd_write_quit_all(struct vidd_client* client, char* args);
 void vidd_write_quit(struct vidd_client* client, char* args);
-void vidd_quit_current(struct vidd_client* client);
 void vidd_client_quit(struct vidd_client* client, char* args);
 void vidd_client_force_quit(struct vidd_client* client, char* args);
 void vidd_force_exit_all(struct vidd_client* client, char* args);
@@ -2020,12 +2021,16 @@ void vidd_run_command_in_floating_window(struct vidd_client* client, char* args)
 	intmax_t borderh = client->height / 10;
 
 
-	vidd_client_pool_add(&client_pool,
-				make_vidd_client(
-					"_-=[NONE]=-_",
-					(client->x + borderw), (client->y + borderh),
-					client->view.width - (2 * borderw),
-					client->view.height - (2 * borderh), 0));
+	vidd_client_pool_add(
+		&client_pool,
+		make_vidd_client(
+			"_-=[NONE]=-_",
+			(client->x + borderw), (client->y + borderh),
+			client->view.width - (2 * borderw),
+			client->view.height - (2 * borderh),
+			0
+		)
+	);
 
 	struct vidd_client* new_client = &client_pool.clients[client_pool.length-1];
 
@@ -2120,7 +2125,7 @@ void vidd_client_pool_remove(struct vidd_client_pool* pool, struct vidd_client* 
 void vidd_write_quit(struct vidd_client* client, char* args)
 {
 	vidd_write(client, args);
-	vidd_quit_current(client);
+	vidd_client_quit(client, 0);
 }
 
 struct buffer vidd_get_file_data_path(struct vidd_client* client)
@@ -2145,6 +2150,7 @@ void vidd_save_file_data(struct vidd_client* client)
 	FILE* fp = fopen(file_path.data, "w");
 	fwrite(&client->cursor.x, sizeof(client->cursor.x), 1, fp);
 	fwrite(&client->cursor.y->number, sizeof(client->cursor.x), 1, fp);
+	fwrite(client->make_command.data, 1, 255, fp);
 	fclose(fp);
 	free_buffer(&file_path);
 }
@@ -2154,33 +2160,37 @@ void vidd_load_file_data(struct vidd_client* client)
 	struct buffer file_path = vidd_get_file_data_path(client);
 
 	intmax_t y = 0;
+	char make_command[255];
 	FILE* fp = fopen(file_path.data, "r");
 	if (fp)
 	{
 		fread(&client->cursor.x, sizeof(client->cursor.x), 1, fp);
 		fread(&y, sizeof(client->cursor.x), 1, fp);
-		fclose(fp);
-		free_buffer(&file_path);
+		fread(make_command, 1, 255, fp);
+
+		buffer_set_data(&client->make_command, make_command, strlen(make_command));
 		client->cursor.x = 0;
 		client->cursor.y = line_get_line(client->cursor.y, y);
 		vidd_redraw(client);
+
+		fclose(fp);
 	}
+	free_buffer(&file_path);
 }
 
-void vidd_quit_current(struct vidd_client* client)
+
+
+
+
+void vidd_run_make(struct vidd_client* client)
 {
-	if (client->unsavedChanges) return;
-
-	vidd_save_file_data(client);
-
-	if (client_pool.length == 1) vidd_force_exit_all(client, 0);
-
-	vidd_client_pool_remove(&client_pool, client);
-
-	vidd_client_pool_next_client(&client_pool);
-
-	vidd_reorganize_clients(&client_pool);
+	vidd_run_command_in_floating_window(client, client->make_command.data);
 }
+
+
+
+
+
 void vidd_client_quit(struct vidd_client* client, char* args)
 {
 	if (client->unsavedChanges) return;
@@ -2191,7 +2201,8 @@ void vidd_client_quit(struct vidd_client* client, char* args)
 
 	vidd_client_pool_remove(&client_pool, client);
 
-	vidd_client_pool_next_client(&client_pool);
+//    vidd_client_pool_next_client(&client_pool);
+	client_pool.active = 0;
 
 	vidd_reorganize_clients(&client_pool);
 }
@@ -2267,6 +2278,11 @@ void vidd_set(struct vidd_client* client, char* args)
 	{
 		char* value = strtok(0, " \n\0");
 		client->outputTabs = (value == 0 || !strcmp(value, "yes"));
+	}
+	else if (!strcmp(var, "make"))
+	{
+		char* value = strtok(0, "\n\0");
+		buffer_set_data(&client->make_command, value, strlen(value));
 	}
 }
 

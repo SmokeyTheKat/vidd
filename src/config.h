@@ -139,7 +139,7 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	[254]={vidd_load_spot, VIDD_ACTION_MOVEMENT},
 	[443]={vidd_toggle_drawing, VIDD_ACTION_MOVEMENT},
 	[0]={vidd_floating_toggle, VIDD_ACTION_MOVEMENT},
-	['~']={vidd_test, VIDD_ACTION_MOVEMENT},
+	['~']={vidd_run_make, VIDD_ACTION_MOVEMENT},
 	['t']={vidd_load_file_data, VIDD_ACTION_MOVEMENT},
 };
 

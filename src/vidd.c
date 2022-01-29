@@ -111,8 +111,9 @@ struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, int
 	client.displayOn = 1;
 	client.outputTabs = 1;
 	client.mode = VIDD_MODE_NORMAL;
-	client.file_name = make_buffer(150);
-	client.last_find = make_buffer(150);
+	client.file_name = make_buffer(255);
+	client.make_command = make_buffer(255);
+	client.last_find = make_buffer(255);
 	buffer_set_data(&client.file_name, file_name, strlen(file_name));
 	client.text = new_line(0);
 	struct cursor cursor = { 0, 0, client.text };
