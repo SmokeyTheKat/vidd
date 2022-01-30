@@ -1,4 +1,4 @@
 # vidd
-nice text editor :)
+a nice text editor :)
 
 ![sample](example.png)
