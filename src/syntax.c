@@ -1,13 +1,11 @@
-//#ifndef __VIDD_SYNTAX_H__
-//#define __VIDD_SYNTAX_H__
+#include "syntax.h"
+
+#include "vidd.h"
+#include "config_syntax.h"
 
 #include <stdlib.h>
 
-#include "vidd.h"
-#include "line.h"
-#include "buffer.h"
-
-char* current_color = "";
+static char* current_color = "";
 
 void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buffer, struct line* line);
 void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i, bool colored);
@@ -17,7 +15,7 @@ void vidd_syntax_ftdetect_cstring(struct vidd_client* client, char* rfile_name)
 	struct buffer bfile_name = make_buffer_from_cstring(rfile_name);
 	buffer_insert_at(&bfile_name, '.', 0);
 	char* file_name = bfile_name.data;
-	for (intmax_t i = 0; i < sizeof(syntaxes) / sizeof(char**); i++)
+	for (intmax_t i = 0; i < syntaxes_length; i++)
 	{
 		char** syntax = syntaxes[i];
 		for (intmax_t j = 1; j < 1+(intmax_t)syntax[0]; j++)
@@ -149,8 +147,8 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 						}
 						if (!exists && key_end[0] != '\0') continue;
 
-						current_color = SYNTAX_COLORS[(int)stype];
-						buffer_push_cstring(buffer, SYNTAX_COLORS[(int)stype], strlen(SYNTAX_COLORS[(int)stype]));
+						current_color = syntax_colors[(int)stype];
+						buffer_push_cstring(buffer, syntax_colors[(int)stype], strlen(syntax_colors[(int)stype]));
 						buffer_push_cstring(buffer, &text[i], key_start_length);
 
 						i += key_start_length;
@@ -183,7 +181,7 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 			{
 				if (strlen(client->syntax[j]+1) == word_length && !strncmp(&text[i], client->syntax[j]+1, word_length))
 				{
-					buffer_push_cstring(buffer, SYNTAX_COLORS[(int)client->syntax[j][0]], strlen(SYNTAX_COLORS[(int)client->syntax[j][0]]));
+					buffer_push_cstring(buffer, syntax_colors[(int)client->syntax[j][0]], strlen(syntax_colors[(int)client->syntax[j][0]]));
 					buffer_push_cstring(buffer, &text[i], MIN(word_length, client->view.x + client->view.width - i));
 					buffer_push_cstring(buffer, NOSTYLE, sizeof(NOSTYLE)-1);
 					i += word_length;
@@ -202,5 +200,3 @@ VIDD_SYNTAX_APPLY_TO_BUFFER_TEXT_LOOP:;
 		}
 	}
 }
-
-//#endif

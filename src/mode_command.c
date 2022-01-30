@@ -1,13 +1,11 @@
-#ifndef __VIDD_MODE_COMMAND_H__
-#define __VIDD_MODE_COMMAND_H__
+#include "mode_command.h"
+
+#include "utils.h"
+#include "config.h"
+#include "getch.h"
+#include "commands.h"
 
 #include <dirent.h>
-#include "./config.h"
-#include "./commands.h"
-
-void vidd_command_mode_interrupt(struct vidd_client* client, uint32_t key);
-void vidd_command_mode_exit(struct vidd_client* client);
-void vidd_command_mode_cycle_through_files(struct vidd_client* client);
 
 void vidd_command_mode_exit(struct vidd_client* client)
 {
@@ -99,7 +97,7 @@ void vidd_command_mode_interrupt(struct vidd_client* client, uint32_t key)
 		client->mode = VIDD_MODE_NORMAL;
 		char* command = strtok(command_input.data, " \n\t\0 ");
 		bool command_found = false;
-		for (intmax_t i = 0; i < sizeof(vidd_commands)/sizeof(struct command); i++)
+		for (intmax_t i = 0; i < vidd_commands_length; i++)
 		{
 			if (!strcmp(command, vidd_commands[i].name))
 			{
@@ -136,5 +134,3 @@ void vidd_command_mode_interrupt(struct vidd_client* client, uint32_t key)
 		printf("%c", key);
 	}
 }
-
-#endif

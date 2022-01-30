@@ -1,44 +1,8 @@
-#ifndef __VIDD_CONFIG_SYNTAX_H__
-#define __VIDD_CONFIG_SYNTAX_H__
+#include "config_syntax.h"
 
-#define ACTIVE_CLIENT_COLOR BRGB("255", "255", "0") FRGB("0", "0", "0")
-#define INACTIVE_CLIENT_COLOR BRGB("255", "255", "255") FRGB("0", "0", "0")
+#include "utils.h"
 
-#define SSID_KEYWORD "#"
-#define SSID_OPERATOR "+"
-#define SSID_MACRO ")"
-#define SSID_TYPE "%"
-#define SSID_COMMENT "/"
-#define SSID_CONST "*"
-#define SSID_STRING "\""
-#define SSID_CHARACTER_LITERAL "'"
-#define SSID_RANGE "~"
-#define SSID_RANGE_NI "`"
-#define SSID_NUMBER "$"
-
-#define SCID_KEYWORD '#'
-#define SCID_OPERATOR '+'
-#define SCID_MACRO ')'
-#define SCID_TYPE '%'
-#define SCID_COMMENT '/'
-#define SCID_CONST '*'
-#define SCID_STRING '"'
-#define SCID_CHARACTER_LITERAL '\''
-#define SCID_RANGE '~'
-#define SCID_RANGE_NI '`'
-#define SCID_NUMBER '$'
-
-#define SYNTAX_KEYWORD_COLOR FRGB("255", "255", "0")
-#define SYNTAX_OPERATOR_COLOR FRGB("255", "255", "0")
-#define SYNTAX_MACRO_COLOR FRGB("0", "255", "255")
-#define SYNTAX_TYPE_COLOR FRGB("255", "0", "0")
-#define SYNTAX_STRING_COLOR FRGB("255", "0", "255")
-#define SYNTAX_COMMENT_COLOR STYLE_ITALIC FRGB("0", "0", "255")
-#define SYNTAX_CONST_COLOR STYLE_ITALIC FRGB("50", "100", "255")
-#define SYNTAX_CHARACTER_LITERAL_COLOR FRGB("155", "100", "0")
-#define SYNTAX_NUMBER_COLOR FRGB("0", "255", "0")
-
-char* SYNTAX_COLORS[] = {
+char* syntax_colors[] = {
 	[SCID_KEYWORD]=SYNTAX_KEYWORD_COLOR,
 	[SCID_OPERATOR]=SYNTAX_OPERATOR_COLOR,
 	[SCID_MACRO]=SYNTAX_MACRO_COLOR,
@@ -49,6 +13,7 @@ char* SYNTAX_COLORS[] = {
 	[SCID_CHARACTER_LITERAL]=SYNTAX_CHARACTER_LITERAL_COLOR,
 	[SCID_NUMBER]=SYNTAX_NUMBER_COLOR,
 };
+int syntax_colors_length = sizeof(syntax_colors);
 
 #define SYNTAXES_ADD(syntax) \
 	(char**)syntax,
@@ -66,7 +31,7 @@ char* SYNTAX_COLORS[] = {
 #define SYNTAX_ADD_RANGE_NI(start, end) \
 	SSID_RANGE_NI start "\0" end,
 #define SYNTAX_END(name) \
-	0 };
+	0 }; int name##_length = sizeof(name);
 
 SYNTAX_NEW(syntax_c)
 	SYNTAX_EXT_COUNT(2)
@@ -2547,7 +2512,6 @@ SYNTAX_NEW(syntax_rs)
 	SYNTAX_ADD(SSID_OPERATOR "^")
 SYNTAX_END(syntax_rs)
 
-
 char** syntaxes[] = {
 	SYNTAXES_ADD(syntax_c)
 	SYNTAXES_ADD(syntax_cpp)
@@ -2560,5 +2524,4 @@ char** syntaxes[] = {
 	SYNTAXES_ADD(syntax_cl)
 	SYNTAXES_ADD(syntax_rs)
 };
-
-#endif
+int syntaxes_length = sizeof(syntaxes);

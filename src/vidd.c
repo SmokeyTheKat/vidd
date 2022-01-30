@@ -1,37 +1,33 @@
+#include "./vidd.h"
+
+#include "./config.h"
+#include "./syntax.h"
+#include "./getch.h"
+#include "./config_syntax.h"
+#include "./commands.h"
+#include "./mode_command.h"
+
+#include <stdlib.h>
 #include <locale.h>
 #include <signal.h>
 
-#include "./vidd.h"
+struct vidd_client_pool client_pool;
+struct buffer command_input;
+struct buffer copy_buffer;
+struct buffer run_buffer;
+struct buffer macro_buffer;
+bool macro_recording = false;
 
-#include "./config_syntax.h"
-
-uint32_t getch(bool raw)
-{
-	if (run_buffer.length > 0)
-	{
-		return run_buffer.data[--run_buffer.length];
-	}
-	uint64_t retval = 0;
-	if (raw)
-	{
-		uint64_t output = 0;
-		read(STDIN_FILENO, &output, 1);
-		retval = output;
-	}
-	else
-	{
-		uint64_t output = 0;
-		read(STDIN_FILENO, &output, 8);
-		retval = ((output > 255) * 255) + (output % 255);
-	}
-
-	if (macro_recording) buffer_push(&macro_buffer, retval);
-
-	return retval;
-}
-
-#include "./commands.h"
-#include "./mode_command.h"
+char* vidd_mode_texts[] = {
+	[VIDD_MODE_NORMAL]="[NORMAL]",
+	[VIDD_MODE_COMMAND]="[COMMAND]",
+	[VIDD_MODE_WINDOW_MOVE]="[WINDOW MOVE]",
+	[VIDD_MODE_INSERT]="[INSERT]",
+	[VIDD_MODE_REPLACE]="[REPLACE]",
+	[VIDD_MODE_SELECT]="[SELECT]",
+	[VIDD_MODE_LINE_SELECT]="[LINE SELECT]",
+};
+int vidd_mode_texts_length = sizeof(vidd_mode_texts);
 
 char vidd_is_real_file(struct vidd_client* client)
 {
@@ -258,4 +254,3 @@ int main(int argc, char** argv)
 	screen_restore();
 	return 0;
 }
-

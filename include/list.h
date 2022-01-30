@@ -2,8 +2,8 @@
 #define __LIST_H__
 
 #include <stdint.h>
-#include <string.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #define LIST_EXPAND_SIZE 4
 
@@ -13,6 +13,8 @@ struct list
 	intmax_t length;
 	intmax_t capacity;
 };
+
+intmax_t __list_index_of(struct list* list, void* find, intmax_t type_size);
 
 #define make_list(cap, type) (struct list){ \
 		.data=malloc(sizeof(type)*cap), \
@@ -95,14 +97,6 @@ struct list
 #define list_index_of(list, find, type) \
 	__list_index_of((list), (find), sizeof(type))
 
-static intmax_t __list_index_of(struct list* list, void* find, intmax_t type_size)
-{
-	for (intmax_t i = 0; i < list->length; i += type_size)
-		if (!memcmp(&list->data[i], (char*)find, type_size))
-			return i / type_size;
-	return -1;
-}
-
 #define list_replace(list, find, replace, type) { \
 		for (intmax_t i = 0; i < list_length((list), type); i++) \
 		{ \
@@ -136,5 +130,6 @@ static intmax_t __list_index_of(struct list* list, void* find, intmax_t type_siz
 		for (intmax_t i = 0; i < list_length((src), type); i++) \
 			list_push((dest), list_get((src), i, type), type) \
 	}
+
 
 #endif

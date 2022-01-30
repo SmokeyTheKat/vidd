@@ -1,22 +1,11 @@
-#ifndef __VIDD_FUZZY_FIND_H__
-#define __VIDD_FUZZY_FIND_H__
+#include "fuzzy_find.h"
+
+#include "list.h"
+#include "commands.h"
+#include "getch.h"
 
 #include <string.h>
 #include <dirent.h>
-
-#include "list.h"
-
-struct filepath
-{
-	struct buffer name;
-	struct buffer path;
-};
-
-void get_files(struct list* list, char* base_path);
-void vidd_fuzzy_find(struct vidd_client* client, void(*out_function)(struct vidd_client*, char*));
-void vidd_fuzzy_find_open(struct vidd_client* client);
-void vidd_fuzzy_find_vsplit(struct vidd_client* client);
-void vidd_fuzzy_find_float(struct vidd_client* client);
 
 void get_files(struct list* list, char* base_path)
 {
@@ -134,5 +123,3 @@ VIDD_FUZZY_FIND_EXIT:
 		free_buffer(&i->name);
 	}
 }
-
-#endif

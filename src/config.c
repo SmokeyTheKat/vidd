@@ -1,12 +1,12 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define STYLE_EMPTY_LINE FRGB("255", "255", "0") "*"
-#define STYLE_HIGHLIGHT STYLE_REVERSE
-#define STYLE_LINE_NUMBER_COLOR FRGB("255", "255", "0")
-#define STYLE_LINE_NUMBER "%d│"
+#include "config.h"
 
-#define KEY_CTRL(c) ((int)(c-96))
+#include "vidd.h"
+#include "commands.h"
+#include "getch.h"
+#include "fuzzy_find.h"
 
 #define VIDD_MULTI_KEY_BIND_START(n, k) \
 	void n (struct vidd_client* client) \
@@ -65,7 +65,7 @@ void vidd_multi_key_delete_then_insert(struct vidd_client* client)
 
 struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	[0 ... 510]={vidd_void, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('c')]={vidd_client_quit, VIDD_ACTION_MOVEMENT},
+	[KEY_CTRL('c')]={(void(*)(struct vidd_client*))vidd_client_quit, VIDD_ACTION_MOVEMENT},
 	[':']={vidd_enter_command_mode, VIDD_ACTION_MOVEMENT},
 	['/']={vidd_enter_find_next_mode, VIDD_ACTION_MOVEMENT},
 	['?']={vidd_enter_find_prev_mode, VIDD_ACTION_MOVEMENT},
@@ -142,6 +142,7 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	['~']={vidd_run_make, VIDD_ACTION_MOVEMENT},
 	['t']={vidd_load_file_data, VIDD_ACTION_MOVEMENT},
 };
+int vidd_normal_mode_keybinds_length = sizeof(vidd_normal_mode_keybinds);
 
 struct vidd_keybind vidd_window_move_mode_keybinds[] = {
 	[0 ... 510]={0, VIDD_ACTION_MOVEMENT},
@@ -156,6 +157,7 @@ struct vidd_keybind vidd_window_move_mode_keybinds[] = {
 	['u']={vidd_floating_increase_height, VIDD_ACTION_MOVEMENT},
 	['i']={vidd_floating_decrease_height, VIDD_ACTION_MOVEMENT},
 };
+int vidd_window_move_mode_keybinds_length = sizeof(vidd_window_move_mode_keybinds);
 
 struct vidd_keybind vidd_select_mode_keybinds[] = {
 	[0 ... 510]={0, VIDD_ACTION_MOVEMENT},
@@ -167,6 +169,7 @@ struct vidd_keybind vidd_select_mode_keybinds[] = {
 	['<']={vidd_selection_deindent, VIDD_ACTION_EDIT},
 	[KEY_CTRL('n')]={vidd_selection_toggle_comment, VIDD_ACTION_EDIT},
 };
+int vidd_select_mode_keybinds_length = sizeof(vidd_select_mode_keybinds);
 
 struct vidd_keybind vidd_insert_mode_keybinds[] = {
 	[0 ... 510]={vidd_insert_char, VIDD_ACTION_EDIT},
@@ -181,6 +184,7 @@ struct vidd_keybind vidd_insert_mode_keybinds[] = {
 	[KEY_RIGHT]={vidd_move_right, VIDD_ACTION_MOVEMENT},
 	[KEY_ESCAPE]={vidd_exit_insert_mode, VIDD_ACTION_MOVEMENT},
 };
+int vidd_insert_mode_keybinds_length = sizeof(vidd_insert_mode_keybinds);
 
 struct command vidd_commands[] = {
 	{ "w", vidd_write },
@@ -201,6 +205,7 @@ struct command vidd_commands[] = {
 	{ "set", vidd_set },
 	{ "man", vidd_man },
 };
+int vidd_commands_length = sizeof(vidd_commands);
 
 void vidd_run_normal_mode_keybind(struct vidd_client* client)
 {
@@ -323,7 +328,7 @@ void vidd_run_find_mode_keybind(struct vidd_client* client)
 	}
 }
 
-#include "./mode_command.h"
+#include "mode_command.h"
 
 void vidd_run_command_mode_keybind(struct vidd_client* client)
 {
@@ -347,5 +352,6 @@ void(*vidd_editor_keybinds[])(struct vidd_client*) = {
 	[VIDD_MODE_REPLACE]=vidd_run_replace_mode_keybind,
 	[VIDD_MODE_WINDOW_MOVE]=vidd_run_window_move_mode_keybind,
 };
+int vidd_editor_keybinds_length = sizeof(vidd_editor_keybinds);
 
 #endif

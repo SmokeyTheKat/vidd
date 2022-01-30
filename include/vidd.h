@@ -1,17 +1,16 @@
 #ifndef __VIDD_H__
 #define __VIDD_H__
 
+#include "line.h"
+#include "buffer.h"
+#include "list.h"
+#include "utils.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 #include <pthread.h>
-
-#include "./line.h"
-#include "./buffer.h"
-#include "./list.h"
-#include "./utils.h"
-
 
 #define CSTR_REMOVE_NL(b, l) { \
 		if (b[l-1] == '\n') \
@@ -37,6 +36,7 @@ void free_vidd_client(struct vidd_client* client);
 void vidd_load_from_fp(struct line* line, FILE* fp);
 void vidd_load_file(struct vidd_client* client, char* file_name);
 void vidd_load_stdin(struct vidd_client* client);
+struct vidd_client_pool make_vidd_client_pool(intmax_t start_size);
 struct vidd_client* vidd_client_pool_add(struct vidd_client_pool* pool, struct vidd_client client);
 intmax_t vidd_client_pool_get_client_index(struct vidd_client_pool* pool, struct vidd_client* client);
 void vidd_client_pool_set_active(struct vidd_client_pool* pool, struct vidd_client* client);
@@ -60,16 +60,6 @@ enum
 {
 	VIDD_ACTION_MOVEMENT=0,
 	VIDD_ACTION_EDIT,
-};
-
-const char* VIDD_MODE_TEXTS[] = {
-	[VIDD_MODE_NORMAL]="[NORMAL]",
-	[VIDD_MODE_COMMAND]="[COMMAND]",
-	[VIDD_MODE_WINDOW_MOVE]="[WINDOW MOVE]",
-	[VIDD_MODE_INSERT]="[INSERT]",
-	[VIDD_MODE_REPLACE]="[REPLACE]",
-	[VIDD_MODE_SELECT]="[SELECT]",
-	[VIDD_MODE_LINE_SELECT]="[LINE SELECT]",
 };
 
 struct command
@@ -158,14 +148,17 @@ struct vidd_client_pool
 	intmax_t length;
 	intmax_t size;
 };
-
-
  
-struct vidd_client_pool client_pool;
-struct buffer command_input;
-struct buffer copy_buffer;
-struct buffer run_buffer;
-struct buffer macro_buffer;
-bool macro_recording = false;
+extern struct vidd_client_pool client_pool;
+
+extern struct buffer command_input;
+extern struct buffer copy_buffer;
+extern struct buffer run_buffer;
+extern struct buffer macro_buffer;
+
+extern bool macro_recording;
+
+extern char* vidd_mode_texts[];
+extern int vidd_mode_texts_length;
 
 #endif
