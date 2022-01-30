@@ -6,14 +6,16 @@ CFLAGS=-Wall -g -Wno-pointer-sign -DPREFIX=\"${RPREFIX}\" -I./include/
 CSRCS=$(shell find ./src/ -name '*.c')
 OBJS=$(CSRCS:.c=.o)
 
-all: ${OBJS}
+all: paths ${OBJS}
+	$(CC) -o ./vidd ${OBJS} ${CFLAGS}
+
+paths:
 	@if [[ ! -d ${PREFIX}/share/vidd ]]; then      \
 		mkdir -p ${PREFIX}/share/vidd;            \
 		mkdir -p ${PREFIX}/share/vidd/filedata;   \
 		touch ${PREFIX}/share/vidd/cpybuf.data;   \
 		chmod -R a+rwx ${PREFIX}/share/vidd;      \
 	fi
-	$(CC) -o ./vidd ${OBJS} ${CFLAGS}
 
 %.o: %.c
 	$(CC) -c ${CFLAGS} -o $@ $<
