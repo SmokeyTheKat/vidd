@@ -1,7 +1,7 @@
-#include "syntax.h"
+#include <vidd/syntax.h>
 
-#include "vidd.h"
-#include "config_syntax.h"
+#include <vidd/vidd.h>
+#include <vidd/config_syntax.h>
 
 #include <stdlib.h>
 

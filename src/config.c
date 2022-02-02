@@ -1,12 +1,13 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#include "config.h"
+#include <vidd/config.h>
 
-#include "vidd.h"
-#include "commands.h"
-#include "getch.h"
-#include "fuzzy_find.h"
+#include <vidd/vidd.h>
+#include <vidd/display.h>
+#include <vidd/commands.h>
+#include <vidd/getch.h>
+#include <vidd/fuzzy_find.h>
 
 #define VIDD_MULTI_KEY_BIND_START(n, k) \
 	void n (struct vidd_client* client) \
@@ -63,6 +64,15 @@ void vidd_multi_key_delete_then_insert(struct vidd_client* client)
 	vidd_enter_insert_mode(client);
 }
 
+void vidd_test_message(struct vidd_client* client)
+{
+	vidd_show_message(client, "omg hi there :)");
+}
+void vidd_test_error(struct vidd_client* client)
+{
+	vidd_show_error(client, "unsaved changes");
+}
+
 struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	[0 ... 510]={vidd_void, VIDD_ACTION_MOVEMENT},
 	[KEY_CTRL('c')]={(void(*)(struct vidd_client*))vidd_client_quit, VIDD_ACTION_MOVEMENT},
@@ -73,7 +83,7 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	['<']={vidd_deindent, VIDD_ACTION_EDIT},
 	['v']={vidd_enter_select_mode, VIDD_ACTION_MOVEMENT},
 	['V']={vidd_enter_line_select_mode, VIDD_ACTION_MOVEMENT},
-	['i']={vidd_enter_insert_mode, VIDD_ACTION_MOVEMENT},
+	['i']={vidd_enter_insert_mode, VIDD_ACTION_EDIT},
 	['a']={vidd_enter_insert_mode_right, VIDD_ACTION_EDIT},
 	['o']={vidd_insert_on_new_line, VIDD_ACTION_EDIT},
 	['O']={vidd_insert_on_new_line_up, VIDD_ACTION_EDIT},
@@ -141,8 +151,10 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	[0]={vidd_floating_toggle, VIDD_ACTION_MOVEMENT},
 	['~']={vidd_run_make, VIDD_ACTION_MOVEMENT},
 	['t']={vidd_load_file_data, VIDD_ACTION_MOVEMENT},
+	['s']={vidd_test_message, VIDD_ACTION_MOVEMENT},
+	['S']={vidd_test_error, VIDD_ACTION_MOVEMENT},
 };
-int vidd_normal_mode_keybinds_length = sizeof(vidd_normal_mode_keybinds);
+int vidd_normal_mode_keybinds_length = sizeof(vidd_normal_mode_keybinds) / sizeof(vidd_normal_mode_keybinds[0]);
 
 struct vidd_keybind vidd_window_move_mode_keybinds[] = {
 	[0 ... 510]={0, VIDD_ACTION_MOVEMENT},
@@ -157,7 +169,7 @@ struct vidd_keybind vidd_window_move_mode_keybinds[] = {
 	['u']={vidd_floating_increase_height, VIDD_ACTION_MOVEMENT},
 	['i']={vidd_floating_decrease_height, VIDD_ACTION_MOVEMENT},
 };
-int vidd_window_move_mode_keybinds_length = sizeof(vidd_window_move_mode_keybinds);
+int vidd_window_move_mode_keybinds_length = sizeof(vidd_window_move_mode_keybinds) / sizeof(vidd_window_move_mode_keybinds[0]);
 
 struct vidd_keybind vidd_select_mode_keybinds[] = {
 	[0 ... 510]={0, VIDD_ACTION_MOVEMENT},
@@ -169,7 +181,7 @@ struct vidd_keybind vidd_select_mode_keybinds[] = {
 	['<']={vidd_selection_deindent, VIDD_ACTION_EDIT},
 	[KEY_CTRL('n')]={vidd_selection_toggle_comment, VIDD_ACTION_EDIT},
 };
-int vidd_select_mode_keybinds_length = sizeof(vidd_select_mode_keybinds);
+int vidd_select_mode_keybinds_length = sizeof(vidd_select_mode_keybinds) / sizeof(vidd_select_mode_keybinds[0]);
 
 struct vidd_keybind vidd_insert_mode_keybinds[] = {
 	[0 ... 510]={vidd_insert_char, VIDD_ACTION_EDIT},
@@ -184,7 +196,7 @@ struct vidd_keybind vidd_insert_mode_keybinds[] = {
 	[KEY_RIGHT]={vidd_move_right, VIDD_ACTION_MOVEMENT},
 	[KEY_ESCAPE]={vidd_exit_insert_mode, VIDD_ACTION_MOVEMENT},
 };
-int vidd_insert_mode_keybinds_length = sizeof(vidd_insert_mode_keybinds);
+int vidd_insert_mode_keybinds_length = sizeof(vidd_insert_mode_keybinds) / sizeof(vidd_insert_mode_keybinds[0]);
 
 struct command vidd_commands[] = {
 	{ "w", vidd_write },
@@ -205,60 +217,59 @@ struct command vidd_commands[] = {
 	{ "set", vidd_set },
 	{ "man", vidd_man },
 };
-int vidd_commands_length = sizeof(vidd_commands);
+int vidd_commands_length = sizeof(vidd_commands) / sizeof(vidd_commands[0]);
 
 void vidd_run_normal_mode_keybind(struct vidd_client* client)
 {
-	vidd_normal_mode_keybinds[client->key].func(client);
 	if (vidd_normal_mode_keybinds[client->key].type == VIDD_ACTION_EDIT)
 	{
+		if (client->readOnly)
+		{
+			vidd_show_error(client, "read only file");
+			return;
+		}
 		client->unsavedChanges = true;
 		vidd_set_status(client);
 	}
+	vidd_normal_mode_keybinds[client->key].func(client);
 }
 
 void vidd_run_line_select_mode_keybind(struct vidd_client* client)
 {
 	if (vidd_select_mode_keybinds[client->key].func)
 	{
-		vidd_select_mode_keybinds[client->key].func(client);
 		if (vidd_select_mode_keybinds[client->key].type == VIDD_ACTION_EDIT)
 		{
+			if (client->readOnly)
+			{
+				vidd_show_error(client, "read only file");
+				return;
+			}
 			client->unsavedChanges = true;
 			vidd_set_status(client);
 		}
+		vidd_select_mode_keybinds[client->key].func(client);
 	}
-	else
-	{
-		vidd_normal_mode_keybinds[client->key].func(client);
-		if (vidd_normal_mode_keybinds[client->key].type == VIDD_ACTION_EDIT)
-		{
-			client->unsavedChanges = true;
-			vidd_set_status(client);
-		}
-	}
+	else vidd_run_normal_mode_keybind(client);
 }
 
 void vidd_run_select_mode_keybind(struct vidd_client* client)
 {
 	if (vidd_select_mode_keybinds[client->key].func)
 	{
-		vidd_select_mode_keybinds[client->key].func(client);
 		if (vidd_select_mode_keybinds[client->key].type == VIDD_ACTION_EDIT)
 		{
+			if (client->readOnly)
+			{
+				vidd_show_error(client, "read only file");
+				return;
+			}
 			client->unsavedChanges = true;
 			vidd_set_status(client);
 		}
+		vidd_select_mode_keybinds[client->key].func(client);
 	}
-	else
-	{
-		vidd_normal_mode_keybinds[client->key].func(client);
-		if (vidd_normal_mode_keybinds[client->key].type == VIDD_ACTION_EDIT)
-		{
-			client->unsavedChanges = true;
-			vidd_set_status(client);
-		}
-	}
+	else vidd_run_normal_mode_keybind(client);
 }
 
 void vidd_run_insert_mode_keybind(struct vidd_client* client)
@@ -328,7 +339,7 @@ void vidd_run_find_mode_keybind(struct vidd_client* client)
 	}
 }
 
-#include "mode_command.h"
+#include <vidd/mode_command.h>
 
 void vidd_run_command_mode_keybind(struct vidd_client* client)
 {
@@ -352,6 +363,6 @@ void(*vidd_editor_keybinds[])(struct vidd_client*) = {
 	[VIDD_MODE_REPLACE]=vidd_run_replace_mode_keybind,
 	[VIDD_MODE_WINDOW_MOVE]=vidd_run_window_move_mode_keybind,
 };
-int vidd_editor_keybinds_length = sizeof(vidd_editor_keybinds);
+int vidd_editor_keybinds_length = sizeof(vidd_editor_keybinds) / sizeof(vidd_editor_keybinds[0]);
 
 #endif

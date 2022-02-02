@@ -1,7 +1,8 @@
-#include "vidd.h"
+#include <vidd/vidd.h>
 
-#include "getch.h"
-#include "commands.h"
+#include <vidd/getch.h>
+#include <vidd/commands.h>
+#include <vidd/display.h>
 
 #include <stdlib.h>
 #include <locale.h>

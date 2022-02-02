@@ -1,8 +1,8 @@
-#include "fuzzy_find.h"
+#include <vidd/fuzzy_find.h>
 
-#include "list.h"
-#include "commands.h"
-#include "getch.h"
+#include <vidd/list.h>
+#include <vidd/commands.h>
+#include <vidd/getch.h>
 
 #include <string.h>
 #include <dirent.h>

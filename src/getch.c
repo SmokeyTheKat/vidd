@@ -1,6 +1,6 @@
-#include "getch.h"
+#include <vidd/getch.h>
 
-#include "vidd.h"
+#include <vidd/vidd.h>
 
 #include <sys/ioctl.h>
 #include <termios.h>

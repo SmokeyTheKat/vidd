@@ -3,7 +3,6 @@
 
 #include "vidd.h"
 
-void vidd_redraw(struct vidd_client* client);
 void vidd_redraw_line(struct vidd_client* client);
 void vidd_toggle_drawing(struct vidd_client* client);
 void vidd_reorganize_clients(struct vidd_client_pool* pool);

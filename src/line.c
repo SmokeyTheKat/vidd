@@ -1,6 +1,6 @@
-#include "line.h"
+#include <vidd/line.h>
 
-#include "buffer.h"
+#include <vidd/buffer.h>
 
 #include <stdlib.h>
 #include <string.h>

@@ -1,11 +1,12 @@
-#include "./vidd.h"
+#include <vidd/vidd.h>
 
-#include "./config.h"
-#include "./syntax.h"
-#include "./getch.h"
-#include "./config_syntax.h"
-#include "./commands.h"
-#include "./mode_command.h"
+#include <vidd/config.h>
+#include <vidd/display.h>
+#include <vidd/syntax.h>
+#include <vidd/getch.h>
+#include <vidd/config_syntax.h>
+#include <vidd/commands.h>
+#include <vidd/mode_command.h>
 
 #include <stdlib.h>
 #include <locale.h>
@@ -106,6 +107,7 @@ struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, int
 	client.inclusiveSelection = 1;
 	client.displayOn = 1;
 	client.outputTabs = 1;
+	client.readOnly = 0;
 	client.mode = VIDD_MODE_NORMAL;
 	client.file_name = make_buffer(255);
 	client.make_command = make_buffer(255);

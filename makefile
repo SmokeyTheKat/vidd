@@ -1,30 +1,43 @@
 PREFIX=~/.local
-RPREFIX=$(shell realpath ${PREFIX})
 
 CC=gcc
-CFLAGS=-Wall -g -Wno-pointer-sign -DPREFIX=\"${RPREFIX}\" -I./include/
-CSRCS=$(shell find ./src/ -name '*.c')
-OBJS=$(CSRCS:.c=.o)
+CFLAGS=-Wall -g -Ofast -Werror -Wno-pointer-sign -DPREFIX=\"$(shell realpath ${PREFIX})\" -I./include/
+TARGET=./vidd
+BUILDDIR=build
+SRCDIR=src
 
-all: paths ${OBJS}
-	$(CC) -o ./vidd ${OBJS} ${CFLAGS}
+CSRCS=$(shell find ./src/ -name '*.c' -printf "%f\n")
+OBJS=$(addprefix ${BUILDDIR}/, $(CSRCS:.c=.o))
 
-paths:
-	@if [[ ! -d ${PREFIX}/share/vidd ]]; then      \
-		mkdir -p ${PREFIX}/share/vidd;            \
-		mkdir -p ${PREFIX}/share/vidd/filedata;   \
-		touch ${PREFIX}/share/vidd/cpybuf.data;   \
-		chmod -R a+rwx ${PREFIX}/share/vidd;      \
-	fi
-
-%.o: %.c
-	$(CC) -c ${CFLAGS} -o $@ $<
-
-clean:
-	find ./ -type f -name '*.o' -delete
+all: viddpaths ${TARGET}
 
 install: all
 	cp ./vidd ${PREFIX}/bin/
 
+${TARGET}: ${BUILDDIR} ${OBJS}
+	$(CC) -o ./vidd ${OBJS} ${CFLAGS}
+
+${BUILDDIR}:
+	mkdir -p ${BUILDDIR}
+
+${BUILDDIR}/%.o: ${SRCDIR}/%.c
+	$(CC) -c ${CFLAGS} -o $@ $<
+
+viddpaths:
+	@mkdir -p ${PREFIX}
+	@mkdir -p ${PREFIX}/bin
+	@mkdir -p ${PREFIX}/share
+
+	@if [[ ! -d ${PREFIX}/share/vidd ]]; then      \
+		mkdir -p ${PREFIX}/share/vidd;             \
+		mkdir -p ${PREFIX}/share/vidd/filedata;    \
+		touch ${PREFIX}/share/vidd/cpybuf.data;    \
+		chmod -R a+rwx ${PREFIX}/share/vidd;       \
+	fi
+
+clean:
+	find ${BUILDDIR} -type f -name '*.o' -delete
+
 tc: all
-	./vidd ./test.c
+	./vidd ./src/main.c
+

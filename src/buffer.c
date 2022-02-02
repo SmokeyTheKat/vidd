@@ -1,4 +1,4 @@
-#include "buffer.h"
+#include <vidd/buffer.h>
 
 #include <stdlib.h>
 #include <stdio.h>

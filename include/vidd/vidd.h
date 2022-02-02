@@ -126,6 +126,7 @@ struct vidd_client
 			intmax_t syntaxOn : 1;
 			intmax_t inclusiveSelection : 1;
 			intmax_t outputTabs : 1;
+			intmax_t readOnly : 1;
 		};
 	};
 	union

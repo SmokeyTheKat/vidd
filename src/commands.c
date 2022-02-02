@@ -1,118 +1,15 @@
-#include "commands.h"
+#include <vidd/commands.h>
 
-#include "config.h"
-#include "config_syntax.h"
-#include "getch.h"
-#include "utils.h"
-#include "fuzzy_find.h"
-#include "syntax.h"
+#include <vidd/config.h>
+#include <vidd/display.h>
+#include <vidd/config_syntax.h>
+#include <vidd/getch.h>
+#include <vidd/utils.h>
+#include <vidd/fuzzy_find.h>
+#include <vidd/syntax.h>
 
 #include <stdlib.h>
 
-void vidd_line_clear(struct vidd_client* client, intmax_t pos)
-{
-	char* fmt = INACTIVE_CLIENT_COLOR;
-	if (client == vidd_get_active())
-		fmt = ACTIVE_CLIENT_COLOR;
-
-	char* line = malloc(client->width + 1);
-	memset(line, ' ', client->width);
-	line[client->width] = 0;
-
-	cursor_move_to(client->x, client->y + pos);
-	printf("%s%s" NOSTYLE, fmt, line);
-
-	free(line);
-}
-void vidd_redraw(struct vidd_client* client)
-{
-	if (!client->displayOn) return;
-
-	vidd_cursor_adjust(client, false);
-
-	vidd_view_adjust_offset(client);
-
-	struct line* line = client->text;
-	intmax_t line_count = line_get_last(client->cursor.y)->number;
-	intmax_t line_number_gap = number_get_length(line_count);
-	intmax_t visable_line_count = client->view.height;
-
-	struct buffer toprint = make_buffer(client->view.height * client->view.width * 4);
-
-	if (client->view.y < 0)
-	{
-		buffer_printf(&toprint, CURSOR_TO("%d", "%d"), client->y, client->x + 1);
-		for (intmax_t i = client->view.y; i < 0; i++)
-		{
-			buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR);
-			buffer_push(&toprint, '*');
-			buffer_push_repeat(&toprint, ' ', client->view.width + line_number_gap);
-			if (i + 1 < 0)
-				buffer_printf(&toprint, ((client->x != 0) ? ("\r" CURSOR_DOWN() CURSOR_RIGHT("%d")) : ("\r" CURSOR_DOWN())), client->x);
-			buffer_print(&toprint, NOSTYLE);
-		}
-		buffer_printf(&toprint, CURSOR_TO("%d", "%d"), client->y - client->view.y + 1, client->x+1);
-		visable_line_count += client->view.y;
-	}
-	else
-	{
-		line = line_skip(line, client->view.y);
-		buffer_printf(&toprint, CURSOR_TO("1", "%d"), vidd_view_get_absolute_y_offset(client)+1);
-	}
-
-	if (client->x != 0 && client->view.y >= 0)
-		buffer_printf(&toprint, CURSOR_RIGHT("%d"), client->x);
-
-	intmax_t i;
-	for (i = 0; line && i < visable_line_count; i++)
-	{
-		if (client->numbersOn)
-		{
-			buffer_push_repeat(&toprint, ' ', line_number_gap - number_get_length(line->number));
-	
-			const intmax_t line_style_length = sizeof(STYLE_LINE_NUMBER) - 1 - 2;
-	
-			buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR);
-			buffer_printf(&toprint, STYLE_LINE_NUMBER, line->number);
-			buffer_printf(&toprint, NOSTYLE, line->number);
-	
-			if (client->view.xo > line_number_gap + line_style_length)
-				buffer_printf(&toprint, CURSOR_RIGHT("%d"), client->x);
-		}
-
-		if (client->view.x < line->buffer.length)
-			vidd_syntax_apply_to_buffer(client, &toprint, line);
-
-		intmax_t empty_space = client->view.width - MAX((line->buffer.length - client->view.x), 0);
-		empty_space = MIN(client->view.width, empty_space);
-		buffer_push_repeat(&toprint, ' ', empty_space);
-
-		if (i + 1 < visable_line_count)
-			buffer_printf(&toprint, ((client->x != 0) ? ("\r" CURSOR_DOWN() CURSOR_RIGHT("%d")) : ("\r" CURSOR_DOWN())), client->x);
-		line = line->next;
-	}
-	for (; i < visable_line_count; i++)
-	{
-		buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR);
-		buffer_push(&toprint, '*');
-		buffer_push_repeat(&toprint, ' ', client->view.width + line_number_gap);
-		if (i + 1 < visable_line_count)
-			buffer_printf(&toprint, ((client->x != 0) ? ("\r" CURSOR_DOWN() CURSOR_RIGHT("%d")) : ("\r" CURSOR_DOWN())), client->x);
-		buffer_print(&toprint, NOSTYLE);
-	}
-
-	if (client->isFloating) vidd_floating_window_draw_frame(client);
-	printf(NOSTYLE CURSOR_HIDE "%s" CURSOR_SHOW, toprint.data);
-
-	free_buffer(&toprint);
-
-	vidd_set_status(client);
-
-	if (client->mode == VIDD_MODE_LINE_SELECT) vidd_selection_draw(client);
-	if (client->mode == VIDD_MODE_SELECT) vidd_selection_draw(client);
-	cursor_move_to(vidd_view_get_absolute_x_offset(client) + client->cursor.x - client->view.x,
-				vidd_view_get_absolute_y_offset(client) + (client->cursor.y->number - 1) - client->view.y);
-}
 void vidd_redraw_line(struct vidd_client* client)
 {
 	cursor_erase_line();
@@ -147,32 +44,6 @@ void vidd_check_for_window_size_change(struct vidd_client* client)
 	screen_get_size(&new_width, &new_height);
 	if (new_width != client->width || new_height != client->height)
 		vidd_reorganize_clients(&client_pool);
-}
-
-
-
-
-
-void vidd_set_status(struct vidd_client* client)
-{
-	char* fmt = INACTIVE_CLIENT_COLOR;
-	if (client == vidd_get_active())
-		fmt = ACTIVE_CLIENT_COLOR;
-	cursor_save();
-
-	vidd_line_clear(client, client->height - 1);
-
-	cursor_move_to(client->x, client->y + client->height - 1);
-
-	printf("%s%s%s" NOSTYLE, fmt,
-							 (macro_recording == true) ? ("@") : (""),
-							 vidd_mode_texts[client->mode]);
-
-	cursor_move_to(client->x + client->width - strlen(client->file_name.data) - 1 + client->unsavedChanges, client->y + client->height - 1);
-
-	printf(client->unsavedChanges ? "%s*%s" : "%s%s" NOSTYLE, fmt, client->file_name.data);
-
-	cursor_restore();
 }
 
 
@@ -1239,6 +1110,7 @@ void vidd_find_next_word(struct vidd_client* client, char* word, intmax_t length
 			rx = 0;
 		}
 	}
+	vidd_show_error(client, "no results");
 }
 void vidd_find_prev_word(struct vidd_client* client, char* word, intmax_t length)
 {
@@ -1261,6 +1133,7 @@ void vidd_find_prev_word(struct vidd_client* client, char* word, intmax_t length
 			text = line->buffer.data;
 		}
 	}
+	vidd_show_error(client, "no results");
 }
 void vidd_find_next_word_under_cursor(struct vidd_client* client)
 {
@@ -1892,6 +1765,9 @@ void vidd_write(struct vidd_client* client, char* args)
 		return;
 	}
 
+	intmax_t line_count = 0;
+	intmax_t byte_count = 0;
+
 	struct line* line = client->text;
 	while (line)
 	{
@@ -1908,12 +1784,20 @@ void vidd_write(struct vidd_client* client, char* args)
 				fputc(line->buffer.data[i], fp);
 				nontabs_found = true;
 			}
+			byte_count++;
 		}
+		byte_count++;
 		if (line->next) fwrite("\n", 1, 1, fp);
+		else line_count = line->number;
 		line = line->next;
 	}
+	byte_count--;
 	fclose(fp);
 	client->unsavedChanges = false;
+
+	char message[1024] = {0};
+	sprintf(message, "%ldL %ldB written to \"%s\"", line_count, byte_count, file_name);
+	vidd_show_message(client, message);
 }
 void vidd_write_all(struct vidd_client* client, char* args)
 {
@@ -2008,7 +1892,11 @@ void vidd_run_make(struct vidd_client* client)
 
 void vidd_client_quit(struct vidd_client* client, char* args)
 {
-	if (client->unsavedChanges) return;
+	if (client->unsavedChanges)
+	{
+		vidd_show_error(client, "unsaved changes");
+		return;
+	}
 
 	vidd_save_file_data(client);
 
@@ -2093,6 +1981,11 @@ void vidd_set(struct vidd_client* client, char* args)
 	{
 		char* value = strtok(0, " \n\0");
 		client->outputTabs = (value == 0 || !strcmp(value, "yes"));
+	}
+	else if (!strcmp(var, "readonly"))
+	{
+		char* value = strtok(0, " \n\0");
+		client->readOnly = (value == 0 || !strcmp(value, "yes"));
 	}
 	else if (!strcmp(var, "make"))
 	{

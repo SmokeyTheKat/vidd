@@ -1,9 +1,9 @@
-#include "mode_command.h"
+#include <vidd/mode_command.h>
 
-#include "utils.h"
-#include "config.h"
-#include "getch.h"
-#include "commands.h"
+#include <vidd/utils.h>
+#include <vidd/config.h>
+#include <vidd/getch.h>
+#include <vidd/commands.h>
 
 #include <dirent.h>
 
@@ -27,7 +27,7 @@ void vidd_command_mode_cycle_through_files(struct vidd_client* client)
 			curdir_len -= 2;
 			curdir = curdir + 2;
 		}
-		DIR *d;
+		DIR* d;
 		struct dirent* dir;
 		uint32_t key = 0;
 		char finddir_carray[1024] = {0};
@@ -36,7 +36,8 @@ void vidd_command_mode_cycle_through_files(struct vidd_client* client)
 		if (!findlslash) finddir = ".";
 		else
 		{
-			strncpy(finddir, curdir, curdir_len - strlen(findlslash));
+			memcpy(finddir, curdir, curdir_len - strlen(findlslash));
+			finddir[curdir_len - curdir_len - strlen(findlslash)] = 0;
 			skip = curdir_len - strlen(findlslash) + 1;
 			curdir = findlslash + 1;
 		}

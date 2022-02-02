@@ -1,6 +1,6 @@
-#include "config_syntax.h"
+#include <vidd/config_syntax.h>
 
-#include "utils.h"
+#include <vidd/utils.h>
 
 char* syntax_colors[] = {
 	[SCID_KEYWORD]=SYNTAX_KEYWORD_COLOR,
@@ -13,7 +13,7 @@ char* syntax_colors[] = {
 	[SCID_CHARACTER_LITERAL]=SYNTAX_CHARACTER_LITERAL_COLOR,
 	[SCID_NUMBER]=SYNTAX_NUMBER_COLOR,
 };
-int syntax_colors_length = sizeof(syntax_colors);
+int syntax_colors_length = sizeof(syntax_colors) / sizeof(syntax_colors[0]);
 
 #define SYNTAXES_ADD(syntax) \
 	(char**)syntax,
@@ -31,7 +31,7 @@ int syntax_colors_length = sizeof(syntax_colors);
 #define SYNTAX_ADD_RANGE_NI(start, end) \
 	SSID_RANGE_NI start "\0" end,
 #define SYNTAX_END(name) \
-	0 }; int name##_length = sizeof(name);
+	0 }; int name##_length = sizeof(name) / sizeof(name[0]);
 
 SYNTAX_NEW(syntax_c)
 	SYNTAX_EXT_COUNT(2)
@@ -2524,4 +2524,4 @@ char** syntaxes[] = {
 	SYNTAXES_ADD(syntax_cl)
 	SYNTAXES_ADD(syntax_rs)
 };
-int syntaxes_length = sizeof(syntaxes);
+int syntaxes_length = sizeof(syntaxes) / sizeof(syntaxes[0]);
