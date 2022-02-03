@@ -9,6 +9,8 @@
 #include <vidd/getch.h>
 #include <vidd/fuzzy_find.h>
 
+static void _vidd_load_copy(struct vidd_client* client) { vidd_load_copy(); }
+
 #define VIDD_MULTI_KEY_BIND_START(n, k) \
 	void n (struct vidd_client* client) \
 	{ \
@@ -29,11 +31,6 @@
 		} \
 	}
 
-void vidd_test(struct vidd_client* client)
-{
-	vidd_run_command_in_floating_window(client, "make");
-}
-
 VIDD_MULTI_KEY_BIND_START(vidd_delete_object_multi_key, 'a')
 	VIDD_MULTI_KEY_BIND_OPTION('w', vidd_delete_word)
 VIDD_MULTI_KEY_BIND_END(vidd_delete_object_multi_key)
@@ -49,11 +46,6 @@ VIDD_MULTI_KEY_BIND_END(vidd_multi_key_delete)
 VIDD_MULTI_KEY_BIND_START(vidd_multi_key_copy, 'y')
 	VIDD_MULTI_KEY_BIND_OPTION('y', vidd_copy_line)
 VIDD_MULTI_KEY_BIND_END(vidd_multi_key_copy)
-
-static void _vidd_load_copy(struct vidd_client* client)
-{
-	vidd_load_copy();
-}
 
 VIDD_MULTI_KEY_BIND_START(vidd_multi_key_space, ' ')
 	VIDD_MULTI_KEY_BIND_OPTION('r', vidd_run_line)

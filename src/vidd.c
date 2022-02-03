@@ -172,6 +172,18 @@ void free_vidd_client(struct vidd_client* client)
 	else (*client->open_buffers)--;
 	*client = (struct vidd_client){0};
 }
+intmax_t vidd_get_line_count(struct vidd_client* client)
+{
+	return line_get_last(client->cursor.y)->number;
+}
+intmax_t vidd_get_line_number_gap(struct vidd_client* client)
+{
+	return number_get_length(vidd_get_line_count(client));
+}
+bool vidd_is_select_mode(struct vidd_client* client)
+{
+	return (client->mode == VIDD_MODE_LINE_SELECT) || (client->mode == VIDD_MODE_SELECT);
+}
 
 void vidd_load_from_fp(struct line* line, FILE* fp)
 {
@@ -256,7 +268,7 @@ void vidd_main(void)
 	run_buffer = make_buffer(2048);
 	macro_buffer = make_buffer(2048);
 	vidd_load_copy();
-	vidd_redraw(vidd_get_active());
+	vidd_reorganize_clients(&client_pool);
 	while (1) vidd_continue_input(vidd_get_active());
 }
 

@@ -842,54 +842,6 @@ void vidd_selection_deindent(struct vidd_client* client)
 	vidd_toggle_drawing(client);
 
 }
-void vidd_selection_draw(struct vidd_client* client)
-{
-	if (!client->displayOn) return;
-
-	struct buffer toprint = make_buffer(ABS(client->selection.y1 - client->selection.y0)  * client->view.width);
-	struct line* line;
-	cursor_save();
-	if (client->mode == VIDD_MODE_LINE_SELECT)
-	{
-		VIDD_LINE_SELECTION_LOOP({
-			buffer_printf(&toprint, CURSOR_TO("%d", "%d"), vidd_view_get_absolute_y_offset(client) + i - client->view.y + 1, vidd_view_get_absolute_x_offset(client) + 1);
-			buffer_printf(&toprint, active_theme->highlight_style);
-			if (client->view.x < line->buffer.length)
-				buffer_printf(&toprint, "%.*s", (int)client->view.width, &line->buffer.data[client->view.x]);
-			if (line->buffer.length == 0)
-				buffer_printf(&toprint, BRGB("255", "255", "255") " ");
-			buffer_printf(&toprint, NOSTYLE);
-			line = line->next;
-		});
-	}
-	else
-	{
-		VIDD_SELECTION_LOOP_CRSMEJ({
-			buffer_printf(&toprint, CURSOR_TO("%d", "%d"),
-						vidd_view_get_absolute_y_offset(client) + i - client->view.y + 1,
-						vidd_view_get_absolute_x_offset(client) + 1);
-		}, {// range 
-			if (x0 != 0)
-				buffer_printf(&toprint, CURSOR_RIGHT("%d"), x0 - client->view.x);
-			buffer_printf(&toprint, "%s%.*s" NOSTYLE, active_theme->highlight_style, (int)MIN(client->view.width, x1-x0), &line->buffer.data[x0]);
-		}, {// start
-			if (x0 != 0)
-				buffer_printf(&toprint, CURSOR_RIGHT("%d"), x0 - client->view.x);
-			buffer_printf(&toprint, "%s%.*s" NOSTYLE, active_theme->highlight_style, (int)MIN(client->view.width, line->buffer.length-x0+1), &line->buffer.data[x0]);
-		}, {// middle
-			buffer_printf(&toprint, "%s%.*s" NOSTYLE, active_theme->highlight_style, (int)MIN(client->view.width, line->buffer.length), line->buffer.data);
-			if (line->buffer.length == 0)
-				buffer_printf(&toprint, BRGB("255", "255", "255") " ");
-		}, {// end
-			buffer_printf(&toprint, "%s%.*s" NOSTYLE, active_theme->highlight_style, (int)MIN(client->view.width, x1), line->buffer.data);
-			if (line->buffer.length == 0)
-				buffer_printf(&toprint, BRGB("255", "255", "255") " ");
-		}, {});
-	}
-	printf("%s", toprint.data);
-	cursor_restore();
-	free_buffer(&toprint);
-}
 void vidd_selection_swap_cursor(struct vidd_client* client)
 {
 	intmax_t x0 = client->selection.x0;
