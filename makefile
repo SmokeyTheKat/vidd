@@ -9,7 +9,7 @@ SRCDIR=src
 CSRCS=$(shell find ./src/ -name '*.c' -printf "%f\n")
 OBJS=$(addprefix ${BUILDDIR}/, $(CSRCS:.c=.o))
 
-all: clean viddpaths ${TARGET}
+all: viddpaths ${TARGET}
 
 install: all
 	cp ./vidd ${PREFIX}/bin/
