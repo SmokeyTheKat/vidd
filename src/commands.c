@@ -1857,7 +1857,6 @@ void vidd_client_quit(struct vidd_client* client, char* args)
 
 	vidd_client_pool_remove(&client_pool, client);
 
-//    vidd_client_pool_next_client(&client_pool);
 	client_pool.active = 0;
 
 	vidd_reorganize_clients(&client_pool);
