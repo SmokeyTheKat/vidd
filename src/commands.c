@@ -857,7 +857,7 @@ void vidd_selection_draw(struct vidd_client* client)
 			if (client->view.x < line->buffer.length)
 				buffer_printf(&toprint, "%.*s", (int)client->view.width, &line->buffer.data[client->view.x]);
 			if (line->buffer.length == 0)
-				buffer_printf(&toprint, BRGB("255", "255", "255") " ");
+				buffer_printf(&toprint, "%s ", active_theme->highlight_style);
 			buffer_printf(&toprint, NOSTYLE);
 			line = line->next;
 		});
@@ -879,7 +879,7 @@ void vidd_selection_draw(struct vidd_client* client)
 		}, {// middle
 			buffer_printf(&toprint, "%s%.*s" NOSTYLE, active_theme->highlight_style, (int)MIN(client->view.width, line->buffer.length), line->buffer.data);
 			if (line->buffer.length == 0)
-				buffer_printf(&toprint, BRGB("255", "255", "255") " ");
+				buffer_printf(&toprint, "%s ", active_theme->highlight_style);
 		}, {// end
 			buffer_printf(&toprint, "%s%.*s" NOSTYLE, active_theme->highlight_style, (int)MIN(client->view.width, x1), line->buffer.data);
 			if (line->buffer.length == 0)
@@ -1905,7 +1905,6 @@ void vidd_client_quit(struct vidd_client* client, char* args)
 
 	vidd_client_pool_remove(&client_pool, client);
 
-//    vidd_client_pool_next_client(&client_pool);
 	client_pool.active = 0;
 
 	vidd_reorganize_clients(&client_pool);
