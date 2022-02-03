@@ -42,6 +42,7 @@ intmax_t vidd_client_pool_get_client_index(struct vidd_client_pool* pool, struct
 void vidd_client_pool_set_active(struct vidd_client_pool* pool, struct vidd_client* client);
 void vidd_client_pool_next_client(struct vidd_client_pool* pool);
 void vidd_client_pool_prev_client(struct vidd_client_pool* pool);
+void vidd_set_mode_texts_names(void);
 
 enum
 {

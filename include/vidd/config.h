@@ -3,11 +3,6 @@
 
 #include "vidd.h"
 
-#define STYLE_EMPTY_LINE FRGB("255", "255", "0") "*"
-#define STYLE_HIGHLIGHT STYLE_REVERSE
-#define STYLE_LINE_NUMBER_COLOR FRGB("255", "255", "0")
-#define STYLE_LINE_NUMBER "%d│"
-
 #define KEY_CTRL(c) ((int)(c-96))
 
 extern struct vidd_keybind vidd_normal_mode_keybinds[];

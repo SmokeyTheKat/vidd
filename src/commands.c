@@ -2,11 +2,12 @@
 
 #include <vidd/config.h>
 #include <vidd/display.h>
-#include <vidd/config_syntax.h>
 #include <vidd/getch.h>
 #include <vidd/utils.h>
 #include <vidd/fuzzy_find.h>
 #include <vidd/syntax.h>
+#include <vidd/themes.h>
+#include <vidd/style.h>
 
 #include <stdlib.h>
 
@@ -387,7 +388,7 @@ void vidd_view_adjust_offset(struct vidd_client* client)
 {
 	if (client->numbersOn)
 	{
-		const intmax_t line_style_length = sizeof(STYLE_LINE_NUMBER) - 1 - 4;
+		const intmax_t line_style_length = visable_strlen(active_theme->line_number_format) - 2;
 		client->view.height = client->height - 1;
 		intmax_t number_length = number_get_length(line_get_last(client->text)->number);
 		if (client->view.xo != number_length + line_style_length ||
@@ -852,7 +853,7 @@ void vidd_selection_draw(struct vidd_client* client)
 	{
 		VIDD_LINE_SELECTION_LOOP({
 			buffer_printf(&toprint, CURSOR_TO("%d", "%d"), vidd_view_get_absolute_y_offset(client) + i - client->view.y + 1, vidd_view_get_absolute_x_offset(client) + 1);
-			buffer_printf(&toprint, STYLE_HIGHLIGHT);
+			buffer_printf(&toprint, active_theme->highlight_style);
 			if (client->view.x < line->buffer.length)
 				buffer_printf(&toprint, "%.*s", (int)client->view.width, &line->buffer.data[client->view.x]);
 			if (line->buffer.length == 0)
@@ -870,17 +871,17 @@ void vidd_selection_draw(struct vidd_client* client)
 		}, {// range 
 			if (x0 != 0)
 				buffer_printf(&toprint, CURSOR_RIGHT("%d"), x0 - client->view.x);
-			buffer_printf(&toprint, STYLE_HIGHLIGHT "%.*s" NOSTYLE, (int)MIN(client->view.width, x1-x0), &line->buffer.data[x0]);
+			buffer_printf(&toprint, "%s%.*s" NOSTYLE, active_theme->highlight_style, (int)MIN(client->view.width, x1-x0), &line->buffer.data[x0]);
 		}, {// start
 			if (x0 != 0)
 				buffer_printf(&toprint, CURSOR_RIGHT("%d"), x0 - client->view.x);
-			buffer_printf(&toprint, STYLE_HIGHLIGHT "%.*s" NOSTYLE, (int)MIN(client->view.width, line->buffer.length-x0+1), &line->buffer.data[x0]);
+			buffer_printf(&toprint, "%s%.*s" NOSTYLE, active_theme->highlight_style, (int)MIN(client->view.width, line->buffer.length-x0+1), &line->buffer.data[x0]);
 		}, {// middle
-			buffer_printf(&toprint, STYLE_HIGHLIGHT "%.*s" NOSTYLE, (int)MIN(client->view.width, line->buffer.length), line->buffer.data);
+			buffer_printf(&toprint, "%s%.*s" NOSTYLE, active_theme->highlight_style, (int)MIN(client->view.width, line->buffer.length), line->buffer.data);
 			if (line->buffer.length == 0)
 				buffer_printf(&toprint, BRGB("255", "255", "255") " ");
 		}, {// end
-			buffer_printf(&toprint, STYLE_HIGHLIGHT "%.*s" NOSTYLE, (int)MIN(client->view.width, x1), line->buffer.data);
+			buffer_printf(&toprint, "%s%.*s" NOSTYLE, active_theme->highlight_style, (int)MIN(client->view.width, x1), line->buffer.data);
 			if (line->buffer.length == 0)
 				buffer_printf(&toprint, BRGB("255", "255", "255") " ");
 		}, {});
@@ -929,7 +930,7 @@ void vidd_line_selection_draw(struct vidd_client* client)
 	{
 		cursor_move_to(vidd_view_get_absolute_x_offset(client),
 				vidd_view_get_absolute_y_offset(client) + p - client->view.y);
-		printf(STYLE_HIGHLIGHT);
+		printf(active_theme->highlight_style);
 		if (client->view.x < line->buffer.length)
 			printf("%.*s", (int)client->view.width, &line->buffer.data[client->view.x]);
 		printf(NOSTYLE);
@@ -1264,16 +1265,16 @@ void vidd_enter_window_move_mode(struct vidd_client* client)
 void vidd_enter_command_mode(struct vidd_client* client)
 {
 	cursor_save();
-	cursor_move_to(client->x + strlen(vidd_mode_texts[client->mode]), client->y + client->height - 1);
-	printf(ACTIVE_CLIENT_COLOR);
+	cursor_move_to(client->x + visable_strlen(vidd_mode_texts[client->mode]), client->y + client->height - 1);
+	printf(active_theme->status_bar_active_style);
 	printf(":");
 	client->mode = VIDD_MODE_COMMAND;
 }
 void vidd_enter_find_next_mode(struct vidd_client* client)
 {
 	cursor_save();
-	cursor_move_to(client->x + strlen(vidd_mode_texts[client->mode]), client->y + client->height);
-	printf(ACTIVE_CLIENT_COLOR);
+	cursor_move_to(client->x + visable_strlen(vidd_mode_texts[client->mode]), client->y + client->height);
+	printf(active_theme->status_bar_active_style);
 	printf("/");
 	vidd_mode_swap(client, 0);
 	client->mode = VIDD_MODE_FIND;
@@ -1281,8 +1282,8 @@ void vidd_enter_find_next_mode(struct vidd_client* client)
 void vidd_enter_find_prev_mode(struct vidd_client* client)
 {
 	cursor_save();
-	cursor_move_to(client->x + strlen(vidd_mode_texts[client->mode]), client->y + client->height);
-	printf(ACTIVE_CLIENT_COLOR);
+	cursor_move_to(client->x + visable_strlen(vidd_mode_texts[client->mode]), client->y + client->height);
+	printf(active_theme->status_bar_active_style);
 	printf("?");
 	vidd_mode_swap(client, 0);
 	client->mode = VIDD_MODE_FIND_REVERSE;
@@ -1531,7 +1532,7 @@ void vidd_run_line(struct vidd_client* client)
 
 void vidd_floating_window_draw_frame(struct vidd_client* client)
 {
-	printf(BRGB("0", "0", "0") FRGB("255", "255", "255"));
+	printf("%s%s", active_theme->bg_style, active_theme->fg_style);
 	cursor_move_to(client->x - 1, client->y - 1);
 	printf("┌");
 	for (intmax_t i = 0; i < client->width; i++)
@@ -1991,6 +1992,20 @@ void vidd_set(struct vidd_client* client, char* args)
 	{
 		char* value = strtok(0, "\n\0");
 		buffer_set_data(&client->make_command, value, strlen(value));
+	}
+	else if (!strcmp(var, "theme"))
+	{
+		char* value = strtok(0, "\n\0");
+		for (int i = 0; i < themes_length; i++)
+		{
+			if (strcmp(themes[i]->name, value) == 0)
+			{
+				active_theme = themes[i];
+				vidd_redraw(client);
+				vidd_set_mode_texts_names();
+				return;
+			}
+		}
 	}
 }
 

@@ -50,12 +50,18 @@ VIDD_MULTI_KEY_BIND_START(vidd_multi_key_copy, 'y')
 	VIDD_MULTI_KEY_BIND_OPTION('y', vidd_copy_line)
 VIDD_MULTI_KEY_BIND_END(vidd_multi_key_copy)
 
+static void _vidd_load_copy(struct vidd_client* client)
+{
+	vidd_load_copy();
+}
+
 VIDD_MULTI_KEY_BIND_START(vidd_multi_key_space, ' ')
 	VIDD_MULTI_KEY_BIND_OPTION('r', vidd_run_line)
 	VIDD_MULTI_KEY_BIND_OPTION('o', vidd_fuzzy_find_open)
 	VIDD_MULTI_KEY_BIND_OPTION('v', vidd_fuzzy_find_vsplit)
 	VIDD_MULTI_KEY_BIND_OPTION('f', vidd_fuzzy_find_float)
 	VIDD_MULTI_KEY_BIND_OPTION('m', vidd_man_word)
+	VIDD_MULTI_KEY_BIND_OPTION('y', _vidd_load_copy)
 VIDD_MULTI_KEY_BIND_END(vidd_multi_key_space)
 
 void vidd_multi_key_delete_then_insert(struct vidd_client* client)
@@ -150,7 +156,6 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	[443]={vidd_toggle_drawing, VIDD_ACTION_MOVEMENT},
 	[0]={vidd_floating_toggle, VIDD_ACTION_MOVEMENT},
 	['~']={vidd_run_make, VIDD_ACTION_MOVEMENT},
-	['t']={vidd_load_file_data, VIDD_ACTION_MOVEMENT},
 	['s']={vidd_test_message, VIDD_ACTION_MOVEMENT},
 	['S']={vidd_test_error, VIDD_ACTION_MOVEMENT},
 };

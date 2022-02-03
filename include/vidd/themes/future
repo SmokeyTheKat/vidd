@@ -1,0 +1,23 @@
+struct theme* const future = &(struct theme){
+	.name="future",
+	.syntax_styles=(char** const)(char*[]){
+		[SCID_KEYWORD]=FRGB("8", "184", "133"),
+		[SCID_OPERATOR]=FRGB("209", "150", "17"),
+		[SCID_MACRO]=FRGB("229", "122", "202"),
+		[SCID_TYPE]=FRGB("209", "150", "17"),
+		[SCID_COMMENT]=FRGB("158", "127", "99"),
+		[SCID_CONST]=STYLE_ITALIC FG_LIGHT_ORANGE,
+		[SCID_STRING]=FRGB("69", "145", "215"),
+		[SCID_CHARACTER_LITERAL]=FRGB("69", "145", "215"),
+		[SCID_NUMBER]=FRGB("73", "133", "177"),
+	},
+	.mode_format=FRGB("0", "27", "26") BRGB("8", "184", "133") " %s ",
+	.fg_style=FGSC("150"),
+	.bg_style=BRGB("23", "22", "29"),
+	.highlight_style=BG_WHITE FRGB("60", "140", "200") STYLE_REVERSE,
+	.line_number_spacer_style=BRGB("0", "27", "26"),
+	.line_number_format=FRGB("8", "184", "133") " %d ",
+	.empty_line_format=" ",
+	.status_bar_active_style=BRGB("0", "27", "26") FRGB("8", "184", "133"),
+	.status_bar_inactive_style=BRGB("0", "27", "26") FRGB("8", "184", "133"),
+};

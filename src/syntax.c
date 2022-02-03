@@ -1,7 +1,8 @@
 #include <vidd/syntax.h>
 
 #include <vidd/vidd.h>
-#include <vidd/config_syntax.h>
+#include <vidd/themes.h>
+#include <vidd/style.h>
 
 #include <stdlib.h>
 
@@ -39,44 +40,6 @@ void vidd_syntax_ftdetect(struct vidd_client* client)
 
 void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i, bool colored)
 {
-/*
-	if (!IS_PRINTABLE(line->buffer.data[*i]))
-	{
-		uint8_t val = line->buffer.data[*i];
-		int mclen = 0;
-		if (val >= 0xc0 && val <= 0xdf) mclen = 2;
-		else if (val >= 0xe0 && val <= 0xef) mclen = 3;
-		else if (val >= 0xf0 && val <= 0xf7) mclen = 4;
-
-		if (mclen > 1)
-		{
-			bool printgood = true;
-			for (int j = 0; j < mclen; j++)
-			{
-				if ((*i) + j >= line->buffer.length && IS_PRINTABLE(line->buffer.data[(*i) + j]))
-				{
-					printgood = false;
-					break;
-				}
-			}
-			if (printgood)
-			{
-				buffer_push_cstring(buffer, &line->buffer.data[(*i)], mclen);
-				for (int j = 0; j < mclen-1; j++)
-				{
-					if (colored) buffer_push_cstring(buffer, FRGB("100", "100", "100") "·" NOSTYLE, sizeof(FRGB("100", "100", "100") "·" NOSTYLE)-1);
-					else
-					{
-						buffer_push_cstring(buffer, FRGB("100", "100", "100") "·" NOSTYLE, sizeof(FRGB("100", "100", "100") "·" NOSTYLE)-1);
-						buffer_push_cstring(buffer, current_color, strlen(current_color));
-					}
-				}
-				(*i) += mclen;
-			}
-			else buffer_push(buffer, line->buffer.data[(*i)++]);
-		}
-	}
-*/
 	if (!IS_PRINTABLE(line->buffer.data[*i]))
 	{
 		mblen(0, 0);
@@ -118,9 +81,12 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 		{
 			if (IS_NUMBER(text[i]) && !IS_CHARACTER(text[i-1]))
 			{
-				buffer_push_cstring(buffer, SYNTAX_NUMBER_COLOR, sizeof(SYNTAX_NUMBER_COLOR)-1);
+				char* number_style = active_theme->syntax_styles[SCID_NUMBER];
+				buffer_push_cstring(buffer, number_style, strlen(number_style));
 				while (i < line->buffer.length && i < client->view.x + client->view.width && IS_NUMBER(text[i])) buffer_push(buffer, line->buffer.data[i++]);
-				buffer_push_cstring(buffer, NOSTYLE, sizeof(NOSTYLE)-1);
+				buffer_print(buffer, NOSTYLE);
+				buffer_print(buffer, active_theme->bg_style);
+				buffer_print(buffer, active_theme->fg_style);
 				continue;
 			}
 			for (intmax_t j = 1+(intmax_t)client->syntax[0]; client->syntax[j]; j++)
@@ -147,8 +113,8 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 						}
 						if (!exists && key_end[0] != '\0') continue;
 
-						current_color = syntax_colors[(int)stype];
-						buffer_push_cstring(buffer, syntax_colors[(int)stype], strlen(syntax_colors[(int)stype]));
+						current_color = active_theme->syntax_styles[(int)stype];
+						buffer_push_cstring(buffer, active_theme->syntax_styles[(int)stype], strlen(active_theme->syntax_styles[(int)stype]));
 						buffer_push_cstring(buffer, &text[i], key_start_length);
 
 						i += key_start_length;
@@ -163,7 +129,9 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 							buffer_push_cstring(buffer, &text[i], key_end_length);
 							i += key_end_length;
 						}
-						buffer_push_cstring(buffer, NOSTYLE, sizeof(NOSTYLE)-1);
+						buffer_print(buffer, NOSTYLE);
+						buffer_print(buffer, active_theme->bg_style);
+						buffer_print(buffer, active_theme->fg_style);
 						goto VIDD_SYNTAX_APPLY_TO_BUFFER_TEXT_LOOP;
 					}
 				}
@@ -181,9 +149,11 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 			{
 				if (strlen(client->syntax[j]+1) == word_length && !strncmp(&text[i], client->syntax[j]+1, word_length))
 				{
-					buffer_push_cstring(buffer, syntax_colors[(int)client->syntax[j][0]], strlen(syntax_colors[(int)client->syntax[j][0]]));
+					buffer_push_cstring(buffer, active_theme->syntax_styles[(int)client->syntax[j][0]], strlen(active_theme->syntax_styles[(int)client->syntax[j][0]]));
 					buffer_push_cstring(buffer, &text[i], MIN(word_length, client->view.x + client->view.width - i));
-					buffer_push_cstring(buffer, NOSTYLE, sizeof(NOSTYLE)-1);
+					buffer_print(buffer, NOSTYLE);
+					buffer_print(buffer, active_theme->bg_style);
+					buffer_print(buffer, active_theme->fg_style);
 					i += word_length;
 					goto VIDD_SYNTAX_APPLY_TO_BUFFER_TEXT_LOOP;
 				}

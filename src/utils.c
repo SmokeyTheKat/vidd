@@ -16,12 +16,37 @@ char cstring_is_n_number(char* cstr, intmax_t n)
 			return false;
 	return i == n;
 }
+
 char* strlstr(char* src, char* find, intmax_t src_length)
 {
 	intmax_t find_length = strlen(find);
 	for (intmax_t i = src_length - 1; i >= 0; i--)
 		if (!strncmp(&src[i], find, find_length)) return &src[i];
 	return 0;
+}
+
+int visable_strlen(char* str)
+{
+	int max_length = strlen(str);
+	int length = 0;
+	char* ptr = str;
+
+	mblen(0, 0);
+
+	while (*ptr)
+	{
+		if (memcmp(ptr, "\x1b[", 2) == 0)
+		{
+			while (*(ptr++) != 'm');
+		}
+		else
+		{
+			ptr += mblen(ptr, max_length);
+			length++;
+		}
+	}
+
+	return length;
 }
 
 intmax_t number_get_length(intmax_t num)

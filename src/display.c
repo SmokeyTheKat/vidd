@@ -1,10 +1,11 @@
 #include <vidd/display.h>
 
 #include <vidd/commands.h>
+#include <vidd/themes.h>
+#include <vidd/style.h>
 #include <vidd/getch.h>
 #include <vidd/config.h>
 #include <vidd/syntax.h>
-#include <vidd/config_syntax.h>
 
 static void vidd_show_message_fmt(struct vidd_client* client, char* message, char* fmt);
 
@@ -28,12 +29,13 @@ void vidd_redraw(struct vidd_client* client)
 		buffer_printf(&toprint, CURSOR_TO("%d", "%d"), client->y, client->x + 1);
 		for (intmax_t i = client->view.y; i < 0; i++)
 		{
-			buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR);
-			buffer_push(&toprint, '*');
+			buffer_print(&toprint, active_theme->empty_line_format);
 			buffer_push_repeat(&toprint, ' ', client->view.width + line_number_gap);
 			if (i + 1 < 0)
 				buffer_printf(&toprint, ((client->x != 0) ? ("\r" CURSOR_DOWN() CURSOR_RIGHT("%d")) : ("\r" CURSOR_DOWN())), client->x);
 			buffer_print(&toprint, NOSTYLE);
+			buffer_print(&toprint, active_theme->bg_style);
+			buffer_print(&toprint, active_theme->fg_style);
 		}
 		buffer_printf(&toprint, CURSOR_TO("%d", "%d"), client->y - client->view.y + 1, client->x+1);
 		visable_line_count += client->view.y;
@@ -52,16 +54,13 @@ void vidd_redraw(struct vidd_client* client)
 	{
 		if (client->numbersOn)
 		{
+			buffer_print(&toprint, active_theme->line_number_spacer_style);
 			buffer_push_repeat(&toprint, ' ', line_number_gap - number_get_length(line->number));
 	
-			const intmax_t line_style_length = sizeof(STYLE_LINE_NUMBER) - 1 - 2;
-	
-			buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR);
-			buffer_printf(&toprint, STYLE_LINE_NUMBER, line->number);
-			buffer_printf(&toprint, NOSTYLE, line->number);
-	
-			if (client->view.xo > line_number_gap + line_style_length)
-				buffer_printf(&toprint, CURSOR_RIGHT("%d"), client->x);
+			buffer_printf(&toprint, active_theme->line_number_format, line->number);
+			buffer_print(&toprint, NOSTYLE);
+			buffer_print(&toprint, active_theme->bg_style);
+			buffer_print(&toprint, active_theme->fg_style);
 		}
 
 		if (client->view.x < line->buffer.length)
@@ -77,12 +76,13 @@ void vidd_redraw(struct vidd_client* client)
 	}
 	for (; i < visable_line_count; i++)
 	{
-		buffer_printf(&toprint, STYLE_LINE_NUMBER_COLOR);
-		buffer_push(&toprint, '*');
+		buffer_printf(&toprint, active_theme->empty_line_format);
 		buffer_push_repeat(&toprint, ' ', client->view.width + line_number_gap);
 		if (i + 1 < visable_line_count)
 			buffer_printf(&toprint, ((client->x != 0) ? ("\r" CURSOR_DOWN() CURSOR_RIGHT("%d")) : ("\r" CURSOR_DOWN())), client->x);
 		buffer_print(&toprint, NOSTYLE);
+		buffer_print(&toprint, active_theme->bg_style);
+		buffer_print(&toprint, active_theme->fg_style);
 	}
 
 	if (client->isFloating) vidd_floating_window_draw_frame(client);
@@ -128,7 +128,7 @@ static void vidd_show_message_fmt(struct vidd_client* client, char* message, cha
 
 void vidd_show_message(struct vidd_client* client, char* message)
 {
-	char* fmt = (client == vidd_get_active()) ? ACTIVE_CLIENT_COLOR : INACTIVE_CLIENT_COLOR;
+	char* fmt = (client == vidd_get_active()) ? active_theme->status_bar_active_style : active_theme->status_bar_inactive_style;
 	vidd_show_message_fmt(client, message, fmt);
 }
 
@@ -140,7 +140,7 @@ void vidd_show_error(struct vidd_client* client, char* message)
 
 void vidd_set_status(struct vidd_client* client)
 {
-	char* fmt = (client == vidd_get_active()) ? ACTIVE_CLIENT_COLOR : INACTIVE_CLIENT_COLOR;
+	char* fmt = (client == vidd_get_active()) ? active_theme->status_bar_active_style : active_theme->status_bar_inactive_style;
 
 	cursor_save();
 

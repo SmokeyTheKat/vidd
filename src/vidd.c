@@ -1,10 +1,11 @@
 #include <vidd/vidd.h>
 
 #include <vidd/config.h>
+#include <vidd/themes.h>
+#include <vidd/style.h>
 #include <vidd/display.h>
 #include <vidd/syntax.h>
 #include <vidd/getch.h>
-#include <vidd/config_syntax.h>
 #include <vidd/commands.h>
 #include <vidd/mode_command.h>
 
@@ -19,16 +20,54 @@ struct buffer run_buffer;
 struct buffer macro_buffer;
 bool macro_recording = false;
 
+static char* vidd_mode_names[] = {
+	[VIDD_MODE_NORMAL]="NORMAL",
+	[VIDD_MODE_COMMAND]="COMMAND",
+	[VIDD_MODE_WINDOW_MOVE]="WINDOW MOVE",
+	[VIDD_MODE_INSERT]="INSERT",
+	[VIDD_MODE_REPLACE]="REPLACE",
+	[VIDD_MODE_SELECT]="SELECT",
+	[VIDD_MODE_LINE_SELECT]="LINE SELECT",
+};
+int vidd_mode_names_length = sizeof(vidd_mode_names);
+
 char* vidd_mode_texts[] = {
-	[VIDD_MODE_NORMAL]="[NORMAL]",
-	[VIDD_MODE_COMMAND]="[COMMAND]",
-	[VIDD_MODE_WINDOW_MOVE]="[WINDOW MOVE]",
-	[VIDD_MODE_INSERT]="[INSERT]",
-	[VIDD_MODE_REPLACE]="[REPLACE]",
-	[VIDD_MODE_SELECT]="[SELECT]",
-	[VIDD_MODE_LINE_SELECT]="[LINE SELECT]",
+	[VIDD_MODE_NORMAL]="NORMAL",
+	[VIDD_MODE_COMMAND]="COMMAND",
+	[VIDD_MODE_WINDOW_MOVE]="WINDOW MOVE",
+	[VIDD_MODE_INSERT]="INSERT",
+	[VIDD_MODE_REPLACE]="REPLACE",
+	[VIDD_MODE_SELECT]="SELECT",
+	[VIDD_MODE_LINE_SELECT]="LINE SELECT",
 };
 int vidd_mode_texts_length = sizeof(vidd_mode_texts);
+
+void vidd_set_mode_texts_names(void)
+{
+	static char normal_mode_buffer[1024] = {0};
+	static char command_mode_buffer[1024] = {0};
+	static char window_move_mode_buffer[1024] = {0};
+	static char insert_mode_buffer[1024] = {0};
+	static char replace_mode_buffer[1024] = {0};
+	static char select_mode_buffer[1024] = {0};
+	static char line_select_mode_buffer[1024] = {0};
+
+	sprintf(normal_mode_buffer, active_theme->mode_format, vidd_mode_names[VIDD_MODE_NORMAL]);
+	sprintf(command_mode_buffer, active_theme->mode_format, vidd_mode_names[VIDD_MODE_COMMAND]);
+	sprintf(window_move_mode_buffer, active_theme->mode_format, vidd_mode_names[VIDD_MODE_WINDOW_MOVE]);
+	sprintf(insert_mode_buffer, active_theme->mode_format, vidd_mode_names[VIDD_MODE_INSERT]);
+	sprintf(replace_mode_buffer, active_theme->mode_format, vidd_mode_names[VIDD_MODE_REPLACE]);
+	sprintf(select_mode_buffer, active_theme->mode_format, vidd_mode_names[VIDD_MODE_SELECT]);
+	sprintf(line_select_mode_buffer, active_theme->mode_format, vidd_mode_names[VIDD_MODE_LINE_SELECT]);
+
+	vidd_mode_texts[VIDD_MODE_NORMAL] = normal_mode_buffer;
+	vidd_mode_texts[VIDD_MODE_COMMAND] = command_mode_buffer;
+	vidd_mode_texts[VIDD_MODE_WINDOW_MOVE] = window_move_mode_buffer;
+	vidd_mode_texts[VIDD_MODE_INSERT] = insert_mode_buffer;
+	vidd_mode_texts[VIDD_MODE_REPLACE] = replace_mode_buffer;
+	vidd_mode_texts[VIDD_MODE_SELECT] = select_mode_buffer;
+	vidd_mode_texts[VIDD_MODE_LINE_SELECT] = line_select_mode_buffer;
+}
 
 char vidd_is_real_file(struct vidd_client* client)
 {
@@ -211,11 +250,13 @@ void vidd_continue_input(struct vidd_client* client)
 void vidd_main(void)
 {
 	//dbs_start(0, "127.0.0.1");
+	vidd_set_mode_texts_names();
 	command_input = make_buffer(150);
 	copy_buffer = make_buffer(2048);
 	run_buffer = make_buffer(2048);
 	macro_buffer = make_buffer(2048);
 	vidd_load_copy();
+	vidd_redraw(vidd_get_active());
 	while (1) vidd_continue_input(vidd_get_active());
 }
 

@@ -14,14 +14,6 @@
 #define SWAP(a, b) { typeof(a) tmp = a; a = b; b = tmp; }
 #define ABS(v) (((v) >= 0) ? ((v)) : (-1*(v)))
 
-#define FRGB(r, g, b) "\x1b[38;2;" r ";" g ";" b "m"
-#define BRGB(r, g, b) "\x1b[48;2;" r ";" g ";" b "m"
-
-#define NOSTYLE "\x1b[0m"
-#define STYLE_UNDERLINE "\x1b[4m"
-#define STYLE_REVERSE "\x1b[7m"
-#define STYLE_ITALIC "\x1b[3m"
-
 #define CURSOR_HIDE "\x1b[?25l"
 #define CURSOR_SHOW "\x1b[?25h"
 #define CURSOR_TO(x, y) "\x1b[" y ";" x "H"
@@ -217,6 +209,7 @@ enum
 
 char cstring_is_n_number(char* cstr, intmax_t n);
 char* strlstr(char* src, char* find, intmax_t src_length);
+int visable_strlen(char* str);
 intmax_t number_get_length(intmax_t num);
 void screen_get_size(intmax_t * width, intmax_t* height);
 void screen_save(void);
