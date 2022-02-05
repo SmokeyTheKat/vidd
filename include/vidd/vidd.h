@@ -83,7 +83,7 @@ struct vidd_client
 	struct buffer file_name;
 	intmax_t x, y;
 	intmax_t width, height;
-	uint32_t key;
+	uint32_t key, lkey;
 	int* open_buffers;
 	struct line* text;
 

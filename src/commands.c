@@ -1845,7 +1845,7 @@ void vidd_run_make(struct vidd_client* client)
 
 void vidd_client_quit(struct vidd_client* client, char* args)
 {
-	if (client->unsavedChanges)
+	if (client->unsavedChanges && !(client->key == KEY_CTRL('c') && client->lkey == KEY_CTRL('c')))
 	{
 		vidd_show_error(client, "unsaved changes");
 		return;

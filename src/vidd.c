@@ -252,6 +252,7 @@ void vidd_interrupt(struct vidd_client* client, uint32_t key)
 {
 	client->key = key;
 	client->keybinds[client->mode](client);
+	client->lkey = key;
 }
 void vidd_continue_input(struct vidd_client* client)
 {

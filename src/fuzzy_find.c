@@ -69,8 +69,7 @@ static void fuzzy_find_clear_area(void)
 	for (intmax_t y = top + 1; y < top + height; y++)
 	{
 		buffer_printf(&toprint, CURSOR_TO("%d", "%d"), y + 1, left + 1 + 1);
-		for (intmax_t x = left + 1; x < left + width - 1; x++)
-			buffer_print(&toprint, " ");
+		buffer_push_repeat(&toprint, ' ', width - 1);
 	}
 
 	printf("%s", toprint.data);
@@ -125,7 +124,7 @@ static void fuzzy_find_display_data(struct list* entries, struct buffer* tofind,
 		buffer_printf(&toprint, CURSOR_TO("%d", "%d"), top + y + 1, left + 1 + 1);
 
 		if (cursor == pos)
-			buffer_print(&toprint, STYLE_REVERSE);
+			buffer_print(&toprint, active_theme->highlight_style);
 
 		buffer_print(&toprint, i->path.data);
 
