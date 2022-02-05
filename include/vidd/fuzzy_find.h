@@ -7,7 +7,7 @@
 struct filepath;
 
 void get_files(struct list* list, char* base_path);
-void vidd_fuzzy_find(struct vidd_client* client, void(*out_function)(struct vidd_client*, char*));
+void vidd_fuzzy_find(struct vidd_client* client, char* title, void(*out_function)(struct vidd_client*, char*));
 void vidd_fuzzy_find_open(struct vidd_client* client);
 void vidd_fuzzy_find_vsplit(struct vidd_client* client);
 void vidd_fuzzy_find_float(struct vidd_client* client);

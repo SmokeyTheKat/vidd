@@ -1958,6 +1958,11 @@ void vidd_set(struct vidd_client* client, char* args)
 			}
 		}
 	}
+	else if (!strcmp(var, "title"))
+	{
+		char* value = strtok(0, "\n\0");
+		set_terminal_title(value);
+	}
 }
 
 

@@ -1,0 +1,23 @@
+struct theme* const ctx = &(struct theme){
+	.name="ctx",
+	.syntax_styles=(char** const)(char*[]){
+		[SCID_KEYWORD]=FG_BLUE,
+		[SCID_OPERATOR]=FGSC("120"),
+		[SCID_MACRO]="\x1b[38;5;65m",
+		[SCID_TYPE]=FG_MAGENTA,
+		[SCID_COMMENT]=FG_BLUE,
+		[SCID_CONST]=STYLE_ITALIC FRGB("50", "100", "255"),
+		[SCID_STRING]=FG_MAGENTA,
+		[SCID_CHARACTER_LITERAL]=FG_MAGENTA,
+		[SCID_NUMBER]=FG_RED,
+	},
+	.mode_format="[ %s ]",
+	.fg_style=FG_WHITE,
+	.bg_style=BG_BLACK,
+	.highlight_style=FG_WHITE STYLE_REVERSE,
+	.line_number_spacer_style=BG_BLACK,
+	.line_number_format=BG_BLACK FG_CYAN "%d|",
+	.empty_line_format=FG_WHITE "~",
+	.status_bar_active_style=BG_BLUE FG_WHITE,
+	.status_bar_inactive_style=BG_WHITE FG_BLACK,
+};

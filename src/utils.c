@@ -41,12 +41,45 @@ int visable_strlen(char* str)
 		}
 		else
 		{
-			ptr += mblen(ptr, max_length);
+			int chr_length = mblen(ptr, max_length);
+			if (chr_length == -1)
+				return 0;
+			ptr += chr_length;
 			length++;
 		}
 	}
 
 	return length;
+}
+
+bool string_includes_list(char* str, char* _list)
+{
+	char* list = malloc(strlen(_list) + 1);
+	strcpy(list, _list);
+
+	char* word = strtok(list, " \n\0");
+	if (word == 0)
+	{
+		free(list);
+		return true;
+	}
+
+	do
+	{
+		if (!strstr(str, word))
+		{
+			free(list);
+			return false;
+		}
+	} while((word = strtok(0, " \n\0")));
+
+	free(list);
+	return true;
+}
+
+void set_terminal_title(char* title)
+{
+	printf("\x1b]0;%s\x07", title);
 }
 
 intmax_t number_get_length(intmax_t num)

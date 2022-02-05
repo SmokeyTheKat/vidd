@@ -8,6 +8,7 @@
 #include <vidd/themes/monokai>
 #include <vidd/themes/future>
 #include <vidd/themes/vscode>
+#include <vidd/themes/ctx>
 
 struct theme* active_theme = future;
 
@@ -17,5 +18,6 @@ struct theme* themes[] = {
 	monokai,
 	future,
 	vscode,
+	ctx,
 };
 int themes_length = sizeof(themes) / sizeof(themes[0]);

@@ -70,6 +70,9 @@ void vidd_syntax_push_next(struct buffer* buffer, struct line* line, intmax_t* i
 		}
 	}
 	else buffer_push(buffer, line->buffer.data[(*i)++]);
+//
+//    buffer_print(buffer, active_theme->bg_style);
+//    buffer_print(buffer, active_theme->fg_style);
 }
 
 void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buffer, struct line* line)

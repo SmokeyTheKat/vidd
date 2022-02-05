@@ -2,6 +2,7 @@
 
 #include <vidd/args.h>
 #include <vidd/list.h>
+#include <vidd/utils.h>
 #include <vidd/getch.h>
 #include <vidd/commands.h>
 #include <vidd/display.h>
@@ -39,7 +40,6 @@ int main(int argc, char** argv)
 	}
 
 	getch_init();
-//    vidd_redraw(vidd_get_active());
 
 	vidd_main();
 	screen_restore();

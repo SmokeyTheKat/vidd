@@ -2,10 +2,26 @@
 
 #include <vidd/list.h>
 #include <vidd/commands.h>
+#include <vidd/style.h>
+#include <vidd/themes.h>
+#include <vidd/vidd.h>
 #include <vidd/getch.h>
 
 #include <string.h>
 #include <dirent.h>
+
+static void fuzzy_find_clear_area(void);
+static void fuzzy_find_draw_border(char* title);
+static void fuzzy_find_clear_area(void);
+static void fuzzy_find_draw_border(char* title);
+static void fuzzy_find_display_data(struct list* entries, struct buffer* tofind, int cursor);
+static char* fuzzy_find_get_path_at_cursor(struct list* entries, struct buffer* tofind, int cursor);
+static void fuzzy_find_close(struct list* entries);
+
+static int width = 0;
+static int height = 0;
+static int top = 0;
+static int left = 0;
 
 void get_files(struct list* list, char* base_path)
 {
@@ -33,93 +49,184 @@ void get_files(struct list* list, char* base_path)
 
 void vidd_fuzzy_find_open(struct vidd_client* client)
 {
-	vidd_fuzzy_find(client, vidd_edit);
+	vidd_fuzzy_find(client, "edit", vidd_edit);
 }
 
 void vidd_fuzzy_find_vsplit(struct vidd_client* client)
 {
-	vidd_fuzzy_find(client, vidd_vsplit);
+	vidd_fuzzy_find(client, "split", vidd_vsplit);
 }
 
 void vidd_fuzzy_find_float(struct vidd_client* client)
 {
-	vidd_fuzzy_find(client, vidd_open_in_floating_window);
+	vidd_fuzzy_find(client, "window", vidd_open_in_floating_window);
 }
 
-void vidd_fuzzy_find(struct vidd_client* client, void(*out_function)(struct vidd_client*, char*))
+static void fuzzy_find_clear_area(void)
 {
-	intmax_t width, height;
-	screen_get_size(&width, &height);
-	height--;
+	struct buffer toprint = make_buffer(width * height);
 
-	struct list entries = make_list(100, struct filepath);
-	get_files(&entries, ".");
-	screen_clear();
-	for (list_iterate_max(&entries, i, height, struct filepath))
-		printf("%s\r\n", i->path.data+2);
-	int pos = 0;
-	struct buffer typed = make_buffer(100);
-	while (1)
+	for (intmax_t y = top + 1; y < top + height; y++)
 	{
-		char key = getch(true);
-		printf("\x1b[2J\x1b[1;1H");
-		if (key == KEY_ESCAPE)
-		{
-			goto VIDD_FUZZY_FIND_EXIT;
-		}
-		else if (key == KEY_TAB)
-		{
-			pos++;
-			int rpos = 0;
-			for (list_iterate(&entries, i, struct filepath))
-				if (strstr(i->path.data, typed.data)) rpos++;
-			if (pos >= rpos) pos = 0;
-		}
-		else if (key == KEY_RETURN)
-		{
-			vidd_reorganize_clients(&client_pool);
-			int rpos = 0;
-			for (list_iterate(&entries, i, struct filepath))
-			{
-				if (strstr(i->path.data, typed.data))
-				{
-					if (rpos == pos)
-					{
-						out_function(client, i->path.data);
-						goto VIDD_FUZZY_FIND_EXIT;
-					}
-					rpos++;
-				}
-			}
-		}
-		else if (key == KEY_BACKSPACE)
-		{
-			if (typed.length == 0)
-				goto VIDD_FUZZY_FIND_EXIT;
-			buffer_pop(&typed);
-		}
-		else buffer_push(&typed, key);
-		int rpos = 0;
-		printf("\x1b[0m%s\r\n", typed.data);
-		for (list_iterate_condition(&entries, i, rpos < height-1, struct filepath))
-		{
-			char* find_pos = 0;
-			if ((find_pos = strstr(i->path.data, typed.data)))
-			{
-				if (rpos == pos)
-					printf("\x1b[0m\x1b[38;2;255;255;0m\x1b[7m%s\r\n", i->path.data+2);
-				else printf("\x1b[0m%s\x1b[%dD\x1b[38;2;255;255;0m%s\r\n", i->path.data+2,
-							(int)(((ptrdiff_t)&i->path.data[i->path.length]) - ((ptrdiff_t)find_pos)),
-							typed.data);
-				rpos++;
-			}
-		}
+		buffer_printf(&toprint, CURSOR_TO("%d", "%d"), y + 1, left + 1 + 1);
+		for (intmax_t x = left + 1; x < left + width - 1; x++)
+			buffer_print(&toprint, " ");
 	}
-VIDD_FUZZY_FIND_EXIT:
-	vidd_reorganize_clients(&client_pool);
-	for (list_iterate(&entries, i, struct filepath))
+
+	printf("%s", toprint.data);
+
+	free_buffer(&toprint);
+}
+
+static void fuzzy_find_draw_border(char* title)
+{
+	printf("%s", active_theme->bg_style);
+	printf("%s", active_theme->fg_style);
+
+	cursor_move_to(left, top);
+	printf("┌" CURSOR_DOWN() CURSOR_LEFT());
+	for (intmax_t i = 0; i < height; i++)
+		printf("│" CURSOR_DOWN() CURSOR_LEFT());
+
+	cursor_move_to(left + width, top);
+	printf("┐" CURSOR_LEFT() CURSOR_DOWN());
+	for (intmax_t i = 1; i < height; i++)
+		printf("│" CURSOR_DOWN() CURSOR_LEFT());
+	printf("┘");
+
+	cursor_move_to(left, top + height);
+	printf("└");
+	for (intmax_t i = 1; i < width; i++)
+		printf("─");
+
+	cursor_move_to(left + 1, top);
+	for (intmax_t i = 1; i < width; i++)
+		printf("─");
+
+	cursor_move_to(left + (width / 2) - ((strlen(title) + 2) / 2), top);
+	printf(" %s ", title);
+}
+
+static void fuzzy_find_display_data(struct list* entries, struct buffer* tofind, int cursor)
+{
+	fuzzy_find_clear_area();
+
+	struct buffer toprint = make_buffer(width * height);
+
+	int y = 1;
+	buffer_printf(&toprint, CURSOR_TO("%d", "%d"), top + y++ + 1, left + 1 + 1);
+	buffer_print(&toprint, tofind->data);
+
+	int pos = 0;
+	for (list_iterate(entries, i, struct filepath))
+	{
+		if (!string_includes_list(i->path.data, tofind->data)) continue;
+
+		buffer_printf(&toprint, CURSOR_TO("%d", "%d"), top + y + 1, left + 1 + 1);
+
+		if (cursor == pos)
+			buffer_print(&toprint, STYLE_REVERSE);
+
+		buffer_print(&toprint, i->path.data);
+
+		buffer_print(&toprint, NOSTYLE);
+		buffer_print(&toprint, active_theme->bg_style);
+		buffer_print(&toprint, active_theme->fg_style);
+
+		y++;
+		pos++;
+		if (y == height) break;
+	}
+
+	printf("%s", toprint.data);
+
+	free_buffer(&toprint);
+}
+
+static char* fuzzy_find_get_path_at_cursor(struct list* entries, struct buffer* tofind, int cursor)
+{
+	int pos = 0;
+	for (list_iterate(entries, i, struct filepath))
+	{
+		if (!string_includes_list(i->path.data, tofind->data)) continue;
+		if (pos == cursor)
+			return i->path.data;
+		pos++;
+	}
+	return 0;
+}
+
+static void fuzzy_find_close(struct list* entries)
+{
+	for (list_iterate(entries, i, struct filepath))
 	{
 		free_buffer(&i->path);
 		free_buffer(&i->name);
 	}
+	free_list(entries);
+	vidd_reorganize_clients(&client_pool);
+}
+
+void vidd_fuzzy_find(struct vidd_client* client, char* title, void(*out_function)(struct vidd_client*, char*))
+{
+	intmax_t screen_width, screen_height;
+	screen_get_size(&screen_width, &screen_height);
+
+	struct list entries = make_list(100, struct filepath);
+	get_files(&entries, ".");
+
+	width = screen_width * 0.7;
+	height = screen_height * 0.6;
+	top = screen_height / 6;
+	left = screen_width / 6;
+
+	fuzzy_find_draw_border(title);
+
+	int cursor = 0;
+	struct buffer typed = make_buffer(100);
+
+	fuzzy_find_display_data(&entries, &typed, cursor);
+
+	while (1)
+	{
+		char key = getch(true);
+		switch (key)
+		{
+			case KEY_ESCAPE:
+			{
+				fuzzy_find_close(&entries);
+				return;
+			} break;
+			case KEY_TAB:
+			{
+				cursor++;
+			} break;
+			case KEY_RETURN:
+			{
+				char* path = fuzzy_find_get_path_at_cursor(&entries, &typed, cursor);
+				if (path != 0)
+					out_function(client, path);
+				fuzzy_find_close(&entries);
+				return;
+			} break;
+			case KEY_BACKSPACE:
+			{
+				if (typed.length == 0)
+				{
+					fuzzy_find_close(&entries);
+					return;
+				}
+				buffer_pop(&typed);
+				cursor = 0;
+			} break;
+			default:
+			{
+				buffer_push(&typed, key);
+				cursor = 0;
+			} break;
+		}
+		fuzzy_find_display_data(&entries, &typed, cursor);
+	}
+
+	fuzzy_find_close(&entries);
 }

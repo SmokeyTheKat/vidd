@@ -22,6 +22,11 @@ intmax_t __list_index_of(struct list* list, void* find, intmax_t type_size);
 		.capacity=cap, \
 	}
 
+#define free_list(list, ...) \
+	free((list)->data); \
+	(list)->length = 0; \
+	(list)->capacity = 0;
+
 #define list_isempty(list) \
 	(!(list)->length)
 

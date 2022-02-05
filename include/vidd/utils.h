@@ -2,8 +2,7 @@
 #define __VIDD_UTILS_H__
 
 #include <stdint.h>
-
-#define ERROR_PRINT(v) {screen_clear();v;exit(0);}
+#include <stdbool.h>
 
 #define IS_CHARACTER(c) ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_'))
 #define IS_NUMBER(c) (c >= '0' && c <= '9')
@@ -210,6 +209,8 @@ enum
 char cstring_is_n_number(char* cstr, intmax_t n);
 char* strlstr(char* src, char* find, intmax_t src_length);
 int visable_strlen(char* str);
+bool string_includes_list(char* str, char* list);
+void set_terminal_title(char* title);
 intmax_t number_get_length(intmax_t num);
 void screen_get_size(intmax_t * width, intmax_t* height);
 void screen_save(void);
