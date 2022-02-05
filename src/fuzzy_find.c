@@ -174,10 +174,10 @@ void vidd_fuzzy_find(struct vidd_client* client, char* title, void(*out_function
 	struct list entries = make_list(100, struct filepath);
 	get_files(&entries, ".");
 
-	width = screen_width * 0.7;
-	height = screen_height * 0.6;
-	top = screen_height / 6;
-	left = screen_width / 6;
+	width = screen_width * 0.8;
+	height = screen_height * 0.8;
+	top = screen_height * 0.1;
+	left = screen_width * 0.1;
 
 	fuzzy_find_draw_border(title);
 
