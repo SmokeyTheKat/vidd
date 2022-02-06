@@ -5,11 +5,11 @@
 
 void vidd_redraw_line(struct vidd_client* client);
 void vidd_toggle_drawing(struct vidd_client* client);
-void vidd_reorganize_clients(struct vidd_client_pool* pool);
 void vidd_increase_master_size(struct vidd_client* client);
 void vidd_decrease_master_size(struct vidd_client* client);
 
 void vidd_run_line(struct vidd_client* client);
+void vidd_draw_vsplit_line(struct vidd_client* client);
 
 void vidd_floating_window_draw_frame(struct vidd_client* client);
 void vidd_floating_increase_height(struct vidd_client* client);
@@ -142,6 +142,13 @@ void vidd_enter_find_prev_mode(struct vidd_client* client);
 void vidd_enter_replace_mode(struct vidd_client* client);
 void vidd_enter_window_move_mode(struct vidd_client* client);
 
+void vidd_toggle_case(struct vidd_client* client);
+
+void vidd_increase_master_count(struct vidd_client* client);
+void vidd_decrease_master_count(struct vidd_client* client);
+
+void vidd_next_layout(struct vidd_client* client);
+
 void vidd_client_up(struct vidd_client* client);
 void vidd_client_down(struct vidd_client* client);
 void vidd_client_prev(struct vidd_client* client);
@@ -151,6 +158,16 @@ void vidd_client_right(struct vidd_client* client);
 void vidd_swap_split(struct vidd_client* client);
 void vidd_swap_active(void);
 void vidd_swap(struct vidd_client* client);
+
+void vidd_switch_to_tab1(struct vidd_client* client);
+void vidd_switch_to_tab2(struct vidd_client* client);
+void vidd_switch_to_tab3(struct vidd_client* client);
+void vidd_switch_to_tab4(struct vidd_client* client);
+void vidd_switch_to_tab5(struct vidd_client* client);
+void vidd_switch_to_tab6(struct vidd_client* client);
+void vidd_switch_to_tab7(struct vidd_client* client);
+void vidd_switch_to_tab8(struct vidd_client* client);
+void vidd_switch_to_tab9(struct vidd_client* client);
 
 void vidd_open_empty(struct vidd_client* client);
 
@@ -166,12 +183,12 @@ void vidd_edit(struct vidd_client* client, char* args);
 void vidd_fuzzy_find_open(struct vidd_client* client);
 void vidd_run_command_in_frame(struct vidd_client* client, char* args);
 void vidd_run_command(struct vidd_client* client, char* args);
-void vidd_run_command_in_vsplit(struct vidd_client* client, char* args);
+void vidd_run_command_in_open(struct vidd_client* client, char* args);
 void vidd_run_command_in_floating_window(struct vidd_client* client, char* args);
 void vidd_open_in_floating_window(struct vidd_client* client, char* args);
 void vidd_split(struct vidd_client* client, char* args);
 void vidd_duplicate(struct vidd_client* client);
-void vidd_vsplit(struct vidd_client* client, char* args);
+void vidd_open(struct vidd_client* client, char* args);
 void vidd_write(struct vidd_client* client, char* args);
 void vidd_write_all(struct vidd_client* client, char* args);
 void vidd_write_quit_all(struct vidd_client* client, char* args);

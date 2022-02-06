@@ -48,27 +48,28 @@ VIDD_MULTI_KEY_BIND_START(vidd_multi_key_copy, 'y')
 VIDD_MULTI_KEY_BIND_END(vidd_multi_key_copy)
 
 VIDD_MULTI_KEY_BIND_START(vidd_multi_key_space, ' ')
+	VIDD_MULTI_KEY_BIND_OPTION('1', vidd_switch_to_tab1)
+	VIDD_MULTI_KEY_BIND_OPTION('2', vidd_switch_to_tab2)
+	VIDD_MULTI_KEY_BIND_OPTION('3', vidd_switch_to_tab3)
+	VIDD_MULTI_KEY_BIND_OPTION('4', vidd_switch_to_tab4)
+	VIDD_MULTI_KEY_BIND_OPTION('5', vidd_switch_to_tab5)
+	VIDD_MULTI_KEY_BIND_OPTION('6', vidd_switch_to_tab6)
+	VIDD_MULTI_KEY_BIND_OPTION('7', vidd_switch_to_tab7)
+	VIDD_MULTI_KEY_BIND_OPTION('8', vidd_switch_to_tab8)
+	VIDD_MULTI_KEY_BIND_OPTION('9', vidd_switch_to_tab9)
 	VIDD_MULTI_KEY_BIND_OPTION('r', vidd_run_line)
+	VIDD_MULTI_KEY_BIND_OPTION('e', vidd_fuzzy_find_edit)
 	VIDD_MULTI_KEY_BIND_OPTION('o', vidd_fuzzy_find_open)
-	VIDD_MULTI_KEY_BIND_OPTION('v', vidd_fuzzy_find_vsplit)
 	VIDD_MULTI_KEY_BIND_OPTION('f', vidd_fuzzy_find_float)
 	VIDD_MULTI_KEY_BIND_OPTION('m', vidd_man_word)
 	VIDD_MULTI_KEY_BIND_OPTION('y', _vidd_load_copy)
+	VIDD_MULTI_KEY_BIND_OPTION('c', vidd_next_layout)
 VIDD_MULTI_KEY_BIND_END(vidd_multi_key_space)
 
-void vidd_multi_key_delete_then_insert(struct vidd_client* client)
+static void vidd_multi_key_delete_then_insert(struct vidd_client* client)
 {
 	vidd_multi_key_delete(client);
 	vidd_enter_insert_mode(client);
-}
-
-void vidd_test_message(struct vidd_client* client)
-{
-	vidd_show_message(client, "omg hi there :)");
-}
-void vidd_test_error(struct vidd_client* client)
-{
-	vidd_show_error(client, "unsaved changes");
 }
 
 struct vidd_keybind vidd_normal_mode_keybinds[] = {
@@ -140,23 +141,24 @@ struct vidd_keybind vidd_normal_mode_keybinds[] = {
 	[KEY_CTRL('k')]={vidd_client_prev, VIDD_ACTION_MOVEMENT},
 	[KEY_CTRL('h')]={vidd_decrease_master_size, VIDD_ACTION_MOVEMENT},
 	[KEY_CTRL('l')]={vidd_increase_master_size, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('i')]={vidd_enter_window_move_mode, VIDD_ACTION_MOVEMENT},
+	[KEY_CTRL('w')]={vidd_enter_window_move_mode, VIDD_ACTION_MOVEMENT},
+	[KEY_CTRL('i')]={vidd_increase_master_count, VIDD_ACTION_MOVEMENT},
+	[KEY_CTRL('d')]={vidd_decrease_master_count, VIDD_ACTION_MOVEMENT},
 	[27]={vidd_enter_normal_mode, VIDD_ACTION_MOVEMENT},
 	[255]={vidd_toggle_drawing, VIDD_ACTION_MOVEMENT},
 	[253]={vidd_save_spot, VIDD_ACTION_MOVEMENT},
 	[254]={vidd_load_spot, VIDD_ACTION_MOVEMENT},
 	[443]={vidd_toggle_drawing, VIDD_ACTION_MOVEMENT},
 	[0]={vidd_floating_toggle, VIDD_ACTION_MOVEMENT},
-	['~']={vidd_run_make, VIDD_ACTION_MOVEMENT},
-	['s']={vidd_test_message, VIDD_ACTION_MOVEMENT},
-	['S']={vidd_test_error, VIDD_ACTION_MOVEMENT},
+	['~']={vidd_toggle_case, VIDD_ACTION_MOVEMENT},
+	['`']={vidd_run_make, VIDD_ACTION_MOVEMENT},
 };
 int vidd_normal_mode_keybinds_length = sizeof(vidd_normal_mode_keybinds) / sizeof(vidd_normal_mode_keybinds[0]);
 
 struct vidd_keybind vidd_window_move_mode_keybinds[] = {
 	[0 ... 510]={0, VIDD_ACTION_MOVEMENT},
 	[KEY_ESCAPE]={vidd_enter_normal_mode, VIDD_ACTION_MOVEMENT},
-	[KEY_CTRL('i')]={vidd_enter_normal_mode, VIDD_ACTION_MOVEMENT},
+	[KEY_CTRL('w')]={vidd_enter_normal_mode, VIDD_ACTION_MOVEMENT},
 	['j']={vidd_move_floating_down, VIDD_ACTION_MOVEMENT},
 	['k']={vidd_move_floating_up, VIDD_ACTION_MOVEMENT},
 	['l']={vidd_move_floating_right, VIDD_ACTION_MOVEMENT},
@@ -205,8 +207,8 @@ struct command vidd_commands[] = {
 	{ "wq", vidd_write_quit },
 	{ "waqa", vidd_write_quit_all },
 	{ "e", vidd_edit },
-	{ "vs", vidd_vsplit },
-	{ "!vs", vidd_run_command_in_vsplit },
+	{ "o", vidd_open },
+	{ "!o", vidd_run_command_in_open },
 	{ "f", vidd_open_in_floating_window },
 	{ "!f", vidd_run_command_in_floating_window },
 	{ "!", vidd_run_command },

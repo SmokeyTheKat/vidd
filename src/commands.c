@@ -1,6 +1,8 @@
 #include <vidd/commands.h>
 
 #include <vidd/config.h>
+#include <vidd/layouts.h>
+#include <vidd/tab.h>
 #include <vidd/display.h>
 #include <vidd/getch.h>
 #include <vidd/utils.h>
@@ -10,6 +12,7 @@
 #include <vidd/style.h>
 
 #include <stdlib.h>
+#include <ctype.h>
 
 void vidd_redraw_line(struct vidd_client* client)
 {
@@ -44,7 +47,63 @@ void vidd_check_for_window_size_change(struct vidd_client* client)
 	intmax_t new_width, new_height;
 	screen_get_size(&new_width, &new_height);
 	if (new_width != client->width || new_height != client->height)
-		vidd_reorganize_clients(&client_pool);
+		vidd_arrange_clients(client->tab);
+}
+
+
+
+
+void vidd_toggle_case(struct vidd_client* client)
+{
+	char* letter = &client->cursor.y->buffer.data[client->cursor.x];
+	if (isupper(*letter))
+		*letter = tolower(*letter);
+	else if (islower(*letter))
+		*letter = toupper(*letter);
+
+	vidd_move_right(client);
+	vidd_redraw(client);
+}
+
+
+
+
+
+void vidd_switch_to_tab1(struct vidd_client* client)
+{
+	vidd_tab_set(1);
+}
+void vidd_switch_to_tab2(struct vidd_client* client)
+{
+	vidd_tab_set(2);
+}
+void vidd_switch_to_tab3(struct vidd_client* client)
+{
+	vidd_tab_set(3);
+}
+void vidd_switch_to_tab4(struct vidd_client* client)
+{
+	vidd_tab_set(4);
+}
+void vidd_switch_to_tab5(struct vidd_client* client)
+{
+	vidd_tab_set(5);
+}
+void vidd_switch_to_tab6(struct vidd_client* client)
+{
+	vidd_tab_set(6);
+}
+void vidd_switch_to_tab7(struct vidd_client* client)
+{
+	vidd_tab_set(7);
+}
+void vidd_switch_to_tab8(struct vidd_client* client)
+{
+	vidd_tab_set(8);
+}
+void vidd_switch_to_tab9(struct vidd_client* client)
+{
+	vidd_tab_set(9);
 }
 
 
@@ -1265,17 +1324,12 @@ void vidd_enter_line_select_mode(struct vidd_client* client)
 
 
 
-intmax_t vidd_client_pool_get_non_floating_window_count(struct vidd_client_pool* pool)
-{
-	intmax_t count = 0;
-	for (int i = 0; i < pool->length; i++)
-		if (!pool->clients[i].isFloating)
-			count++;
-	return count;
-}
 void vidd_draw_vsplit_line(struct vidd_client* client)
 {
-	if (vidd_client_pool_get_non_floating_window_count(&client_pool) <= 1)
+	if (client->tab->length <= client->tab->master_count || client->tab->master_count <= 0)
+		return;
+
+	if (vidd_tab_get_non_floating_count(client->tab) <= 1)
 		return;
 	cursor_move_to(client->x + client->width, client->y);
 	for (int i = 0; i < client->height; i++)
@@ -1292,17 +1346,17 @@ void vidd_client_down(struct vidd_client* client)
 }
 void vidd_client_prev(struct vidd_client* client)
 {
-	vidd_client_pool_prev_client(&client_pool);
+	vidd_tab_prev_client(client->tab);
 	vidd_redraw(client);
-	vidd_draw_vsplit_line(&client_pool.clients[0]);
+	vidd_draw_vsplit_line(&client->tab->clients[0]);
 	vidd_redraw(vidd_get_active());
 }
 void vidd_client_next(struct vidd_client* client)
 {
-	vidd_draw_vsplit_line(&client_pool.clients[0]);
-	vidd_client_pool_next_client(&client_pool);
+	vidd_draw_vsplit_line(&client->tab->clients[0]);
+	vidd_tab_next_client(client->tab);
 	vidd_redraw(client);
-	vidd_draw_vsplit_line(&client_pool.clients[0]);
+	vidd_draw_vsplit_line(&client->tab->clients[0]);
 	vidd_redraw(vidd_get_active());
 }
 
@@ -1316,7 +1370,7 @@ void vidd_swap_active(void)
 
 void vidd_open_empty(struct vidd_client* client)
 {
-	vidd_vsplit(client, "_-=[NONE]=-_");
+	vidd_open(client, "_-=[NONE]=-_");
 }
 
 
@@ -1341,6 +1395,7 @@ void vidd_edit(struct vidd_client* client, char* args)
 	client->height = tmp.height;
 	client->x = tmp.x;
 	client->y = tmp.y;
+	client->tab = tmp.tab;
 	vidd_redraw(client);
 }
 void vidd_floating_increase_height(struct vidd_client* client)
@@ -1352,7 +1407,7 @@ void vidd_floating_increase_height(struct vidd_client* client)
 		if (client->y + client->height + 1 + 4 >= sheight)
 			client->height = sheight - client->y - 2 - 4;
 		client->height += 4;
-		vidd_reorganize_clients(&client_pool);
+		vidd_arrange_clients(client->tab);
 	}
 }
 void vidd_floating_decrease_height(struct vidd_client* client)
@@ -1362,7 +1417,7 @@ void vidd_floating_decrease_height(struct vidd_client* client)
 		if (client->height - 4 <= 5)
 			client->height = 9;
 		client->height -= 4;
-		vidd_reorganize_clients(&client_pool);
+		vidd_arrange_clients(client->tab);
 	}
 }
 void vidd_floating_increase_width(struct vidd_client* client)
@@ -1374,7 +1429,7 @@ void vidd_floating_increase_width(struct vidd_client* client)
 		if (client->x + client->width + 1 + 4 >= swidth)
 			client->width = swidth - client->x - 2 - 4;
 		client->width += 4;
-		vidd_reorganize_clients(&client_pool);
+		vidd_arrange_clients(client->tab);
 	}
 }
 void vidd_floating_decrease_width(struct vidd_client* client)
@@ -1384,7 +1439,7 @@ void vidd_floating_decrease_width(struct vidd_client* client)
 		if (client->width - 4 <= 5)
 			client->width = 9;
 		client->width -= 4;
-		vidd_reorganize_clients(&client_pool);
+		vidd_arrange_clients(client->tab);
 	}
 }
 void vidd_move_floating_up(struct vidd_client* client)
@@ -1394,7 +1449,7 @@ void vidd_move_floating_up(struct vidd_client* client)
 		if (client->y - 2 <= 1)
 			client->y = 2 + 2;
 		client->y -= 2;
-		vidd_reorganize_clients(&client_pool);
+		vidd_arrange_clients(client->tab);
 	}
 }
 void vidd_move_floating_down(struct vidd_client* client)
@@ -1406,7 +1461,7 @@ void vidd_move_floating_down(struct vidd_client* client)
 		if (client->y + client->height + 1 + 2 >= sheight)
 			client->y = sheight - client->height - 2 - 2;
 		client->y += 2;
-		vidd_reorganize_clients(&client_pool);
+		vidd_arrange_clients(client->tab);
 	}
 }
 void vidd_move_floating_right(struct vidd_client* client)
@@ -1418,7 +1473,7 @@ void vidd_move_floating_right(struct vidd_client* client)
 		if (client->x + client->width + 1 + 4 >= swidth)
 			client->x = swidth - client->width - 2 - 4;
 		client->x += 4;
-		vidd_reorganize_clients(&client_pool);
+		vidd_arrange_clients(client->tab);
 	}
 }
 void vidd_move_floating_left(struct vidd_client* client)
@@ -1428,7 +1483,7 @@ void vidd_move_floating_left(struct vidd_client* client)
 		if (client->x - 4 <= 1)
 			client->x = 2 + 4;
 		client->x -= 4;
-		vidd_reorganize_clients(&client_pool);
+		vidd_arrange_clients(client->tab);
 	}
 }
 void vidd_floating_center(struct vidd_client* client)
@@ -1445,23 +1500,27 @@ void vidd_floating_toggle(struct vidd_client* client)
 	client->isFloating = !client->isFloating;
 	if (client->isFloating)
 		vidd_floating_center(client);
-	vidd_reorganize_clients(&client_pool);
+	vidd_arrange_clients(client->tab);
 }
 void vidd_increase_master_size(struct vidd_client* client)
 {
-	if (client_pool.master_size + 0.05 < 1)
+	if (client->tab->master_size + 0.05 < 1)
 	{
-		client_pool.master_size += 0.05;
-		vidd_reorganize_clients(&client_pool);
+		client->tab->master_size += 0.05;
+		vidd_arrange_clients(client->tab);
 	}
 }
 void vidd_decrease_master_size(struct vidd_client* client)
 {
-	if (client_pool.master_size - 0.05 > 0)
+	if (client->tab->master_size - 0.05 > 0)
 	{
-		client_pool.master_size -= 0.05;
-		vidd_reorganize_clients(&client_pool);
+		client->tab->master_size -= 0.05;
+		vidd_arrange_clients(client->tab);
 	}
+}
+void vidd_next_layout(struct vidd_client* client)
+{
+	vidd_tab_next_layout(client->tab);
 }
 
 
@@ -1508,80 +1567,47 @@ void vidd_floating_window_draw_frame(struct vidd_client* client)
 	printf("┘");
 
 }
-struct vidd_client* vidd_get_master_client(struct vidd_client_pool* pool)
+struct vidd_client* vidd_get_master_client(struct vidd_client* client)
 {
-	for (int i = 0; i < pool->length; i++)
+	struct vidd_tab* tab = client->tab;
+	for (int i = 0; i < tab->length; i++)
 	{
-		if (pool->clients[i].isFloating == false)
-			return &pool->clients[i];
+		if (tab->clients[i].isFloating == false)
+			return &tab->clients[i];
 	}
-	return &pool->clients[0];
+	return &tab->clients[0];
 }
-void vidd_reorganize_clients(struct vidd_client_pool* pool)
+void vidd_increase_master_count(struct vidd_client* client)
 {
-	struct vidd_client* master = vidd_get_master_client(pool);
-
-	screen_get_size(&master->width, &master->height);
-	master->x = 0;
-	master->y = 0;
-
-	intmax_t screen_width = master->width;
-
-	if (vidd_client_pool_get_non_floating_window_count(&client_pool) > 1)
-		master->width *= pool->master_size;
-
-	vidd_redraw(master);
-	vidd_draw_vsplit_line(master);
-
-	intmax_t sub_clients = vidd_client_pool_get_non_floating_window_count(&client_pool)-1;
-
-	intmax_t sw_height = (sub_clients == 0) ? (0) : (master->height/sub_clients);
-	intmax_t sw_width = screen_width - master->width - 1;
-	intmax_t sw_x = master->width + 1;
-	intmax_t new_y = 0;
-
-	intmax_t extra = master->height - sw_height * sub_clients;
-
-	for (intmax_t i = 0; i < pool->length; i++)
-	{
-		struct vidd_client* cur = &pool->clients[i];
-		if (cur->isFloating || cur == master) continue;
-		cur->x = sw_x;
-		cur->y = new_y;
-		cur->width = sw_width;
-		cur->height = sw_height;
-		new_y += (extra-- > 0) ? (++cur->height) : (cur->height);
-		vidd_redraw(cur);
-	}
-	for (intmax_t i = 0; i < pool->length; i++)
-	{
-		struct vidd_client* cur = &pool->clients[i];
-		if (cur->isFloating)
-			vidd_redraw(cur);
-	}
-	vidd_cursor_adjust(master, true);
+	client->tab->master_count++;
+	vidd_arrange_clients(client->tab);
+}
+void vidd_decrease_master_count(struct vidd_client* client)
+{
+	client->tab->master_count--;
+	vidd_arrange_clients(client->tab);
 }
 void vidd_swap(struct vidd_client* client)
 {
 	if (client->isFloating) return;
-	if (client == &client_pool.clients[0])
+	if (client == &client->tab->clients[0])
 	{
-		if (client_pool.length == 1) return;
-		client = &client_pool.clients[1];
+		if (client->tab->length == 1) return;
+		client = &client->tab->clients[1];
 	}
-	struct vidd_client tmp = client_pool.clients[0];
-	client_pool.clients[0] = *client;
+	struct vidd_client tmp = client->tab->clients[0];
+	client->tab->clients[0] = *client;
 	*client = tmp;
 
-	client_pool.active = 0;
+	client->tab->active = 0;
 
-	vidd_reorganize_clients(&client_pool);
+	vidd_arrange_clients(client->tab);
 }
 void vidd_duplicate(struct vidd_client* client)
 {
-	vidd_vsplit(client, "");
+	vidd_open(client, "");
 }
-void vidd_vsplit(struct vidd_client* client, char* args)
+void vidd_open(struct vidd_client* client, char* args)
 {
 	char* file_name = args;
 	if (strlen(args) == 0)
@@ -1595,7 +1621,7 @@ void vidd_vsplit(struct vidd_client* client, char* args)
 		new_client = make_vidd_client(file_name, 0, 0, 0, 0, client->open_buffers);
 	else new_client = make_vidd_client(file_name, 0, 0, 0, 0, 0);
 
-	struct vidd_client* new_client_ptr = vidd_client_pool_add(&client_pool, new_client);
+	struct vidd_client* new_client_ptr = vidd_tab_add_client(client->tab, new_client);
 
 	if ((void*)client->file_name.data == (void*)file_name)
 	{
@@ -1610,10 +1636,10 @@ void vidd_vsplit(struct vidd_client* client, char* args)
 
 	vidd_swap(new_client_ptr);
 }
-void vidd_run_command_in_vsplit(struct vidd_client* client, char* args)
+void vidd_run_command_in_open(struct vidd_client* client, char* args)
 {
-	vidd_vsplit(client, "_-=[NONE]=-_");
-	struct vidd_client* new_client = &client_pool.clients[client_pool.length-1];
+	vidd_open(client, "_-=[NONE]=-_");
+	struct vidd_client* new_client = &client->tab->clients[client->tab->length-1];
 
 	FILE* fp = popen(args, "r");
 	vidd_load_from_fp(new_client->text, fp);
@@ -1629,7 +1655,7 @@ void vidd_open_in_floating_window(struct vidd_client* client, char* args)
 	}
 
 	if ((void*)client->file_name.data == (void*)file_name)
-		vidd_client_pool_add(&client_pool,
+		vidd_tab_add_client(client->tab,
 					make_vidd_client(
 						file_name,
 						10, 10,
@@ -1637,7 +1663,7 @@ void vidd_open_in_floating_window(struct vidd_client* client, char* args)
 						client->view.height / 2,
 						client->open_buffers));
 	else
-		vidd_client_pool_add(&client_pool,
+		vidd_tab_add_client(client->tab,
 					make_vidd_client(
 						file_name,
 						10, 10,
@@ -1645,11 +1671,11 @@ void vidd_open_in_floating_window(struct vidd_client* client, char* args)
 						client->view.height / 2,
 						0));
 
-	struct vidd_client* new_client = &client_pool.clients[client_pool.length-1];
+	struct vidd_client* new_client = &client->tab->clients[client->tab->length-1];
 
 	new_client->isFloating = true;
 
-	vidd_client_pool_set_active(&client_pool, new_client);
+	vidd_tab_set_active(client->tab, new_client);
 
 	vidd_load_file(new_client, file_name);
 	vidd_redraw(new_client);
@@ -1661,11 +1687,10 @@ void vidd_run_command_in_floating_window(struct vidd_client* client, char* args)
 	intmax_t borderw = client->width / 23;
 	intmax_t borderh = client->height / 10;
 
-
-	vidd_client_pool_add(
-		&client_pool,
+	vidd_tab_add_client(
+		client->tab,
 		make_vidd_client(
-			"_-=[NONE]=-_",
+			args,
 			(client->x + borderw), (client->y + borderh),
 			client->view.width - (2 * borderw),
 			client->view.height - (2 * borderh),
@@ -1673,11 +1698,11 @@ void vidd_run_command_in_floating_window(struct vidd_client* client, char* args)
 		)
 	);
 
-	struct vidd_client* new_client = &client_pool.clients[client_pool.length-1];
+	struct vidd_client* new_client = &client->tab->clients[client->tab->length-1];
 
 	new_client->isFloating = true;
 
-	vidd_client_pool_set_active(&client_pool, new_client);
+	vidd_tab_set_active(client->tab, new_client);
 
 	intmax_t comlen = strlen(args) + 6;
 	char* com = malloc(comlen);
@@ -1754,25 +1779,15 @@ void vidd_write(struct vidd_client* client, char* args)
 }
 void vidd_write_all(struct vidd_client* client, char* args)
 {
-	for (intmax_t i = 0; i < client_pool.length; i++)
-		vidd_write(&client_pool.clients[i], "");
+	for (intmax_t i = 0; i < client->tab->length; i++)
+		vidd_write(&client->tab->clients[i], "");
 }
 void vidd_write_quit_all(struct vidd_client* client, char* args)
 {
-	if (client_pool.length == 0) return;
-	vidd_write(&client_pool.clients[0], "");
-	vidd_client_quit(&client_pool.clients[0], "");
+	if (client->tab->length == 0) return;
+	vidd_write(&client->tab->clients[0], "");
+	vidd_client_quit(&client->tab->clients[0], "");
 	vidd_write_quit_all(client, args);
-}
-void vidd_client_pool_remove(struct vidd_client_pool* pool, struct vidd_client* client)
-{
-	intmax_t pos = vidd_client_pool_get_client_index(pool, client);
-	free_vidd_client(client);
-	for (intmax_t i = pos; i < pool->length - 1; i++)
-		pool->clients[i] = pool->clients[i+1];
-	pool->length--;
-	pool->clients[pool->length] = (struct vidd_client){ 0 };
-	pool->active = 0;
 }
 void vidd_write_quit(struct vidd_client* client, char* args)
 {
@@ -1853,31 +1868,33 @@ void vidd_client_quit(struct vidd_client* client, char* args)
 
 	vidd_save_file_data(client);
 
-	if (client_pool.length == 1) vidd_force_exit_all(client, 0);
+	if (client->tab->length == 1) vidd_force_exit_all(client, 0);
 
-	vidd_client_pool_remove(&client_pool, client);
+	struct vidd_tab* tab = client->tab;
 
-	client_pool.active = 0;
+	vidd_tab_remove_client(client->tab, client);
 
-	vidd_reorganize_clients(&client_pool);
+	tab->active = 0;
+
+	vidd_arrange_clients(tab);
 }
 void vidd_client_force_quit(struct vidd_client* client, char* args)
 {
-	if (client_pool.length == 1) vidd_force_exit_all(client, 0);
+	if (client->tab->length == 1) vidd_force_exit_all(client, 0);
 
-	vidd_client_pool_remove(&client_pool, client);
+	vidd_tab_remove_client(client->tab, client);
 
-	vidd_client_pool_next_client(&client_pool);
+	vidd_tab_next_client(client->tab);
 
-	vidd_reorganize_clients(&client_pool);
+	vidd_arrange_clients(client->tab);
 }
 void vidd_exit_all(struct vidd_client* client, char* args)
 {
-	for (intmax_t i = 0; i < client_pool.length;)
+	for (intmax_t i = 0; i < client->tab->length;)
 	{
-		intmax_t olen = client_pool.length;
-		vidd_client_quit(&client_pool.clients[i], "");
-		intmax_t nlen = client_pool.length;
+		intmax_t olen = client->tab->length;
+		vidd_client_quit(&client->tab->clients[i], "");
+		intmax_t nlen = client->tab->length;
 		if (olen == nlen) i++;
 	}
 }
@@ -1952,7 +1969,7 @@ void vidd_set(struct vidd_client* client, char* args)
 			if (strcmp(themes[i]->name, value) == 0)
 			{
 				active_theme = themes[i];
-				vidd_redraw(client);
+				vidd_arrange_clients(client->tab);
 				vidd_set_mode_texts_names();
 				return;
 			}

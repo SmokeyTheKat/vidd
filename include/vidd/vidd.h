@@ -3,6 +3,7 @@
 
 #include "line.h"
 #include "buffer.h"
+#include "tab.h"
 #include "list.h"
 #include "utils.h"
 
@@ -24,7 +25,6 @@ struct cursor;
 struct viewport;
 struct command;
 struct vidd_client;
-struct vidd_client_pool;
 
 void vidd_main(void);
 struct vidd_client* vidd_get_active(void);
@@ -39,12 +39,6 @@ bool vidd_is_select_mode(struct vidd_client* client);
 void vidd_load_from_fp(struct line* line, FILE* fp);
 void vidd_load_file(struct vidd_client* client, char* file_name);
 void vidd_load_stdin(struct vidd_client* client);
-struct vidd_client_pool make_vidd_client_pool(intmax_t start_size);
-struct vidd_client* vidd_client_pool_add(struct vidd_client_pool* pool, struct vidd_client client);
-intmax_t vidd_client_pool_get_client_index(struct vidd_client_pool* pool, struct vidd_client* client);
-void vidd_client_pool_set_active(struct vidd_client_pool* pool, struct vidd_client* client);
-void vidd_client_pool_next_client(struct vidd_client_pool* pool);
-void vidd_client_pool_prev_client(struct vidd_client_pool* pool);
 void vidd_set_mode_texts_names(void);
 
 enum
@@ -86,6 +80,7 @@ struct vidd_client
 	uint32_t key, lkey;
 	int* open_buffers;
 	struct line* text;
+	struct vidd_tab* tab;
 
 	struct viewport
 	{
@@ -144,17 +139,6 @@ struct vidd_client
 	};
 	int mode;
 };
-
-struct vidd_client_pool
-{
-	intmax_t active;
-	struct vidd_client* clients;
-	float master_size;
-	intmax_t length;
-	intmax_t size;
-};
- 
-extern struct vidd_client_pool client_pool;
 
 extern struct buffer command_input;
 extern struct buffer copy_buffer;

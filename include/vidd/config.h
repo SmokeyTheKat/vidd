@@ -4,6 +4,7 @@
 #include "vidd.h"
 
 #define KEY_CTRL(c) ((int)(c-96))
+#define DEFAULT_FILE PREFIX "/share/vidd/default"
 
 extern struct vidd_keybind vidd_normal_mode_keybinds[];
 extern int vidd_normal_mode_keybinds_length;

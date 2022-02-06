@@ -2,6 +2,7 @@
 
 #include <vidd/config.h>
 #include <vidd/themes.h>
+#include <vidd/layouts.h>
 #include <vidd/style.h>
 #include <vidd/display.h>
 #include <vidd/syntax.h>
@@ -13,7 +14,6 @@
 #include <locale.h>
 #include <signal.h>
 
-struct vidd_client_pool client_pool;
 struct buffer command_input;
 struct buffer copy_buffer;
 struct buffer run_buffer;
@@ -76,50 +76,7 @@ char vidd_is_real_file(struct vidd_client* client)
 
 struct vidd_client* vidd_get_active(void)
 {
-	return &client_pool.clients[client_pool.active];
-}
-
-intmax_t vidd_client_pool_get_client_index(struct vidd_client_pool* pool, struct vidd_client* client)
-{
-	for (intmax_t i = 0; i < pool->length; i++)
-		if (client == &pool->clients[i]) return i;
-	return -1;
-}
-
-void vidd_client_pool_set_active(struct vidd_client_pool* pool, struct vidd_client* client)
-{
-	pool->active = vidd_client_pool_get_client_index(pool, client);
-}
-
-void vidd_client_pool_prev_client(struct vidd_client_pool* pool)
-{
-	pool->active--;
-	if (pool->active < 0) pool->active = pool->length-1;
-}
-
-void vidd_client_pool_next_client(struct vidd_client_pool* pool)
-{
-	pool->active++;
-	if (pool->active >= pool->length) pool->active = 0;
-}
-
-struct vidd_client_pool make_vidd_client_pool(intmax_t start_size)
-{
-	struct vidd_client_pool pool = { 0 };
-	pool.size = start_size;
-	pool.clients = malloc(sizeof(struct vidd_client) * pool.size);
-	pool.master_size = 0.5;
-	pool.active = 0;
-	return pool;
-}
-
-struct vidd_client* vidd_client_pool_add(struct vidd_client_pool* pool, struct vidd_client client)
-{
-	if (pool->length + 1 > pool->size)
-		pool->clients = realloc(pool->clients, ++pool->size);
-
-	pool->clients[pool->length] = client;
-	return &pool->clients[pool->length++];
+	return &active_tab->clients[active_tab->active];
 }
 
 struct vidd_client make_vidd_client(char* file_name, intmax_t x, intmax_t y, intmax_t width, intmax_t height, int* open_buffers)
@@ -262,14 +219,13 @@ void vidd_continue_input(struct vidd_client* client)
 
 void vidd_main(void)
 {
-	//dbs_start(0, "127.0.0.1");
 	vidd_set_mode_texts_names();
 	command_input = make_buffer(150);
 	copy_buffer = make_buffer(2048);
 	run_buffer = make_buffer(2048);
 	macro_buffer = make_buffer(2048);
 	vidd_load_copy();
-	vidd_reorganize_clients(&client_pool);
+	vidd_arrange_clients(vidd_get_active()->tab);
 	while (1) vidd_continue_input(vidd_get_active());
 }
 

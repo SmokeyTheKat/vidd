@@ -1,6 +1,8 @@
 #include <vidd/fuzzy_find.h>
 
 #include <vidd/list.h>
+#include <vidd/tab.h>
+#include <vidd/layouts.h>
 #include <vidd/commands.h>
 #include <vidd/style.h>
 #include <vidd/themes.h>
@@ -49,17 +51,17 @@ void get_files(struct list* list, char* base_path)
 
 void vidd_fuzzy_find_open(struct vidd_client* client)
 {
-	vidd_fuzzy_find(client, "edit", vidd_edit);
+	vidd_fuzzy_find(client, "open", vidd_open);
 }
 
-void vidd_fuzzy_find_vsplit(struct vidd_client* client)
+void vidd_fuzzy_find_edit(struct vidd_client* client)
 {
-	vidd_fuzzy_find(client, "split", vidd_vsplit);
+	vidd_fuzzy_find(client, "edit", vidd_edit);
 }
 
 void vidd_fuzzy_find_float(struct vidd_client* client)
 {
-	vidd_fuzzy_find(client, "window", vidd_open_in_floating_window);
+	vidd_fuzzy_find(client, "float", vidd_open_in_floating_window);
 }
 
 static void fuzzy_find_clear_area(void)
@@ -163,7 +165,7 @@ static void fuzzy_find_close(struct list* entries)
 		free_buffer(&i->name);
 	}
 	free_list(entries);
-	vidd_reorganize_clients(&client_pool);
+	vidd_arrange_clients(active_tab);
 }
 
 void vidd_fuzzy_find(struct vidd_client* client, char* title, void(*out_function)(struct vidd_client*, char*))

@@ -1,5 +1,7 @@
 #include <vidd/args.h>
 
+#include <vidd/config.h>
+
 #include <string.h>
 
 struct arguments parse_args(int argc, char** argv)
@@ -25,9 +27,9 @@ struct arguments parse_args(int argc, char** argv)
 			list_push(&args.files, argv[i], char*);
 		}
 	}
-	if (list_length(&args.files, char*) == 0)
+	if (list_length(&args.files, char*) == 0 && !args.readonly)
 	{
-		list_push(&args.files, "_-=[NONE]=-_", char*);
+		list_push(&args.files, DEFAULT_FILE, char*);
 	}
 	return args;
 }
