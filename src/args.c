@@ -18,6 +18,10 @@ struct arguments parse_args(int argc, char** argv)
 		{
 			args.readonly = true;
 		}
+		else if (strcmp(argv[i], "--test-getch") == 0)
+		{
+			args.test_getch = true;
+		}
 		else if (strcmp(argv[i], "-") == 0)
 		{
 			args.read_stdin = true;

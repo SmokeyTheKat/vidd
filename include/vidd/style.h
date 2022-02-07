@@ -10,6 +10,7 @@
 #define STYLE_UNDERLINE "\x1b[4m"
 #define STYLE_REVERSE "\x1b[7m"
 #define STYLE_ITALIC "\x1b[3m"
+#define STYLE_BOLD "\x1b[1m"
 
 #define FG_BLACK "\x1b[38;2;0;0;0m"
 #define FG_WHITE "\x1b[38;2;255;255;255m"

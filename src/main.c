@@ -19,6 +19,14 @@ int main(int argc, char** argv)
 
 	struct arguments args = parse_args(argc, argv);
 
+	if (args.test_getch)
+	{
+		getch_init();
+		getch_test();
+		getch_exit();
+		return 0
+	}
+
 	screen_save();
 
 	init_vidd_tab();

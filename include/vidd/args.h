@@ -14,6 +14,7 @@ struct arguments parse_args(int argc, char** argv);
 struct arguments
 {
 	struct list files;
+	bool test_getch;
 	bool read_stdin;
 	bool readonly;
 };

@@ -68,7 +68,7 @@ static void layout_tiled(struct vidd_tab* tab)
 		return;
 	}
 
-	new_width = (master_count > 0) ? (screen_width - screen_width * tab->master_size) : (screen_width);
+	new_width = (master_count > 0) ? (screen_width - screen_width * tab->master_size - 1) : (screen_width);
 	new_height = screen_height / stack_count;
 	extra_height = screen_height - new_height * stack_count;
 	new_x = (master_count > 0) ? (screen_width * tab->master_size + 1) : 0;

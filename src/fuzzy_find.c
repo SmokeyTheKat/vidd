@@ -114,10 +114,7 @@ static void fuzzy_find_display_data(struct list* entries, struct buffer* tofind,
 
 	struct buffer toprint = make_buffer(width * height);
 
-	int y = 1;
-	buffer_printf(&toprint, CURSOR_TO("%d", "%d"), top + y++ + 1, left + 1 + 1);
-	buffer_print(&toprint, tofind->data);
-
+	int y = 2;
 	int pos = 0;
 	for (list_iterate(entries, i, struct filepath))
 	{
@@ -138,6 +135,9 @@ static void fuzzy_find_display_data(struct list* entries, struct buffer* tofind,
 		pos++;
 		if (y == height) break;
 	}
+
+	buffer_printf(&toprint, CURSOR_TO("%d", "%d"), top + 1 + 1, left + 1 + 1);
+	buffer_print(&toprint, tofind->data);
 
 	printf("%s", toprint.data);
 

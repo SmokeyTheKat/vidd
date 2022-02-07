@@ -6,6 +6,8 @@
 #include <termios.h>
 #include <unistd.h>
 
+static struct termios oldt;
+
 uint32_t getch(bool raw)
 {
 	if (run_buffer.length > 0)
@@ -31,7 +33,16 @@ uint32_t getch(bool raw)
 	return retval;
 }
 
-static struct termios oldt;
+void getch_test(void)
+{
+	printf("'q' to exit:\r\n");
+	while (1)
+	{
+		uint32_t key = getch(false);
+		if (key == 'q') break;
+		printf("%d\r\n", key);
+	}
+}
 
 void getch_exit(void)
 {

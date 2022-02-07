@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 uint32_t getch(bool raw);
+void getch_test(void);
 void getch_exit(void);
 void getch_init(void);
 
