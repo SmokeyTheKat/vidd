@@ -1,6 +1,7 @@
 struct theme* const ctx = &(struct theme){
 	.name="ctx",
 	.syntax_styles=(char** const)(char*[]){
+		[0 ... 255]="",
 		[SCID_KEYWORD]=FG_BLUE,
 		[SCID_OPERATOR]=FGSC("120"),
 		[SCID_MACRO]="\x1b[38;5;65m",

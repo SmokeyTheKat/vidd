@@ -16,6 +16,7 @@
 #define SSID_RANGE "~"
 #define SSID_RANGE_NI "`"
 #define SSID_NUMBER "$"
+#define SSID_FUNCTION "@"
 
 #define SCID_KEYWORD '#'
 #define SCID_OPERATOR '+'
@@ -28,6 +29,7 @@
 #define SCID_RANGE '~'
 #define SCID_RANGE_NI '`'
 #define SCID_NUMBER '$'
+#define SCID_FUNCTION '@'
 
 #define SYNTAX_DEFINE(name) \
 	extern char* name[]; extern int name##_length;

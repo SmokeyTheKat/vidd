@@ -84,13 +84,26 @@ void vidd_syntax_apply_to_buffer(struct vidd_client* client, struct buffer* buff
 		{
 			if (IS_NUMBER(text[i]) && !IS_CHARACTER(text[i-1]))
 			{
-				char* number_style = active_theme->syntax_styles[SCID_NUMBER];
-				buffer_push_cstring(buffer, number_style, strlen(number_style));
+				buffer_print(buffer, active_theme->syntax_styles[SCID_NUMBER]);
 				while (i < line->buffer.length && i < client->view.x + client->view.width && IS_NUMBER(text[i])) buffer_push(buffer, line->buffer.data[i++]);
 				buffer_print(buffer, NOSTYLE);
 				buffer_print(buffer, active_theme->bg_style);
 				buffer_print(buffer, active_theme->fg_style);
 				continue;
+			}
+			if (IS_CHARACTER(text[i]) && (i == 0 || (i > 0 && !IS_CHARACTER(text[i-1]))))
+			{
+				int j = i;
+				while (j < line->buffer.length && j < client->view.x + client->view.width && IS_CHARACTER(text[j])) j++;
+				if (text[j] == '(')
+				{
+					buffer_print(buffer, active_theme->syntax_styles[SCID_FUNCTION]);
+					while (i < line->buffer.length && i < client->view.x + client->view.width && IS_CHARACTER(text[i])) buffer_push(buffer, line->buffer.data[i++]);
+					buffer_print(buffer, NOSTYLE);
+					buffer_print(buffer, active_theme->bg_style);
+					buffer_print(buffer, active_theme->fg_style);
+					continue;
+				}
 			}
 			for (intmax_t j = 1+(intmax_t)client->syntax[0]; client->syntax[j]; j++)
 			{

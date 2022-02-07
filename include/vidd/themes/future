@@ -1,6 +1,7 @@
 struct theme* const future = &(struct theme){
 	.name="future",
 	.syntax_styles=(char** const)(char*[]){
+		[0 ... 255]="",
 		[SCID_KEYWORD]=FRGB("8", "184", "133"),
 		[SCID_OPERATOR]=FRGB("209", "150", "17"),
 		[SCID_MACRO]=FRGB("229", "122", "202"),
