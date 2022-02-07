@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 		getch_init();
 		getch_test();
 		getch_exit();
-		return 0
+		return 0;
 	}
 
 	screen_save();
