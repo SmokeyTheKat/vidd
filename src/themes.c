@@ -11,8 +11,9 @@
 #include <vidd/themes/ctx>
 #include <vidd/themes/gruvbox>
 #include <vidd/themes/gloom>
+#include <vidd/themes/strg>
 
-struct theme* active_theme = gloom;
+struct theme* active_theme = strg;
 
 struct theme* themes[] = {
 	amp,
@@ -23,5 +24,6 @@ struct theme* themes[] = {
 	ctx,
 	gruvbox,
 	gloom,
+	strg,
 };
 int themes_length = sizeof(themes) / sizeof(themes[0]);

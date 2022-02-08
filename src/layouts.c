@@ -17,9 +17,11 @@ int vidd_layouts_length = sizeof(vidd_layouts) / sizeof(vidd_layouts[0]);
 
 void vidd_arrange_clients(struct vidd_tab* tab)
 {
+	screen_clear();
 	vidd_layouts[tab->layout](tab);
 	redraw_floating(tab);
 	vidd_cursor_adjust(vidd_get_active(), true);
+	vidd_redraw(&tab->clients[tab->active]);
 }
 
 static void redraw_floating(struct vidd_tab* tab)
@@ -103,6 +105,4 @@ static void layout_monocle(struct vidd_tab* tab)
 		cur->height = screen_height;
 		vidd_redraw(cur);
 	}
-
-	vidd_redraw(&tab->clients[tab->active]);
 }

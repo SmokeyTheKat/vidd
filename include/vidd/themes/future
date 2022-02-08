@@ -19,6 +19,6 @@ struct theme* const future = &(struct theme){
 	.line_number_spacer_style=BRGB("0", "27", "26") FRGB("8", "184", "133"),
 	.line_number_format=" %d ",
 	.empty_line_format=" ",
-	.status_bar_active_style=BRGB("0", "27", "26") FRGB("8", "184", "133"),
+	.status_bar_active_style=STYLE_BOLD BRGB("0", "27", "26") FRGB("8", "184", "133"),
 	.status_bar_inactive_style=BRGB("0", "27", "26") FRGB("8", "184", "133"),
 };
