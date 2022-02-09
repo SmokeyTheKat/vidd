@@ -1565,7 +1565,6 @@ void vidd_floating_window_draw_frame(struct vidd_client* client)
 
 	cursor_move_to(client->x + client->width, client->y + client->height);
 	printf("┘");
-
 }
 struct vidd_client* vidd_get_master_client(struct vidd_client* client)
 {

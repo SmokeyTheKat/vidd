@@ -22,6 +22,8 @@
 #define CURSOR_RIGHT(v) "\x1b[" v "C"
 #define CURSOR_LEFT(v) "\x1b[" v "D"
 
+#define KEY_CTRL(c) ((int)(c-96))
+
 #define PATH_MAX 4096
 
 enum
@@ -38,6 +40,7 @@ enum
 	KEY_ESCAPE=27,
 	KEY_CTRL_BACKSPACE=8,
 	KEY_TAB='\t',
+	KEY_SHIFT_TAB=463,
 };
 
 #define VIDD_LINE_SELECTION_FULL_LOOP(c) \

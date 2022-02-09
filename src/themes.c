@@ -27,3 +27,11 @@ struct theme* themes[] = {
 	strg,
 };
 int themes_length = sizeof(themes) / sizeof(themes[0]);
+
+
+void buffer_push_default_style(struct buffer* buffer)
+{
+	buffer_print(buffer, NOSTYLE);
+	buffer_print(buffer, active_theme->bg_style);
+	buffer_print(buffer, active_theme->fg_style);
+}

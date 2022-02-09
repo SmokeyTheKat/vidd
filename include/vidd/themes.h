@@ -1,7 +1,11 @@
 #ifndef __VIDD_THEMES_H__
 #define __VIDD_THEMES_H__
 
+#include <vidd/buffer.h>
+
 struct theme;
+
+void buffer_push_default_style(struct buffer* buffer);
 
 struct theme
 {

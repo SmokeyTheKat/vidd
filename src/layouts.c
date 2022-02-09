@@ -34,6 +34,13 @@ static void redraw_floating(struct vidd_tab* tab)
 	}
 }
 
+//static struct vidd_client* next_tiled(struct vidd_client* client)
+//{
+//    struct vidd_client* next = client;
+//    while ((next = vidd_tab_get_next_client(client->tab, next))->isFloating);
+//    return next;
+//}
+
 static void layout_tiled(struct vidd_tab* tab)
 {
 	intmax_t screen_width, screen_height;

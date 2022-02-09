@@ -33,8 +33,7 @@ void vidd_redraw(struct vidd_client* client)
 	intmax_t visable_line_count = client->view.height;
 
 	struct buffer toprint = make_buffer(client->view.height * client->view.width * 4);
-	buffer_print(&toprint, active_theme->bg_style);
-	buffer_print(&toprint, active_theme->fg_style);
+	buffer_push_default_style(&toprint);
 
 	if (client->view.y < 0)
 	{
@@ -45,9 +44,7 @@ void vidd_redraw(struct vidd_client* client)
 			buffer_push_repeat(&toprint, ' ', client->view.width + line_number_gap);
 			if (i + 1 < 0)
 				buffer_printf(&toprint, ((client->x != 0) ? ("\r" CURSOR_DOWN() CURSOR_RIGHT("%d")) : ("\r" CURSOR_DOWN())), client->x);
-			buffer_print(&toprint, NOSTYLE);
-			buffer_print(&toprint, active_theme->bg_style);
-			buffer_print(&toprint, active_theme->fg_style);
+			buffer_push_default_style(&toprint);
 		}
 		buffer_printf(&toprint, CURSOR_TO("%d", "%d"), client->y - client->view.y + 1, client->x+1);
 		visable_line_count += client->view.y;
@@ -70,11 +67,9 @@ void vidd_redraw(struct vidd_client* client)
 			buffer_push_repeat(&toprint, ' ', line_number_gap - number_get_length(line->number));
 	
 			buffer_printf(&toprint, active_theme->line_number_format, line->number);
-			buffer_print(&toprint, NOSTYLE);
 		}
 
-		buffer_print(&toprint, active_theme->bg_style);
-		buffer_print(&toprint, active_theme->fg_style);
+		buffer_push_default_style(&toprint);
 
 		if (client->view.x < line->buffer.length)
 			vidd_syntax_apply_to_buffer(client, &toprint, line);
@@ -93,9 +88,7 @@ void vidd_redraw(struct vidd_client* client)
 		buffer_push_repeat(&toprint, ' ', client->view.width + line_number_gap);
 		if (i + 1 < visable_line_count)
 			buffer_printf(&toprint, ((client->x != 0) ? ("\r" CURSOR_DOWN() CURSOR_RIGHT("%d")) : ("\r" CURSOR_DOWN())), client->x);
-		buffer_print(&toprint, NOSTYLE);
-		buffer_print(&toprint, active_theme->bg_style);
-		buffer_print(&toprint, active_theme->fg_style);
+		buffer_push_default_style(&toprint);
 	}
 
 	if (client->isFloating)

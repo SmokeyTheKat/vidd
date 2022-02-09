@@ -101,6 +101,20 @@ int vidd_tab_get_non_floating_count(struct vidd_tab* tab)
 	return count;
 }
 
+struct vidd_client* vidd_tab_get_next_client(struct vidd_tab* tab, struct vidd_client* client)
+{
+	int idx = vidd_tab_get_client_index(tab, client) + 1;
+	if (idx >= tab->length) idx = 0;
+	return &tab->clients[idx];
+}
+
+struct vidd_client* vidd_tab_get_prev_client(struct vidd_tab* tab, struct vidd_client* client)
+{
+	int idx = vidd_tab_get_client_index(tab, client) - 1;
+	if (idx < 0) idx = tab->length - 1;
+	return &tab->clients[idx];
+}
+
 void vidd_tab_next_client(struct vidd_tab* tab)
 {
 	tab->active++;
@@ -110,6 +124,6 @@ void vidd_tab_next_client(struct vidd_tab* tab)
 void vidd_tab_prev_client(struct vidd_tab* tab)
 {
 	tab->active--;
-	if (tab->active < 0) tab->active = tab->length-1;
+	if (tab->active < 0) tab->active = tab->length - 1;
 }
 

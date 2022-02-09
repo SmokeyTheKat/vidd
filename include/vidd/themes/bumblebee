@@ -11,7 +11,6 @@ struct theme* const bumblebee = &(struct theme){
 		[SCID_STRING]=FG_MAGENTA,
 		[SCID_CHARACTER_LITERAL]=FG_MAGENTA,
 		[SCID_NUMBER]=FG_GREEN,
-		[SCID_FUNCTION]=FG_GREEN,
 	},
 	.mode_format="[%s]",
 	.fg_style=FG_WHITE,

@@ -17,6 +17,8 @@ struct vidd_client* vidd_tab_get_active(struct vidd_tab* tab);
 int vidd_tab_get_non_floating_count(struct vidd_tab* tab);
 void vidd_tab_next_client(struct vidd_tab* tab);
 void vidd_tab_prev_client(struct vidd_tab* tab);
+struct vidd_client* vidd_tab_get_next_client(struct vidd_tab* tab, struct vidd_client* client);
+struct vidd_client* vidd_tab_get_prev_client(struct vidd_tab* tab, struct vidd_client* client);
 
 struct vidd_tab
 {

@@ -190,13 +190,18 @@ void vidd_fuzzy_find(struct vidd_client* client, char* title, void(*out_function
 
 	while (1)
 	{
-		char key = getch(true);
+		uint32_t key = getch(false);
 		switch (key)
 		{
 			case KEY_ESCAPE:
+			case KEY_CTRL('c'):
 			{
 				fuzzy_find_close(&entries);
 				return;
+			} break;
+			case KEY_SHIFT_TAB:
+			{
+				if (cursor > 0) cursor--;
 			} break;
 			case KEY_TAB:
 			{
