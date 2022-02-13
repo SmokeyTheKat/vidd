@@ -166,12 +166,14 @@ void vidd_load_from_fp(struct line* line, FILE* fp)
 		}
 	}
 }
+
 void vidd_load_stdin(struct vidd_client* client)
 {
 	buffer_set_data(&client->file_name, "_-=[NONE]=-_", strlen("_-=[NONE]=-_"));
 	vidd_load_from_fp(client->text, stdin);
 	freopen("/dev/tty", "rw", stdin);
 }
+
 void vidd_load_file(struct vidd_client* client, char* file_name)
 {
 	buffer_set_data(&client->file_name, file_name, strlen(file_name));

@@ -11,10 +11,10 @@ static struct termios oldt;
 uint32_t getch(bool raw)
 {
 	if (run_buffer.length > 0)
-	{
 		return run_buffer.data[--run_buffer.length];
-	}
+
 	uint64_t retval = 0;
+
 	if (raw)
 	{
 		uint64_t output = 0;

@@ -10,6 +10,7 @@
 #include <vidd/languages/sast>
 #include <vidd/languages/clature>
 #include <vidd/languages/rust>
+#include <vidd/languages/go>
 
 char** syntaxes[] = {
 	SYNTAXES_ADD(syntax_c)
@@ -22,5 +23,6 @@ char** syntaxes[] = {
 	SYNTAXES_ADD(syntax_sast)
 	SYNTAXES_ADD(syntax_cl)
 	SYNTAXES_ADD(syntax_rs)
+	SYNTAXES_ADD(syntax_go)
 };
 int syntaxes_length = sizeof(syntaxes) / sizeof(syntaxes[0]);

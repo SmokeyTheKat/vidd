@@ -11,6 +11,14 @@
 
 static void _vidd_load_copy(struct vidd_client* client) { vidd_load_copy(); }
 
+#define VIDD_MULTI_KEY_HOLD_BIND_START(n, k) \
+	void n (struct vidd_client* client) \
+	{ \
+		uint32_t nkey = 0; \
+		while ((nkey = getch(false)) == k); \
+		switch (nkey) \
+		{
+
 #define VIDD_MULTI_KEY_BIND_START(n, k) \
 	void n (struct vidd_client* client) \
 	{ \
@@ -31,6 +39,10 @@ static void _vidd_load_copy(struct vidd_client* client) { vidd_load_copy(); }
 		} \
 	}
 
+#define VIDD_MULTI_KEY_HOLD_BIND_END(n) \
+		} \
+	}
+
 VIDD_MULTI_KEY_BIND_START(vidd_delete_object_multi_key, 'a')
 	VIDD_MULTI_KEY_BIND_OPTION('w', vidd_delete_word)
 VIDD_MULTI_KEY_BIND_END(vidd_delete_object_multi_key)
@@ -47,7 +59,7 @@ VIDD_MULTI_KEY_BIND_START(vidd_multi_key_copy, 'y')
 	VIDD_MULTI_KEY_BIND_OPTION('y', vidd_copy_line)
 VIDD_MULTI_KEY_BIND_END(vidd_multi_key_copy)
 
-VIDD_MULTI_KEY_BIND_START(vidd_multi_key_space, ' ')
+VIDD_MULTI_KEY_HOLD_BIND_START(vidd_multi_key_space, ' ')
 	VIDD_MULTI_KEY_BIND_OPTION('1', vidd_switch_to_tab1)
 	VIDD_MULTI_KEY_BIND_OPTION('2', vidd_switch_to_tab2)
 	VIDD_MULTI_KEY_BIND_OPTION('3', vidd_switch_to_tab3)
@@ -64,7 +76,7 @@ VIDD_MULTI_KEY_BIND_START(vidd_multi_key_space, ' ')
 	VIDD_MULTI_KEY_BIND_OPTION('m', vidd_man_word)
 	VIDD_MULTI_KEY_BIND_OPTION('y', _vidd_load_copy)
 	VIDD_MULTI_KEY_BIND_OPTION('c', vidd_next_layout)
-VIDD_MULTI_KEY_BIND_END(vidd_multi_key_space)
+VIDD_MULTI_KEY_HOLD_BIND_END(vidd_multi_key_space)
 
 static void vidd_multi_key_delete_then_insert(struct vidd_client* client)
 {
