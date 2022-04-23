@@ -1721,7 +1721,7 @@ void vidd_run_command(struct vidd_client* client, char* args)
 	intmax_t comlen = strlen(args) + 20;
 	char* com = malloc(comlen);
 	memcpy(com, args, comlen-19);
-	memcpy(com + comlen-19, " 2>&1 > /dev/null &", 19);
+	memcpy(com + comlen-19, " > /dev/null 2>&1 &", 19);
 	com[comlen] = 0;
 	FILE* fp = popen(com, "r");
 	fclose(fp);

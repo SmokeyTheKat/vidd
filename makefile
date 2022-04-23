@@ -1,7 +1,7 @@
 PREFIX=~/.local
 
 CC=gcc
-CFLAGS=-Wall -g -Ofast -Werror -Wno-pointer-sign -DPREFIX=\"$(shell realpath ${PREFIX})\" -I./include/
+CFLAGS=-Wall -g -Ofast  -Wno-pointer-sign -DPREFIX=\"$(shell realpath ${PREFIX})\" -I./include/
 TARGET=./vidd
 BUILDDIR=build
 SRCDIR=src
@@ -28,7 +28,7 @@ viddpaths:
 	@mkdir -p ${PREFIX}/bin
 	@mkdir -p ${PREFIX}/share
 
-	@if [[ ! -d ${PREFIX}/share/vidd ]]; then      \
+	@if [ ! -d ${PREFIX}/share/vidd ]; then      \
 		mkdir -p ${PREFIX}/share/vidd;             \
 		mkdir -p ${PREFIX}/share/vidd/filedata;    \
 		touch ${PREFIX}/share/vidd/cpybuf.data;    \
