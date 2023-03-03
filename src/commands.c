@@ -983,11 +983,21 @@ void vidd_copy_to_clipboard(struct vidd_client* client)
 		{
 			i++;
 			for (; i < copy_buffer.length && copy_buffer.data[i] != 27; i++)
+			{
+				if (copy_buffer.data[i] == '\'')
+				{
+					buffer_push(&transfer, '\\');
+				}
+				else if (copy_buffer.data[i] == '\\')
+				{
+					buffer_push(&transfer, '\\');
+				}
 				buffer_push(&transfer, copy_buffer.data[i]);
+			}
 		}
 	}
 
-	char* com_front = "echo '";
+	char* com_front = "echo $'";
 	char* com_end = "' | xclip -selection c";
 	buffer_push_cstring_front(&transfer, com_front, strlen(com_front));
 	buffer_push_cstring(&transfer, com_end, strlen(com_end));
@@ -1710,7 +1720,7 @@ void vidd_run_command_in_floating_window(struct vidd_client* client, char* args)
 	com[comlen] = 0;
 	FILE* fp = popen(com, "r");
 	vidd_load_from_fp(new_client->text, fp);
-	fclose(fp);
+	pclose(fp);
 	free(com);
 
 	vidd_redraw(new_client);
@@ -1724,7 +1734,7 @@ void vidd_run_command(struct vidd_client* client, char* args)
 	memcpy(com + comlen-19, " > /dev/null 2>&1 &", 19);
 	com[comlen] = 0;
 	FILE* fp = popen(com, "r");
-	fclose(fp);
+	pclose(fp);
 	free(com);
 }
 void vidd_write(struct vidd_client* client, char* args)

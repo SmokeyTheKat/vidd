@@ -94,15 +94,18 @@ void vidd_command_mode_interrupt(struct vidd_client* client, uint32_t key)
 	else if (key == KEY_RETURN)
 	{
 		client->mode = VIDD_MODE_NORMAL;
-		char* command = strtok(command_input.data, " \n\t\0 ");
 		bool command_found = false;
-		for (intmax_t i = 0; i < vidd_commands_length; i++)
+		if (command_input.length > 0)
 		{
-			if (!strcmp(command, vidd_commands[i].name))
+			char* command = strtok(command_input.data, " \n\t\0 ");
+			for (intmax_t i = 0; i < vidd_commands_length; i++)
 			{
-				command_found = true;
-				vidd_commands[i].func(client, &command[strlen(command)+1]);
-				break;
+				if (!strcmp(command, vidd_commands[i].name))
+				{
+					command_found = true;
+					vidd_commands[i].func(client, &command[strlen(command)+1]);
+					break;
+				}
 			}
 		}
 		

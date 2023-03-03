@@ -123,7 +123,10 @@ void free_vidd_client(struct vidd_client* client)
 	{
 		free_buffer(&client->file_name);
 		vidd_text_clear(client);
-		free_line(client->text);
+		struct line* line = client->text;
+		while (line->next) {
+			line = free_line(client->text);
+		}
 		free(client->open_buffers);
 	}
 	else (*client->open_buffers)--;

@@ -31,7 +31,7 @@ struct arguments parse_args(int argc, char** argv)
 			list_push(&args.files, argv[i], char*);
 		}
 	}
-	if (list_length(&args.files, char*) == 0 && !args.readonly)
+	if (list_length(&args.files, char*) == 0 && !args.readonly && args.read_stdin == false)
 	{
 		list_push(&args.files, DEFAULT_FILE, char*);
 	}

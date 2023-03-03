@@ -13,7 +13,7 @@
 #include <vidd/themes/gloom>
 #include <vidd/themes/strg>
 
-struct theme* active_theme = strg;
+struct theme* active_theme = gloom;
 
 struct theme* themes[] = {
 	amp,
