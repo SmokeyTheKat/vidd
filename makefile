@@ -1,7 +1,7 @@
 PREFIX=~/.local
 
 CC=gcc
-CFLAGS=-Wall -g -Ofast  -Wno-pointer-sign -DPREFIX=\"$(shell realpath ${PREFIX})\" -I./include/
+CFLAGS=-Wall -O3 -Wno-pointer-sign -DPREFIX=\"$(shell realpath ${PREFIX})\" -I./include/
 TARGET=./vidd
 BUILDDIR=build
 SRCDIR=src
@@ -12,7 +12,7 @@ OBJS=$(addprefix ${BUILDDIR}/, $(CSRCS:.c=.o))
 all: viddpaths ${TARGET}
 
 install: all
-	cp ./vidd ${PREFIX}/bin/
+	cp ${TARGET} ${PREFIX}/bin/
 
 ${TARGET}: ${BUILDDIR} ${OBJS}
 	$(CC) -o ./vidd ${OBJS} ${CFLAGS}

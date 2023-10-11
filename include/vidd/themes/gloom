@@ -1,4 +1,4 @@
-struct theme* const gloom = &(struct theme){
+const struct theme* const gloom = &(struct theme){
 	.name="gloom",
 	.syntax_styles=(char** const)(char*[]){
 		[0 ... 255]="",
