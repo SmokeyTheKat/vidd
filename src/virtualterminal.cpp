@@ -65,7 +65,9 @@ void VirtualTerminal::onResize(void) {
 	mSavedBuffer.resize(mFrameBuffer->getSize());
 	struct winsize w = {
 		.ws_row = static_cast<unsigned short>(mFrameBuffer->getSize().y - 0),
-		.ws_col = static_cast<unsigned short>(mFrameBuffer->getSize().x - 1)
+		.ws_col = static_cast<unsigned short>(mFrameBuffer->getSize().x - 1),
+		.ws_xpixel = 0,
+		.ws_ypixel = 0
 	};
 	::ioctl(mFd, TIOCSWINSZ, &w);
 }

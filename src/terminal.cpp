@@ -4,14 +4,13 @@
 #include <vidd/keys.hpp>
 #include <vidd/utils.hpp>
 #include <vidd/log.hpp>
+#include <vidd/format.hpp>
 
 #include <cstdio>
 #include <string>
 #include <stack>
 #include <algorithm>
 #include <memory>
-
-#include <format>
 
 #include <sys/ioctl.h>
 #include <termios.h>
@@ -314,11 +313,11 @@ bool Terminal::flush(void) {
 				atEnd = false;
 			}
 			if (ySkipped > 0) {
-				sTextBuffer += std::format("\e[{}E", ySkipped);
+				sTextBuffer += Format::format("\e[{}E", ySkipped);
 				ySkipped = 0;
 			}
 			if (xSkipped > 0) {
-				sTextBuffer += std::format("\e[{}C", xSkipped);
+				sTextBuffer += Format::format("\e[{}C", xSkipped);
 				xSkipped = 0;
 			}
 		}
@@ -508,15 +507,15 @@ void Terminal::disableBracketedPaste(void) {
 }
 
 void Terminal::Cursor::moveTo(Vec2 pos, std::string& output) {
-	output.append(std::format("\e[{};{}H", pos.y+1, pos.x+1));
+	output.append(Format::format("\e[{};{}H", pos.y+1, pos.x+1));
 }
 
 void Terminal::Cursor::moveDown(int v, std::string& output) {
 	if (v == 0) return;
 	if (v > 0) {
-		output.append(std::format("\e[{}B", v));
+		output.append(Format::format("\e[{}B", v));
 	} else {
-		output.append(std::format("\e[{}A", -v));
+		output.append(Format::format("\e[{}A", -v));
 	}
 }
 
@@ -527,9 +526,9 @@ void Terminal::Cursor::moveUp(int v, std::string& output) {
 void Terminal::Cursor::moveRight(int v, std::string& output) {
 	if (v == 0) return;
 	if (v > 0) {
-		output.append(std::format("\e[{}C", v));
+		output.append(Format::format("\e[{}C", v));
 	} else {
-		output.append(std::format("\e[{}D", -v));
+		output.append(Format::format("\e[{}D", -v));
 	}
 }
 

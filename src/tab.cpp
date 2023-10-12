@@ -8,7 +8,6 @@
 #include <vidd/vidd.hpp>
 
 #include <algorithm>
-#include <format>
 
 Tab::Tab(TabArea* tabArea)
 : Component(Vec2(0, 0), Vec2(1, 1)), mTabArea(tabArea) {
