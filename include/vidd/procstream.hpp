@@ -66,8 +66,8 @@ public:
 
 	std::string read(std::size_t n) {
 		char* buf = new char[n]();
-		::read(mReadFd, buf, n);
-		std::string out(buf);
+		std::size_t length = ::read(mReadFd, buf, n);
+		std::string out(buf, length);
 		delete[] buf;
 		return out;
 	};

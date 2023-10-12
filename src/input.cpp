@@ -8,6 +8,7 @@ std::size_t Input::getLine(std::string& buffer) {
 			char buf[512];
 			std::size_t len = std::fread(buf, 1, sizeof(buf), mFp);
 			if (len == 0) {
+				buffer.clear();
 				buffer.insert(
 					buffer.end(),
 					mBackBuffer.begin(),

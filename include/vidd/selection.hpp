@@ -42,7 +42,7 @@ public:
 	SelectionIterator(Line* line, const Selection& sel)
 	: mLine(line), mSel(sel) {
 		if (line) {
-			mNextLine = line->next;
+			mNextLine = line->next();
 		} else {
 			mNextLine = line;
 		}
@@ -78,7 +78,7 @@ struct Selection {
 	};
 
 	SelectionIterator begin(void) { return SelectionIterator(curStart.y, *this); }
-	SelectionIterator end(void) { return SelectionIterator(curEnd.y->next, *this); }
+	SelectionIterator end(void) { return SelectionIterator(curEnd.y->next(), *this); }
 };
 
 #endif

@@ -87,7 +87,7 @@ SelectionRange SelectionIterator::operator*(void) {
 SelectionIterator& SelectionIterator::operator++(void) {
 	mLine = mNextLine;
 	if (mLine != nullptr) {
-		mNextLine = mLine->next;
+		mNextLine = mLine->next();
 	}
 	return *this;
 }

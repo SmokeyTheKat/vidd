@@ -47,11 +47,11 @@ void CodeView::render(void) {
 		Line* ptr = first->first();
 		while (ptr != first) {
 			syntax.skimState(ptr->data);
-			ptr = ptr->next;
+			ptr = ptr->next();
 		}
 	
 		int y = 0;
-		while (ptr != last->next) {
+		while (ptr != last->next()) {
 			std::vector<Word> words = syntax.highlight(ptr->data);
 			int x = -view.x;
 			for (Word& w : words) {
@@ -71,7 +71,7 @@ void CodeView::render(void) {
 				}
 				x += w.word.length();
 			}
-			ptr = ptr->next;
+			ptr = ptr->next();
 			y++;
 		}
 	} else {
@@ -83,9 +83,9 @@ void CodeView::render(void) {
 		Draw::style(style);
 		int x = -view.x;
 		int y = 0;
-		while (ptr != last->next) {
+		while (ptr != last->next()) {
 			drawText(Vec2(x, y), ptr->data);
-			ptr = ptr->next;
+			ptr = ptr->next();
 			y++;
 		}
 	}

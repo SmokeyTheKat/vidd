@@ -8,7 +8,7 @@
 #include <iostream>
 
 Buffer::Buffer(Input input) {
-	Line* line = Line::createChain();
+	Line* line = Line::createChain()->first();
 	head = line;
 	std::string data;
 	data.reserve(1024);

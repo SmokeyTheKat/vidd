@@ -7,8 +7,11 @@
 #include <iostream>
 
 struct Line {
-	Line* next = nullptr;
-	Line* prev = nullptr;
+private:
+	Line* mNext = nullptr;
+	Line* mPrev = nullptr;
+
+public:
 	int number = 0;
 	WString data;
 
@@ -23,9 +26,15 @@ struct Line {
 
 	Line* remove(void);
 
+	bool isId(void);
 	bool isHead(void);
+	bool isTail(void);
 	bool isIsolated(void);
 
+	Line* next(void);
+	Line* prev(void);
+
+	Line* getId(void);
 	Line* first(void);
 	Line* last(void);
 	Line* skip(int count);

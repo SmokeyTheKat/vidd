@@ -121,8 +121,8 @@ void TextEditor::saveFile(std::string name) {
 				ofs << str[i].view();
 			}
 		}
-		if (ptr->next) ofs << '\n';
-		ptr = ptr->next;
+		if (ptr->next()) ofs << '\n';
+		ptr = ptr->next();
 	}
 	ofs.close();
 	mUnsavedChanges = false;
@@ -169,11 +169,11 @@ void TextEditor::editDeleteSelection(void) {
 	Selection selection = mSelection.ordered();
 
 	Line* firstLine = selection.curStart.y;
-	Line* lineBefore = firstLine->prev;
+	Line* lineBefore = firstLine->prev();
 
 	cursorMoveTo(selection.curEnd);
 
-	Line* lineAfter = lineBefore != nullptr ? lineBefore : selection.curEnd.y->next;
+	Line* lineAfter = lineBefore != nullptr ? lineBefore : selection.curEnd.y->next();
 	for (auto range : selection) {
 		range.line->data.remove(range.range.x, range.range.y);
 		switch (range.type) {
@@ -198,8 +198,8 @@ void TextEditor::editDeleteSelection(void) {
 		}
 	}
 
-	if (lineBefore != nullptr && lineAfter->next && lineAfter != firstLine) {
-		lineAfter = lineAfter->next;
+	if (lineBefore != nullptr && lineAfter->next() && lineAfter != firstLine) {
+		lineAfter = lineAfter->next();
 	}
 	cursorMoveTo(Cursor(selection.curStart.x, lineAfter, selection.curStart.lx));
 
@@ -522,7 +522,7 @@ void TextEditor::splitLineAtCursor(void) {
 
 Line* TextEditor::mergeLineUpAtCursor(void) {
 	Line* line = mCursor.y;
-	Line* pline = line->prev;
+	Line* pline = line->prev();
 	if (!pline) return line;
 	int plineLength = pline->data.length();
 
@@ -710,7 +710,7 @@ void TextEditor::fixCursor(void) {
 	}
 
 	if (mCursor.y->number == mView.y + mView.height) {
-		mCursor.y = mCursor.y->prev;
+		mCursor.y = mCursor.y->prev();
 	} else if (mCursor.y->number > mView.y + mView.height) {
 		mCursor.y = mCursor.y->get(mView.y + mView.height);
 	}
@@ -946,13 +946,13 @@ void TextEditor::cursorMoveNextWordEnd(void) {
 }
 
 void TextEditor::cursorMoveNextParagraph(void) {
-	while (getLineEnd() <= 0 && mCursor.y->next)
+	while (getLineEnd() <= 0 && mCursor.y->next())
 		cursorMoveY(1);
 
-	while (getLineEnd() > 0 && mCursor.y->next)
+	while (getLineEnd() > 0 && mCursor.y->next())
 		cursorMoveY(1);
 
-	while (getLineEnd() <= 0 && mCursor.y->next)
+	while (getLineEnd() <= 0 && mCursor.y->next())
 		cursorMoveY(1);
 
 	cursorMoveY(-1);
@@ -960,10 +960,10 @@ void TextEditor::cursorMoveNextParagraph(void) {
 }
 
 void TextEditor::cursorMovePrevParagraph(void) {
-	while (getLineEnd() <= 0 && mCursor.y->prev)
+	while (getLineEnd() <= 0 && mCursor.y->prev())
 		cursorMoveY(-1);
 
-	while (getLineEnd() > 0 && mCursor.y->prev)
+	while (getLineEnd() > 0 && mCursor.y->prev())
 		cursorMoveY(-1);
 
 	viewChangedIfSelecting();
@@ -985,7 +985,7 @@ void TextEditor::cursorMoveToInView(void) {
 			viewChangedIfSelecting();
 			break;
 		}
-		line = line->next;
+		line = line->next();
 	}
 }
 
@@ -1087,7 +1087,7 @@ Cursor TextEditor::findNextFromCursor(WStringView find) const {
 		std::size_t pos = line.findSubString(find, x);
 		if (pos == WStringView::npos) {
 			x = 0;
-			ptr = ptr->next;
+			ptr = ptr->next();
 		} else {
 			return Cursor(pos, ptr);
 		}
@@ -1103,7 +1103,7 @@ Cursor TextEditor::findPrevFromCursor(WStringView find) const {
 		std::size_t pos = line.findSubStringRtl(find, x);
 		if (pos == WStringView::npos) {
 			x = WStringView::npos;
-			ptr = ptr->prev;
+			ptr = ptr->prev();
 		} else {
 			return Cursor(pos, ptr);
 		}
@@ -1138,7 +1138,7 @@ std::vector<Vec2> TextEditor::indexWordsLocations(void) {
 
 	Line* line = mCursor.y->get(mView.y);
 	Line* end = line->skip(mView.height);
-	for (; line != end; line = line->next) {
+	for (; line != end; line = line->next()) {
 		const WString& data = line->data;
 		for (std::size_t x = 0; x < data.length();) {
 			if (isAtWord(data, x)) {
