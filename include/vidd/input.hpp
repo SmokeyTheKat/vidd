@@ -27,7 +27,7 @@ public:
 	: mOwning(false), mFp(fp), mName(name) {}
 
 	~Input(void) {
-		if (mOwning) {
+		if (mOwning && mFp != nullptr) {
 			std::fclose(mFp);
 		}
 	}

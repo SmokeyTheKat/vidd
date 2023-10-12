@@ -1,6 +1,7 @@
 #include <vidd/input.hpp>
 
 std::size_t Input::getLine(std::string& buffer) {
+	if (mFp == nullptr) return 0;
 	while (mLineLimit == 0 || mLinesRead < mLineLimit) {
 		std::size_t lbPos = mBackBuffer.find('\n');
 		if (lbPos == std::string::npos) {
