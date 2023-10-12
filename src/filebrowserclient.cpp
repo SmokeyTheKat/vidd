@@ -10,6 +10,7 @@
 #include <vidd/codeview.hpp>
 #include <vidd/texteditor.hpp>
 #include <vidd/input.hpp>
+#include <vidd/format.hpp>
 
 #include <algorithm>
 #include <fstream>
@@ -158,14 +159,14 @@ void FileBrowserClient::fileChange(void) {
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".jpg")
 		) {
 			Vec2 size = Vec2(mSize.x * 0.7 - 1, mSize.y);
-			mSide.reset(new TerminalViewer(std::format("termimg {} -a -d -c -k", file.path)));
-//            mSide.reset(new TerminalViewer(std::format("/bin/ddmoIL {} {} {} && cat", file.path, size.x - 1, size.y - 1)));
+			mSide.reset(new TerminalViewer(Format::format("termimg {} -a -d -c -k", file.path)));
+//            mSide.reset(new TerminalViewer(Format::format("/bin/ddmoIL {} {} {} && cat", file.path, size.x - 1, size.y - 1)));
 		} else if (
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".mp3") ||
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".wav")
 		) {
 			Vec2 size = Vec2(mSize.x * 0.7 - 1, mSize.y);
-			mSide.reset(new TerminalViewer(std::format("mpv {}", file.path)));
+			mSide.reset(new TerminalViewer(Format::format("mpv {}", file.path)));
 		}
 	} else if (file.type == FileType::Text) {
 		mSide.reset(new CodeViewer(Input(file.path)));

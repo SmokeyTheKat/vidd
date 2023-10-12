@@ -2,8 +2,8 @@ PREFIX := ~/.local
 
 CC := clang
 LIBS :=
-CFLAGS := -std=c++20 -O3 -Wall -Wextra -Wno-unused-parameter -I./include/ -DPREFIX=\"$(shell realpath $(PREFIX))\"
-LDFLAGS := -lstdc++ -lm
+CFLAGS := $(if $(uselibfmt), -DUSE_LIBFMT,) -std=c++20 -O3 -Wall -Wextra -Wno-unused-parameter -I./include/ -DPREFIX=\"$(shell realpath $(PREFIX))\"
+LDFLAGS := -lstdc++ -lm $(if $(uselibfmt), -lfmt,)
 
 TARGET := ./vidd
 

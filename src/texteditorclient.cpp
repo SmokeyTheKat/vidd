@@ -17,6 +17,7 @@
 #include <vidd/procstream.hpp>
 #include <vidd/virtualterminal.hpp>
 #include <vidd/terminalclient.hpp>
+#include <vidd/format.hpp>
 
 #include <map>
 #include <set>
@@ -284,7 +285,7 @@ void TextEditorClient::onAttach(void) {
 void TextEditorClient::saveFile(void) {
 	mStatus = StatusMessage {
 		.type = StatusMessageType::FileWrite,
-		.text = std::format("saving file '{}'", mEditor.getFileName()),
+		.text = Format::format("saving file '{}'", mEditor.getFileName()),
 	};
 	getDisplay()->delay(1.0, [this] {
 		setNoStatus();
@@ -349,7 +350,8 @@ void TextEditorClient::resizeEditor(void) {
 	if (mShowLineNumbers) {
 		mOldLineCount = mEditor.getLineCount();
 		int lineCountWidth = Utils::countDigits(mOldLineCount);
-		leftOffset = WString(std::vformat(theme->numberFormat, std::make_format_args(mOldLineCount, lineCountWidth))).length();
+		leftOffset = WString(Format::vformat(theme->numberFormat, mOldLineCount, lineCountWidth)).length();
+//        leftOffset = WString(Format::vformat(theme->numberFormat, Format::make_format_args(mOldLineCount, lineCountWidth))).length();
 	}
 	int bottomOffset = mShowStatusBar ? 1 : 0;
 	Vec2 size = mSize - Vec2(leftOffset, bottomOffset) - Vec2(1, 0);
@@ -701,7 +703,7 @@ void TextEditorClient::copyEditorCopyBufferToSystemCopyBuffer(void) {
 		if (chr == '\\') data.push_back('\\');
 		data.append(chr.view().begin(), chr.view().end());
 	}
-	std::string cmd = std::format("echo -n $'{}' | xclip -selection c", data);
+	std::string cmd = Format::format("echo -n $'{}' | xclip -selection c", data);
 	std::FILE* fp = ::popen(cmd.c_str(), "r");
 	::pclose(fp);
 }
@@ -787,19 +789,19 @@ void TextEditorClient::inputReplace(void) {
 			}
 
 			if (i == data.length()) {
-				Log::log(std::format("0: '{}' : '{}'", find, replace));
+				Log::log(Format::format("0: '{}' : '{}'", find, replace));
 				mEditor.replaceNextFromCursor(WString(std::string(find)), WString(std::string(replace)));
 			}
 
 			i++;
 
 			if (i >= data.length()) {
-				Log::log(std::format("0: '{}' : '{}'", find, replace));
+				Log::log(Format::format("0: '{}' : '{}'", find, replace));
 				mEditor.replaceNextFromCursor(WString(std::string(find)), WString(std::string(replace)));
 			} else if (data[i] == 'g') {
-				Log::log(std::format("g: '{}' : '{}'", find, replace));
+				Log::log(Format::format("g: '{}' : '{}'", find, replace));
 			} else {
-				Log::log(std::format("0: '{}' : '{}'", find, replace));
+				Log::log(Format::format("0: '{}' : '{}'", find, replace));
 				mEditor.replaceNextFromCursor(WString(std::string(find)), WString(std::string(replace)));
 			}
 		},
@@ -894,7 +896,7 @@ void TextEditorClient::fuzzyGoto(void) {
 	std::vector<Client*> clients = getTabArea()->getAllClients();
 	std::vector<std::string> clientNames;
 	for (std::size_t i = 0; i < clients.size(); i++) {
-		clientNames.push_back(std::format("{}: {}", i, clients[i]->getTitle().string()));
+		clientNames.push_back(Format::format("{}: {}", i, clients[i]->getTitle().string()));
 	}
 
 	openFuzzy(
@@ -1100,7 +1102,7 @@ void TextEditorClient::unhandledKey(Key key) {
 void TextEditorClient::onKeyDown(Key key) {
 	requireSelfRedraw();
 	if (sIsRecordingMacro) {
-		Log::log(std::format("{}: {}", (int)mMode, key));
+		Log::log(Format::format("{}: {}", (int)mMode, key));
 		sMacroBuffer.push_back(key);
 	}
 	interpret(key);
@@ -1175,11 +1177,11 @@ void TextEditorClient::renderStatusBar(void) {
 	if (1.5 * fileName.length() > mSize.x) {
 		fileName = FileSystem::getFileName(fileName);
 	}
-	fileName = std::format("[{}]", fileName);
+	fileName = Format::format("[{}]", fileName);
 	drawTextReverse(WString(fileName));
 
 	const Cursor& cursor = mEditor.getCursor();
-	WString cursorPos = WString(std::format("[{},{}]", cursor.x + 1, cursor.y->number + 1));
+	WString cursorPos = WString(Format::format("[{},{}]", cursor.x + 1, cursor.y->number + 1));
 
 	drawTextReverse(cursorPos);
 }
@@ -1214,7 +1216,8 @@ void TextEditorClient::renderLineNumbers(void) {
 			st.fg = theme->important;
 			Draw::style(st);
 		}
-		drawText(Vec2(0, i), WString(std::vformat(theme->numberFormat, std::make_format_args(y, lineCountWidth))));
+		drawText(Vec2(0, i), WString(Format::vformat(theme->numberFormat, y, lineCountWidth)));
+//        drawText(Vec2(0, i), WString(Format::vformat(theme->numberFormat, Format::make_format_args(y, lineCountWidth))));
 		if (y == cursorLine) {
 			Draw::style(theme->numberStyle);
 		}
@@ -1224,7 +1227,8 @@ void TextEditorClient::renderLineNumbers(void) {
 	Draw::style(theme->emptyLineStyle);
 
 	for (; i < view.height; i++) {
-		drawText(Vec2(0, i), WString(std::vformat(theme->emptyLineFormat, std::make_format_args(' ', lineCountWidth))));
+		drawText(Vec2(0, i), WString(Format::vformat(theme->emptyLineFormat, ' ', lineCountWidth)));
+//        drawText(Vec2(0, i), WString(Format::vformat(theme->emptyLineFormat, Format::make_format_args(' ', lineCountWidth))));
 		y++;
 	}
 }

@@ -2,9 +2,9 @@
 #define __VIDD_COLOR_HPP__
 
 #include <vidd/utils.hpp>
+#include <vidd/format.hpp>
 
 #include <string>
-#include <format>
 #include <cstdint>
 
 struct Color {
@@ -65,11 +65,11 @@ struct Color {
 	};
 
 	std::string fgStr(void) const {
-		return std::format("\e[38;2;{};{};{}m", r, g, b);
+		return Format::format("\e[38;2;{};{};{}m", r, g, b);
 	};
 
 	std::string bgStr(void) const {
-		return std::format("\e[48;2;{};{};{}m", r, g, b);
+		return Format::format("\e[48;2;{};{};{}m", r, g, b);
 	};
 
 	Color darken(double perc = 0.2) const {

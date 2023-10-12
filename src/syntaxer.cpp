@@ -3,6 +3,8 @@
 #include <vidd/language.hpp>
 #include <vidd/theme.hpp>
 
+#include <optional>
+
 namespace {
 
 bool isAllUpper(WStringView str) {

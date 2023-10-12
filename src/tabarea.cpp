@@ -5,8 +5,8 @@
 #include <vidd/display.hpp>
 #include <vidd/texteditorclient.hpp>
 #include <vidd/utils.hpp>
+#include <vidd/format.hpp>
 
-#include <format>
 #include <cmath>
 
 TabArea::TabArea(void)
@@ -139,20 +139,20 @@ void TabArea::render(void) {
 		if (tab->clientCount() > 0) {
 			status = "▘";
 		}
-		drawText(pos, WString(std::format("{}{} ", status, (i + 1) % 10)));
+		drawText(pos, WString(Format::format("{}{} ", status, (i + 1) % 10)));
 		pos.x += mTabWidth;
 		i++;
 	}
 
 	Draw::style(inactiveStyle);
-	drawText(pos, WString(std::format(" [{}] ", getActive()->clientCount())));
+	drawText(pos, WString(Format::format(" [{}] ", getActive()->clientCount())));
 
 	Draw::style(activeStyle);
 	drawText(" "_ws);
 	drawText(getActive()->getSelected()->getTitle());
 
 	Draw::style(activeStyle);
-	drawTextReverse(Vec2(mSize.x - 1, 0), WStringView(std::format(
+	drawTextReverse(Vec2(mSize.x - 1, 0), WStringView(Format::format(
 		"[{}]", Utils::getTimeString()
 	)));
 }

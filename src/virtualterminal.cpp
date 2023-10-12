@@ -3,6 +3,8 @@
 #include <vidd/log.hpp>
 #include <vidd/keys.hpp>
 #include <vidd/parsestring.hpp>
+#include <vidd/format.hpp>
+#include <vidd/colortables.hpp>
 
 #define _POSIX_C_SOURCE 200809L
 #include <unistd.h>
@@ -21,8 +23,7 @@
 #include <vector>
 #include <string>
 #include <string_view>
-
-#include <vidd/colortables.hpp>
+#include <optional>
 
 namespace {
 
@@ -188,7 +189,7 @@ void VirtualTerminal::interpretCsi(ParseString seq) {
 	} else if (seq.subString(0, 5) == "48;5;") {
 		mBrush.bg = color256Table[seq.subString(5, seq.length() - 1).getInt()];
 	} else if (seq == "6n") {
-		std::string cpr = std::format("\e[{};{}R", mCursor.y + 1, mCursor.x + 1);
+		std::string cpr = Format::format("\e[{};{}R", mCursor.y + 1, mCursor.x + 1);
 		::write(mFd, cpr.data(), cpr.length());
 	} else if (cap == 'A') {
 		int count = 1;

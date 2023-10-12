@@ -59,10 +59,10 @@
 #define BG_ORANGE "\e[48;2;255;165;0m"
 #define BG_LIGHT_ORANGE "\e[48;2;255;175;20m"
 
-typedef uint8_t Format;
+using StyleFlags = uint8_t;
 
 struct Style {
-	Format format = 0;
+	StyleFlags format = 0;
 	Color fg;
 	Color bg;
 
@@ -75,11 +75,11 @@ struct Style {
 	};
 
 	Style(void) = default;
-	Style(Format format)
+	Style(StyleFlags format)
 	: format(format) {};
 	Style(Color fg, Color bg)
 	: format(0), fg(fg), bg(bg) {};
-	Style(Color fg, Color bg, Format format)
+	Style(Color fg, Color bg, StyleFlags format)
 	: format(format), fg(fg), bg(bg) {};
 
 	std::string string(void) const {
@@ -104,7 +104,7 @@ struct Style {
 	};
 
 	void differenceString(std::string& out, const Style& other) const {
-		Format diff = format ^ other.format;
+		StyleFlags diff = format ^ other.format;
 		if (diff) {
 			out += "\e[";
 			if (diff & Style::underline) {
