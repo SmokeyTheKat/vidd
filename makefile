@@ -1,44 +1,29 @@
-PREFIX=~/.local
+PREFIX := ~/.local
 
-CC=gcc
-CFLAGS=-Wall -O3 -Wno-pointer-sign -DPREFIX=\"$(shell realpath ${PREFIX})\" -I./include/
-TARGET=./vidd
-BUILDDIR=build
-SRCDIR=src
+CC := clang
+LIBS :=
+CFLAGS := -std=c++20 -O3 -Wall -Wextra -Wno-unused-parameter -I./include/ -DPREFIX=\"$(shell realpath $(PREFIX))\"
+LDFLAGS := -lstdc++ -lm
 
-CSRCS=$(shell find ./src/ -name '*.c' -printf "%f\n")
-OBJS=$(addprefix ${BUILDDIR}/, $(CSRCS:.c=.o))
+TARGET := ./vidd
 
-all: viddpaths ${TARGET}
+CSRCS=$(shell find ./src/ -name "*.cpp" -type f)
+OBJS=$(CSRCS:.cpp=.o)
 
-install: all
-	cp ${TARGET} ${PREFIX}/bin/
+all: $(TARGET)
 
-${TARGET}: ${BUILDDIR} ${OBJS}
-	$(CC) -o ./vidd ${OBJS} ${CFLAGS}
+install: $(TARGET)
+	cp $(TARGET) $(PREFIX)/bin/
 
-${BUILDDIR}:
-	mkdir -p ${BUILDDIR}
+$(TARGET): $(OBJS)
+	$(CC) -o $(TARGET) $(OBJS) $(CFLAGS) $(LDFLAGS)
 
-${BUILDDIR}/%.o: ${SRCDIR}/%.c
-	$(CC) -c ${CFLAGS} -o $@ $<
-
-viddpaths:
-	@mkdir -p ${PREFIX}
-	@mkdir -p ${PREFIX}/bin
-	@mkdir -p ${PREFIX}/share
-
-	@if [ ! -d ${PREFIX}/share/vidd ]; then      \
-		mkdir -p ${PREFIX}/share/vidd;             \
-		mkdir -p ${PREFIX}/share/vidd/filedata;    \
-		touch ${PREFIX}/share/vidd/cpybuf.data;    \
-		chmod -R a+rwx ${PREFIX}/share/vidd;       \
-	fi
+%.o: %.cpp
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:
-	rm -rf ${BUILDDIR}
-	rm -rf ${TARGET}
+	find ./ -type f -name *.o -delete
+	rm -rf $(TARGET)
 
 tc: all
-	./vidd src/main.c
-
+	$(TARGET)
