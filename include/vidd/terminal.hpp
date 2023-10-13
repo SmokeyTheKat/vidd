@@ -9,8 +9,6 @@
 
 #include <string>
 #include <variant>
-#include <iostream>
-#include <ostream>
 
 namespace Terminal {
 	enum class CursorStyle {

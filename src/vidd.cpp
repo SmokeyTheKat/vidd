@@ -8,8 +8,6 @@
 #include <vidd/filesystem.hpp>
 #include <vidd/input.hpp>
 
-#include <fstream>
-
 Vidd* Vidd::instance = nullptr;
 
 Vidd::Vidd(const Arguments& args)

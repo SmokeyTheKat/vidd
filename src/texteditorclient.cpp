@@ -22,7 +22,6 @@
 #include <map>
 #include <set>
 #include <functional>
-#include <fstream>
 #include <string>
 
 namespace {
@@ -351,7 +350,6 @@ void TextEditorClient::resizeEditor(void) {
 		mOldLineCount = mEditor.getLineCount();
 		int lineCountWidth = Utils::countDigits(mOldLineCount);
 		leftOffset = WString(Format::vformat(theme->numberFormat, mOldLineCount, lineCountWidth)).length();
-//        leftOffset = WString(Format::vformat(theme->numberFormat, Format::make_format_args(mOldLineCount, lineCountWidth))).length();
 	}
 	int bottomOffset = mShowStatusBar ? 1 : 0;
 	Vec2 size = mSize - Vec2(leftOffset, bottomOffset) - Vec2(1, 0);
@@ -1217,7 +1215,6 @@ void TextEditorClient::renderLineNumbers(void) {
 			Draw::style(st);
 		}
 		drawText(Vec2(0, i), WString(Format::vformat(theme->numberFormat, y, lineCountWidth)));
-//        drawText(Vec2(0, i), WString(Format::vformat(theme->numberFormat, Format::make_format_args(y, lineCountWidth))));
 		if (y == cursorLine) {
 			Draw::style(theme->numberStyle);
 		}
@@ -1228,7 +1225,6 @@ void TextEditorClient::renderLineNumbers(void) {
 
 	for (; i < view.height; i++) {
 		drawText(Vec2(0, i), WString(Format::vformat(theme->emptyLineFormat, ' ', lineCountWidth)));
-//        drawText(Vec2(0, i), WString(Format::vformat(theme->emptyLineFormat, Format::make_format_args(' ', lineCountWidth))));
 		y++;
 	}
 }

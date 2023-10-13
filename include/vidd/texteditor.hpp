@@ -11,8 +11,6 @@
 
 #include <memory>
 #include <string>
-#include <istream>
-#include <fstream>
 
 static const int gTabWidth = 4;
 

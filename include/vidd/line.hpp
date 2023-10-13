@@ -4,7 +4,6 @@
 #include <vidd/wchar.hpp>
 
 #include <string>
-#include <iostream>
 
 struct Line {
 private:

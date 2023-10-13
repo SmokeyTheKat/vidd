@@ -7,6 +7,7 @@
 #include <vidd/utils.hpp>
 #include <vidd/filesystem.hpp>
 
+#include <iostream>
 #include <fstream>
 
 CopyBuffer TextEditor::mCopyBuffer;

@@ -13,7 +13,6 @@
 #include <vidd/format.hpp>
 
 #include <algorithm>
-#include <fstream>
 
 #define DV CLIENT->getDv()
 

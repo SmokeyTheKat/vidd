@@ -4,7 +4,6 @@
 #include <vidd/line.hpp>
 #include <vidd/input.hpp>
 
-#include <istream>
 #include <string>
 #include <vector>
 

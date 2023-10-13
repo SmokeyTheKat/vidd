@@ -43,11 +43,11 @@ struct Color {
 		} break;
 		case 2: {
 			red[0] = hex[0];
-			red[1] = hex[0];
-			green[0] = hex[1];
+			red[1] = hex[1];
+			green[0] = hex[0];
 			green[1] = hex[1];
-			blue[0] = hex[2];
-			blue[1] = hex[2];
+			blue[0] = hex[0];
+			blue[1] = hex[1];
 		} break;
 		default: {
 			red[0] = '0';

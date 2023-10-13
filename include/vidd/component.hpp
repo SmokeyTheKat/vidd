@@ -14,7 +14,6 @@
 #include <string_view>
 #include <functional>
 #include <algorithm>
-#include <sstream>
 
 class Component;
 class Display;

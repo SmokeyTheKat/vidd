@@ -11,6 +11,7 @@
 #include <stack>
 #include <algorithm>
 #include <memory>
+#include <iostream>
 
 #include <sys/ioctl.h>
 #include <termios.h>

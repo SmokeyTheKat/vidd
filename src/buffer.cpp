@@ -3,7 +3,6 @@
 #include <vidd/charsets.hpp>
 #include <vidd/utils.hpp>
 
-#include <sstream>
 #include <algorithm>
 #include <iostream>
 
