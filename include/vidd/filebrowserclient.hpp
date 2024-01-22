@@ -14,12 +14,15 @@ class FileBrowserClient : public Client {
 	DirectoryViewer mDv;
 	DirectoryViewer mParentDv;
 	std::unique_ptr<Component> mSide = nullptr;
+	std::string mCopyedPath;
+	std::string mOrigionalDirectory;
 
 public:
 	FileBrowserClient(Tab* tab, const std::string& path);
 	FileBrowserClient(Tab* tab, const std::string& path, const std::string& defaultFile);
 
 	DirectoryViewer* getDv(void) { return &mDv; };
+	std::string getOrigionalDirectory(void) { return mOrigionalDirectory; };
 
 	void adjustView(void);
 	void loadDirectory(const std::string& path);
@@ -30,6 +33,15 @@ public:
 	void selectFileNewWindow(void);
 
 	void backDirectory(void);
+
+	void copyFile(void);
+	void pasteFile(void);
+	void deleteFile(void);
+	void renameFile(void);
+	void makeFile(void);
+	void makeDir(void);
+
+	void setCwd(void);
 
 	void fileChange(void);
 

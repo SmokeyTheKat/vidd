@@ -27,7 +27,6 @@ void DirectoryViewer::loadDirectory(const std::string& path) {
 
 	mFiles.clear();
 	for (const auto& path : filePaths) {
-		Log::log(path);
 		FileInfo f;
 		f.path = path;
 		f.hasPermission = FileSystem::hasPermission(path);

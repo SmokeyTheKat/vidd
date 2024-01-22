@@ -16,6 +16,16 @@ bool isAllUpper(WStringView str) {
 	return true;
 }
 
+int countUpper(WStringView str) {
+	int count = 0;
+	for (auto c : str) {
+		if (CharSets::letters.contains(c) && std::isupper(c)) {
+			count += 1;
+		}
+	}
+	return count;
+}
+
 }; // namespace
 
 std::vector<Syntaxer::Token> Syntaxer::tokenize(WStringView line) {
@@ -240,7 +250,7 @@ std::vector<Word> Syntaxer::highlight(WStringView line) {
 			} else {
 				if (mLang->syntax.highlightFunctionCalls && isAtFunctionCall(i)) {
 					words.push_back(Word{ token.word, mTheme->getSyntaxStyle(StyleType::Function) });
-				} else if (mLang->syntax.highlightConsts && isAllUpper(token.word)) {
+				} else if (mLang->syntax.highlightConsts && isAllUpper(token.word) && countUpper(token.word) > 1) {
 					words.push_back(Word{ token.word, mTheme->getSyntaxStyle(StyleType::Const) });
 				} else if (mLang->syntax.highlightTypes && std::isupper(token.word[0])) {
 					words.push_back(Word{ token.word, mTheme->getSyntaxStyle(StyleType::Type) });

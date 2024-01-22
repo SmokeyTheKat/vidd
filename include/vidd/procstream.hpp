@@ -72,6 +72,27 @@ public:
 		return out;
 	};
 
+	std::vector<std::string> readAllLines(void) {
+		std::vector<std::string> out;
+		char buf[512];
+		std::string cur;
+		while (isOpen()) {
+			int length = ::read(mReadFd, buf, sizeof(buf));
+			if (length <= 0) break;
+			std::string_view chunk(buf, length);
+			for (std::size_t i = 0; i < chunk.length(); i++) {
+				if (chunk[i] == '\n') {
+					out.push_back(std::move(cur));
+					cur.clear();
+				} else {
+					cur += chunk[i];
+				}
+			}
+		}
+		out.push_back(cur);
+		return out;
+	};
+
 	void write(std::string_view data) {
 		::write(mWriteFd, data.data(), data.length());
 	};

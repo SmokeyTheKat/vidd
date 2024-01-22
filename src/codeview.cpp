@@ -49,11 +49,21 @@ void CodeView::render(void) {
 			syntax.skimState(ptr->data);
 			ptr = ptr->next();
 		}
-	
+		int previousIndentLevel = 0;
 		int y = 0;
 		while (ptr != last->next()) {
 			std::vector<Word> words = syntax.highlight(ptr->data);
 			int x = -view.x;
+			if (words.size() == 0 && previousIndentLevel > 1) {
+				Style s = theme->text;
+				s.fg = s.bg.augment(0.2);
+				Draw::style(s);
+				for (int i = 1; i < previousIndentLevel; i++) {
+					drawText(Vec2(x + i * 4, y), "┆"_ws);
+				}
+			} else {
+				previousIndentLevel = 0;
+			}
 			for (Word& w : words) {
 				Draw::style(w.style);
 				drawText(Vec2(x, y), w.word);
@@ -67,6 +77,7 @@ void CodeView::render(void) {
 						drawText(Vec2(tx, y), "┆"_ws);
 					}
 					sv = sv.subString(4, WStringView::npos);
+					previousIndentLevel++;
 					tx += 4;
 				}
 				x += w.word.length();

@@ -6,6 +6,7 @@
 #include <vidd/tabarea.hpp>
 #include <vidd/tab.hpp>
 #include <vidd/fuzzywindow.hpp>
+#include <vidd/grepwindow.hpp>
 #include <vidd/log.hpp>
 #include <vidd/vidd.hpp>
 #include <vidd/timer.hpp>
@@ -18,6 +19,8 @@
 #include <vidd/virtualterminal.hpp>
 #include <vidd/terminalclient.hpp>
 #include <vidd/format.hpp>
+#include <vidd/charsets.hpp>
+#include <cstdlib>
 
 #include <map>
 #include <set>
@@ -38,6 +41,7 @@ namespace {
 using CommandList = std::map<std::string_view, std::function<void(TextEditorClient*, const std::vector<std::string_view>&)>>;
 
 const CommandList commandList = {
+	COMMAND("getenv", 1, CLIENT->getEnv(params[0]))
 	COMMAND("w", 0, CLIENT->saveFile())
 	COMMAND("number", 0, CLIENT->toggleLineNumbers())
 	COMMAND("notabs", 0, EDITOR->setNoTabs())
@@ -70,6 +74,8 @@ const CommandList commandList = {
 	KEYBIND(TextEditorClient, ({ Keys::ScrollLeft }), EDITOR->viewScrollX(-2)) \
 	KEYBIND(TextEditorClient, ({ Keys::ScrollRight }), EDITOR->viewScrollX(2)) \
 	KEYBIND(TextEditorClient, ({ 'g', 'g' }), EDITOR->cursorMoveToFirstLine(); EDITOR->cursorMoveToLineStart();) \
+	KEYBIND(TextEditorClient, ({ 'g', 'j' }), EDITOR->cursorMoveToNextIndentationLevel()) \
+	KEYBIND(TextEditorClient, ({ 'g', 'k' }), EDITOR->cursorMoveToPrevionsIndentationLevel()) \
 	KEYBIND(TextEditorClient, ({ 'G' }), EDITOR->cursorMoveToLastLine(); EDITOR->cursorMoveToLineStart();) \
 	KEYBIND(TextEditorClient, ({ '0' }), EDITOR->cursorMoveToLineStart()) \
 	KEYBIND(TextEditorClient, ({ '^' }), EDITOR->cursorMoveToLineStart()) \
@@ -153,7 +159,9 @@ const KeyBinds normalKeyBinds = {
 	KEYBIND(TextEditorClient, ({ ' ', 'o' }), CLIENT->fuzzyOpenFile()) \
 	KEYBIND(TextEditorClient, ({ ' ', 'f' }), CLIENT->fuzzyOpenFloatingFile()) \
 	KEYBIND(TextEditorClient, ({ ' ', 'g' }), CLIENT->fuzzyGoto()) \
+	KEYBIND(TextEditorClient, ({ ' ', 'h' }), CLIENT->fuzzyGrep()) \
 	KEYBIND(TextEditorClient, ({ ' ', 'd' }), CLIENT->openDirectory()) \
+	KEYBIND(TextEditorClient, ({ ' ', 's' }), CLIENT->openFloatingDirectory()) \
 };
 
 const AliasBinds windowMoveAliases = {
@@ -300,14 +308,15 @@ void TextEditorClient::openFile(std::string_view file) {
 	getTab()->addAndSelectClient<TextEditorClient>(Input(file));
 }
 
-void TextEditorClient::openFloatingFile(std::string_view file) {
-	Client* client = getTab()->addAndSelectClient<TextEditorClient>(Input(file));
+TextEditorClient* TextEditorClient::openFloatingFile(std::string_view file) {
+	TextEditorClient* client = getTab()->addAndSelectClient<TextEditorClient>(Input(file));
 	client->setFloating();
 	Component* parent = client->getParent();
 	Vec2 tabSize = getTab()->getSize();
 	Vec2 windowSize = tabSize * 0.8;
 	parent->setSize(windowSize);
 	parent->setPos((tabSize - windowSize) / 2);
+	return client;
 }
 
 void TextEditorClient::tryClose(void) {
@@ -504,7 +513,7 @@ void TextEditorClient::enterCommandMode(void) {
 			std::string_view cmd = data.substr(0, comSplit);
 			if (comSplit < data.length()) {
 				std::string_view paramString = data.substr(comSplit + 1);
-		
+
 				while (paramString.length() > 0) {
 					auto split = paramString.find_first_of(" \r\n\0\t");
 					if (split == std::string_view::npos) split = paramString.length();
@@ -571,7 +580,7 @@ std::vector<std::pair<std::string, Vec2>> TextEditorClient::generateJumpKeys(std
 				id = aIdx | (bIdx << 5);
 			} while (matches.count(id) != 0);
 			matches.insert(id);
-	
+
 			pairs.push_back(std::make_pair(""s + aKeys[aIdx] + bKeys[bIdx], locations[i]));
 		}
 	};
@@ -621,6 +630,13 @@ void TextEditorClient::exitWindowMoveMode(void) {
 	mMode = EditMode::Normal;
 	setNormalBinds();
 	requireRedraw();
+}
+
+void TextEditorClient::getEnv(std::string_view get) {
+	std::string gets(get);
+	const char* cs = std::getenv(gets.c_str());
+	if (cs)
+		Log::log(cs);
 }
 
 Key TextEditorClient::getKey(void) {
@@ -843,7 +859,7 @@ void TextEditorClient::gotoMarker(void) {
 	}
 }
 
-void TextEditorClient::openFuzzy(const std::string& title, const std::vector<std::string> data, std::function<void(std::string)> callback) {
+void TextEditorClient::openFuzzy(const std::string& title, const std::vector<std::string>& data, std::function<void(std::string)> callback) {
 	Vec2 size = getTab()->getSize() * 0.8;
 
 	FuzzyWindow* fw = new FuzzyWindow(title, data, size, [callback](FuzzyWindow* fw, std::string result) {
@@ -910,6 +926,38 @@ void TextEditorClient::fuzzyGoto(void) {
 			}
 		}
 	);
+}
+
+void TextEditorClient::fuzzyGrep(void) {
+	Vec2 size = getTab()->getSize() * 0.8;
+
+	std::vector<TextEditorClient*> clients = getTabArea()->getAllClientsOf<TextEditorClient>();
+
+	GrepWindow* fw = new GrepWindow(size, [this, clients](GrepWindow* fw, auto result) {
+		std::string selected = FileSystem::realPath(result.file);
+		if (result.y >= 0) {
+			TextEditorClient* found = nullptr;
+			for (TextEditorClient* tec : clients) {
+				std::string filename = tec->getEditor()->getFileName();
+				if (filename.length() > 0 && FileSystem::realPath(filename) == selected) {
+					found = tec;
+					break;
+				}
+			}
+			if (found != nullptr) {
+				found->getEditor()->cursorMoveTo(result.x - 1, result.y - 1);
+				Tab* tab = found->getTab();
+				found->getTabArea()->setActive(tab);
+				tab->setSelected(found);
+			} else {
+				TextEditorClient* te = openFloatingFile(result.file);
+				te->getEditor()->cursorMoveTo(result.x - 1, result.y - 1);
+			}
+		}
+		delete fw;
+	});
+	getTabArea()->addChild(fw);
+	getDisplay()->setSelected(fw);
 }
 
 void TextEditorClient::toggleRecordingMacro(void) {
@@ -1042,26 +1090,16 @@ void TextEditorClient::onDeselect(void) {
 }
 
 void TextEditorClient::onPaste(WStringView data) {
-	switch (mMode) {
-	case EditMode::Insert: {
-		for (auto c : data) {
-			mEditor.insertCharAtCursor(c);
-		}
-	} break;
-	case EditMode::Normal: {
-		enterInsertModeRight();
-		for (auto c : data) {
-			mEditor.insertCharAtCursor(c);
-		}
-		exitInsertMode();
-	} break;
-	default: {
-	} break;
-	}
+	mEditor.insertAtCursor(data);
 }
 
 void TextEditorClient::unhandledKey(Key key) {
 	switch (mMode) {
+	case EditMode::Normal: {
+		if (CharSets::numbers.contains(key) && key != 0) {
+			Log::log(std::to_string(key));
+		}
+	} break;
 	case EditMode::Insert: {
 		mEditor.insertCharAtCursor(key);
 	} break;
@@ -1232,6 +1270,20 @@ void TextEditorClient::renderLineNumbers(void) {
 void TextEditorClient::openDirectory(void) {
 	std::string path = mEditor.getFileName();
 	getTab()->replaceClientWithNew<FileBrowserClient>(this, FileSystem::getParentDirectory(path), FileSystem::getFileName(path));
+}
+
+void TextEditorClient::openFloatingDirectory(void) {
+	std::string path = mEditor.getFileName();
+	Client* client = getTab()->addAndSelectClient<FileBrowserClient>(
+		FileSystem::getParentDirectory(path),
+		FileSystem::getFileName(path)
+	);
+	client->setFloating();
+	Component* parent = client->getParent();
+	Vec2 tabSize = getTab()->getSize();
+	Vec2 windowSize = tabSize * 0.6;
+	parent->setSize(windowSize);
+	parent->setPos((tabSize - windowSize) / 2);
 }
 
 void TextEditorClient::openTermianl(void) {

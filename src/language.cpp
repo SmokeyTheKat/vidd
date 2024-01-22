@@ -33,6 +33,7 @@ const Language none {
 #include <vidd/languages/ocaml.hpp>
 #include <vidd/languages/funs.hpp>
 #include <vidd/languages/java.hpp>
+#include <vidd/languages/numbers.hpp>
 const std::vector<const Language*> languages {
 	&none,
 	&cpp,
@@ -48,6 +49,7 @@ const std::vector<const Language*> languages {
 	&ocaml,
 	&funs,
 	&java,
+	&numbers,
 };
 
 }; // namespace

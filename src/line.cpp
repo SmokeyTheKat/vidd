@@ -150,3 +150,14 @@ void Line::splitAt(int pos) {
 	);
 	this->data.removeAfter(pos);
 }
+
+bool Line::isEmpty(void) {
+	return data.length() == 0;
+}
+
+int Line::getFirstChar(void) {
+	for (int i = 0; i < data.length(); i++) {
+		if (data[i] != ' ') return i;
+	}
+	return -1;
+}

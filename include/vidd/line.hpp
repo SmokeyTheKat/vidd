@@ -45,6 +45,10 @@ public:
 
 	void splitAt(int pos);
 
+	bool isEmpty(void);
+
+	int getFirstChar(void);
+
 private:
 	Line(void) = default;
 	~Line(void) = default;

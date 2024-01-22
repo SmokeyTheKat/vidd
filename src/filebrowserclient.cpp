@@ -11,6 +11,7 @@
 #include <vidd/texteditor.hpp>
 #include <vidd/input.hpp>
 #include <vidd/format.hpp>
+#include <vidd/inputbox.hpp>
 
 #include <algorithm>
 
@@ -22,8 +23,16 @@ const KeyBinds normalKeyBinds = {
 	KEYBIND(FileBrowserClient, ({ Keys::ctrl('c') }), CLIENT->close())
 	KEYBIND(FileBrowserClient, ({ 'g', 'g' }), DV->firstFile())
 	KEYBIND(FileBrowserClient, ({ 'g', 'h' }), CLIENT->loadDirectory("./"))
+	KEYBIND(FileBrowserClient, ({ 'g', 'o' }), CLIENT->loadDirectory(CLIENT->getOrigionalDirectory()))
 	KEYBIND(FileBrowserClient, ({ 'g', 'm', 'm' }), CLIENT->loadDirectory("/mnt"))
 	KEYBIND(FileBrowserClient, ({ 'g', 'm', 'p' }), CLIENT->loadDirectory("/home/william/Documents/Projects"))
+	KEYBIND(FileBrowserClient, ({ 'y', 'y' }), CLIENT->copyFile())
+	KEYBIND(FileBrowserClient, ({ 'p' }), CLIENT->pasteFile())
+	KEYBIND(FileBrowserClient, ({ 'd', 'd' }), CLIENT->deleteFile())
+	KEYBIND(FileBrowserClient, ({ 'r' }), CLIENT->renameFile())
+	KEYBIND(FileBrowserClient, ({ 'c', 'd' }), CLIENT->makeDir())
+	KEYBIND(FileBrowserClient, ({ 'c', 'f' }), CLIENT->makeFile())
+	KEYBIND(FileBrowserClient, ({ 's' }), CLIENT->setCwd())
 	KEYBIND(FileBrowserClient, ({ 'G' }), DV->lastFile())
 	KEYBIND(FileBrowserClient, ({ 'j' }), DV->nextFile())
 	KEYBIND(FileBrowserClient, ({ 'k' }), DV->prevFile())
@@ -86,7 +95,11 @@ public:
 };
 
 FileBrowserClient::FileBrowserClient(Tab* tab, const std::string& path)
-: Client(tab), mPath(FileSystem::realPath(path)), mDv(path), mParentDv(FileSystem::getParentDirectory(path)) {
+: Client(tab),
+  mPath(FileSystem::realPath(path)),
+  mDv(path),
+  mParentDv(FileSystem::getParentDirectory(path)),
+  mOrigionalDirectory(path) {
 	mDv.onChange = std::bind(&FileBrowserClient::fileChange, this);
 	setSelectable(true);
 	mKeyBinds = &normalKeyBinds;
@@ -102,6 +115,7 @@ FileBrowserClient::FileBrowserClient(Tab* tab, const std::string& path, const st
 }
 
 void FileBrowserClient::gotoLetter(void) {
+	if (mDv.getFiles().size() == 0) return;
 	Key letter = Terminal::getKey();
 	if (CharSets::characters.contains(letter)) {
 		const auto& files = mDv.getFiles();
@@ -116,13 +130,14 @@ void FileBrowserClient::gotoLetter(void) {
 }
 
 void FileBrowserClient::loadDirectory(const std::string& path) {
-	mPath = path;
+	mPath = FileSystem::realPath(path);
 	mDv.loadDirectory(mPath);
 	mParentDv.loadDirectory(FileSystem::getParentDirectory(mPath));
 	mParentDv.setPtr(FileSystem::getFileName(mPath));
 }
 
 void FileBrowserClient::selectFile(void) {
+	if (mDv.getFiles().size() == 0) return;
 	const FileInfo& file = mDv.getSelectedFile();
 	if (file.hasPermission == false) return;
 	if (file.type == FileType::Directory) {
@@ -133,6 +148,7 @@ void FileBrowserClient::selectFile(void) {
 }
 
 void FileBrowserClient::selectFileNewWindow(void) {
+	if (mDv.getFiles().size() == 0) return;
 	const FileInfo& file = mDv.getSelectedFile();
 	if (file.hasPermission == false) return;
 	if (file.type == FileType::Text) {
@@ -144,8 +160,80 @@ void FileBrowserClient::backDirectory(void) {
 	loadDirectory(FileSystem::getParentDirectory(mPath));
 }
 
+void FileBrowserClient::copyFile(void) {
+	if (mDv.getFiles().size() == 0) return;
+	const FileInfo& file = mDv.getSelectedFile();
+	if (file.hasPermission) {
+		mCopyedPath = file.path;
+	}
+}
+
+void FileBrowserClient::pasteFile(void) {
+	FileSystem::copy(mCopyedPath, mPath);
+	loadDirectory(mPath);
+}
+
+void FileBrowserClient::deleteFile(void) {
+	const FileInfo& file = mDv.getSelectedFile();
+	if (file.hasPermission) {
+		InputBox* fw = new InputBox("type \"yes\" to confirm", [this, path = file.path](InputBox* fw, std::string text) {
+			if (text == "yes") {
+				FileSystem::remove(path);
+				loadDirectory(mPath);
+			}
+			delete fw;
+		});
+		getTabArea()->addChild(fw);
+		getDisplay()->setSelected(fw);
+	}
+}
+
+void FileBrowserClient::renameFile(void) {
+	const FileInfo& file = mDv.getSelectedFile();
+	if (file.hasPermission) {
+		InputBox* fw = new InputBox("rename", [this, path = file.path](InputBox* fw, std::string name) {
+			if (name.length() > 0) {
+				FileSystem::rename(path, name);
+				loadDirectory(mPath);
+			}
+			delete fw;
+		});
+		getTabArea()->addChild(fw);
+		getDisplay()->setSelected(fw);
+	}
+}
+
+void FileBrowserClient::makeFile(void) {
+	InputBox* fw = new InputBox("create file", [this](InputBox* fw, std::string name) {
+		if (name.length() > 0) {
+			FileSystem::createFile(mPath + "/" + name);
+			loadDirectory(mPath);
+		}
+		delete fw;
+	});
+	getTabArea()->addChild(fw);
+	getDisplay()->setSelected(fw);
+}
+
+void FileBrowserClient::setCwd(void) {
+	FileSystem::setCwd(mPath);
+}
+
+void FileBrowserClient::makeDir(void) {
+	InputBox* fw = new InputBox("create directory", [this](InputBox* fw, std::string name) {
+		if (name.length() > 0) {
+			FileSystem::createDirectory(mPath + "/" + name);
+			loadDirectory(mPath);
+		}
+		delete fw;
+	});
+	getTabArea()->addChild(fw);
+	getDisplay()->setSelected(fw);
+}
+
 void FileBrowserClient::fileChange(void) {
 	mSide.reset(nullptr);
+	if (mDv.getFiles().size() == 0) return;
 	const FileInfo& file = mDv.getSelectedFile();
 	if (file.type == FileType::Directory) {
 		if (file.hasPermission) {
@@ -162,7 +250,7 @@ void FileBrowserClient::fileChange(void) {
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".mp3") ||
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".wav")
 		) {
-			mSide.reset(new TerminalViewer(Format::format("mpv {}", file.path)));
+			mSide.reset(new TerminalViewer(Format::format("mpv --loop {}", file.path)));
 		}
 	} else if (file.type == FileType::Text) {
 		mSide.reset(new CodeViewer(Input(file.path)));

@@ -5,6 +5,42 @@
 
 namespace Utils {
 
+std::vector<std::string_view> splitAt(std::string_view text, char at) {
+	std::vector<std::string_view> words;
+
+	std::size_t start = 0;
+	for (std::size_t i = 0; i < text.length(); i++) {
+		if (text[i] == at) {
+			words.push_back(text.substr(start, i - start));
+			start = i + 1;
+		}
+	}
+	words.push_back(text.substr(start, text.length()));
+
+	return words;
+}
+
+std::vector<std::string_view> splitAtFirst(std::string_view text, char at, int n) {
+	std::vector<std::string_view> words;
+
+	int c = 0;
+	std::size_t start = 0;
+	for (std::size_t i = 0; i < text.length(); i++) {
+		if (text[i] == at && c < n) {
+			c++;
+			words.push_back(text.substr(start, i - start));
+			start = i + 1;
+		}
+	}
+	words.push_back(text.substr(start, text.length()));
+
+	return words;
+}
+
+std::vector<std::string_view> splitAtSpaces(std::string_view text) {
+	return splitAt(text, ' ');
+}
+
 void stringReplace(std::string& string, std::string_view find, std::string_view replace) {
 	size_t pos = 0;
 	while ((pos = string.find(find, pos)) != std::string::npos) {

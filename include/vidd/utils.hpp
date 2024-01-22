@@ -46,6 +46,20 @@ inline std::string joinStrings(const std::vector<std::string>& strings, std::str
 	return out;
 }
 
+inline std::string joinStrings(const std::vector<std::string_view>& strings, std::string_view delim) {
+	if (strings.size() == 0) return "";
+	std::string out(strings[0]);
+	for (std::size_t i = 1; i < strings.size(); i++) {
+		out += delim;
+		out += strings[i];
+	}
+	return out;
+}
+
+std::vector<std::string_view> splitAt(std::string_view text, char at);
+std::vector<std::string_view> splitAtFirst(std::string_view text, char at, int n);
+std::vector<std::string_view> splitAtSpaces(std::string_view text);
+
 inline std::string getTimeString(void) {
 	std::time_t time = std::time(nullptr);
 	char timeBuf[std::size("hh:mm:ss")];
@@ -75,7 +89,7 @@ constexpr char isSpace(char c) {
 	}
 }
 
-constexpr int stringToInt(std::string_view str, int base) {
+constexpr int stringToInt(std::string_view str, int base = 10) {
 	std::string_view baseChars[32];
 	baseChars[10] = "0123456789";
 	baseChars[16] = "0123456789abcdef";

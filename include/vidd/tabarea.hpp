@@ -42,6 +42,20 @@ public:
 
 	std::vector<Client*> getAllClients(void);
 
+	template<class T>
+	std::vector<T*> getAllClientsOf(void) {
+		std::vector<T*> clients;
+		for (auto& tab : mTabs) {
+			std::vector<Client*> tabClients = tab->getClients();
+			for (Client* c : tabClients) {
+				if (T* t = dynamic_cast<T*>(c)) {
+					clients.push_back(t);
+				}
+			}
+		}
+		return clients;
+	}
+
 	void openNextTabWithClients(void);
 
 	void resizeTabs(void) const;

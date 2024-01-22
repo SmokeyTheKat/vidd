@@ -166,6 +166,8 @@ public:
 
 	Line* mergeLineUpAtCursor(void);
 
+	void insertAtCursor(WStringView data);
+
 	void insertCharAtCursor(WChar chr);
 	void replaceCharAtCursor(WChar chr);
 
@@ -209,6 +211,8 @@ public:
 	void cursorMoveTo(Vec2 pos);
 	void cursorMoveTo(Cursor cur);
 	void cursorMoveToWordStart(void);
+	void cursorMoveToNextIndentationLevel(void);
+	void cursorMoveToPrevionsIndentationLevel(void);
 
 	void cursorMoveToFirstLine(void);
 	void cursorMoveToLastLine(void);

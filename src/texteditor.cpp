@@ -544,6 +544,27 @@ Line* TextEditor::mergeLineUpAtCursor(void) {
 	return pline;
 }
 
+void TextEditor::insertAtCursor(WStringView data) {
+	bool savedOverflow = mLineEndOverflow;
+	mLineEndOverflow = true;
+
+	mTrackUndos = false;
+
+	Vec2 regionStart = mCursor.toVec2();
+	for (auto c : data) {
+		insertCharAtCursor(c);
+	}
+
+	mTrackUndos = true;
+	registerUndoAction<UndoInsertAction>(
+		regionStart,
+		mCursor.toVec2(),
+		mCopyBuffer.data
+	);
+
+	mLineEndOverflow = savedOverflow;
+}
+
 void TextEditor::insertCharAtCursor(WChar chr) {
 	switch (chr) {
 	case '\n': {
@@ -765,7 +786,7 @@ void TextEditor::viewScrollToY(int y) {
 }
 
 char TextEditor::getCharAtCursor(void) {
-	return mCursor.y->data[mCursor.x].bytes[0];
+	return mCursor.y->data.length() == 0 ? ' ' : mCursor.y->data[mCursor.x].bytes[0];
 }
 
 WStringView TextEditor::getWordUnderCursor(void) {
@@ -1054,6 +1075,84 @@ void TextEditor::cursorMoveTo(Cursor cur) {
 
 void TextEditor::cursorMoveToWordStart(void) {
 	cursorMoveToX(getWordStartAtPos(mCursor.y->data, mCursor.x));
+}
+
+void TextEditor::cursorMoveToNextIndentationLevel(void) {
+	int level = mCursor.x;
+	if (mCursor.y->getFirstChar() < level) {
+		level = mCursor.y->getFirstChar();
+		cursorMoveToX(level);
+	}
+	mCursor.lx = mCursor.x;
+
+	if (getCharAtCursor() != ' ') {
+		while (mCursor.y->isEmpty() || mCursor.y->getFirstChar() == level) {
+			cursorMoveY(1);
+			if (!mCursor.y->next()) break;
+		}
+
+		if (getCharAtCursor() != ' ') {
+			cursorMoveY(1);
+		}
+
+		if (mViewChanged) {
+			viewCenterAroundCursor();
+		}
+
+		viewChangedIfSelecting();
+	}
+
+	if (mCursor.x == level && getCharAtCursor() == ' ') {
+		while (mCursor.y->isEmpty() || mCursor.y->getFirstChar() > level) {
+			cursorMoveY(1);
+			if (!mCursor.y->next()) break;
+		}
+
+		if (mViewChanged) {
+			viewCenterAroundCursor();
+		}
+
+		viewChangedIfSelecting();
+	}
+}
+
+void TextEditor::cursorMoveToPrevionsIndentationLevel(void) {
+	int level = mCursor.x;
+	if (mCursor.y->getFirstChar() < level) {
+		level = mCursor.y->getFirstChar();
+		cursorMoveToX(level);
+	}
+	mCursor.lx = mCursor.x;
+
+	if (getCharAtCursor() != ' ') {
+		while (mCursor.y->isEmpty() || mCursor.y->getFirstChar() == level) {
+			cursorMoveY(-1);
+			if (!mCursor.y->prev()) break;
+		}
+
+		if (getCharAtCursor() != ' ') {
+			cursorMoveY(-1);
+		}
+
+		if (mViewChanged) {
+			viewCenterAroundCursor();
+		}
+
+		viewChangedIfSelecting();
+	}
+
+	if (mCursor.x == level && getCharAtCursor() == ' ') {
+		while (mCursor.y->isEmpty() || mCursor.y->getFirstChar() > level) {
+			cursorMoveY(-1);
+			if (!mCursor.y->prev()) break;
+		}
+
+		if (mViewChanged) {
+			viewCenterAroundCursor();
+		}
+
+		viewChangedIfSelecting();
+	}
 }
 
 void TextEditor::cursorMoveToFirstLine(void) {

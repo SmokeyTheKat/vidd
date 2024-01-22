@@ -177,7 +177,6 @@ void Display::mainLoop(void) {
 		if (mSelected) {
 			Vec2 newCursorPos = mSelected->getCursor();
 			if (newCursorPos != mCursorPos) {
-				Log::log("??");
 				mCursorPos = newCursorPos;
 				Terminal::Cursor::moveTo(newCursorPos);
 			}

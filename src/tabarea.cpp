@@ -6,6 +6,7 @@
 #include <vidd/texteditorclient.hpp>
 #include <vidd/utils.hpp>
 #include <vidd/format.hpp>
+#include <vidd/log.hpp>
 
 #include <cmath>
 

@@ -24,6 +24,10 @@ void Vidd::quit(void) {
 int Vidd::run(void) {
 	Tab* tab = mTabArea.getActive();
 
+	if (Vidd::hasFlag("--help")) {
+		return 0;
+	}
+
 	if (Vidd::hasFlag("-")) {
 		tab->addClient<TextEditorClient>(Input(stdin, "-"));
 	}
@@ -49,7 +53,7 @@ int Vidd::run(void) {
 			if (Vidd::hasFlag("-b")) {
 				tex->getEditor()->cursorMoveToLastLine();
 			}
-	
+
 			if (Vidd::hasValueArg("-l")) {
 				tex->getEditor()->cursorMoveToY(std::stoi(Vidd::getValueArg("-l")));
 			}

@@ -2,21 +2,29 @@
 
 #include <cstdio>
 
+//#define DEBUG
+
 namespace {
 
 std::vector<std::string> logs;
-//FILE* fp = nullptr;
+#ifdef DEBUG
+FILE* fp = nullptr;
+#endif
 }; // namespace
 
 void Log::log(std::string_view msg) {
-//    if (fp == nullptr) {
-//        fp = std::fopen("./log", "w");
-//    }
+#ifdef DEBUG
+	if (fp == nullptr) {
+		fp = std::fopen("./log", "w");
+	}
+#endif
 	std::string str(msg);
 	logs.push_back(str);
-//    std::fputs(str.c_str(), fp);
-//    std::fputc('\n', fp);
-//    std::fflush(fp);
+#ifdef DEBUG
+	std::fputs(str.c_str(), fp);
+	std::fputc('\n', fp);
+	std::fflush(fp);
+#endif
 }
 
 void Log::clear(void) {

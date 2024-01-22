@@ -74,7 +74,7 @@ public:
 	void saveFile(void);
 	void editFile(std::string_view file);
 	void openFile(std::string_view file);
-	void openFloatingFile(std::string_view file);
+	TextEditorClient* openFloatingFile(std::string_view file);
 
 	void tryClose(void);
 
@@ -118,6 +118,8 @@ public:
 	void enterWindowMoveMode(void);
 	void exitWindowMoveMode(void);
 
+	void getEnv(std::string_view);
+
 	void cursorMoveToNextChar(void);
 	void cursorMoveToPrevChar(void);
 
@@ -127,11 +129,12 @@ public:
 
 	void copyEditorCopyBufferToSystemCopyBuffer(void);
 
-	void openFuzzy(const std::string& title, const std::vector<std::string> data, std::function<void(std::string)> callback);
+	void openFuzzy(const std::string& title, const std::vector<std::string>& data, std::function<void(std::string)> callback);
 	void fuzzyEditFile(void);
 	void fuzzyOpenFile(void);
 	void fuzzyOpenFloatingFile(void);
 	void fuzzyGoto(void);
+	void fuzzyGrep(void);
 
 	void toggleRecordingMacro(void);
 	void runMacro(void);
@@ -149,6 +152,7 @@ public:
 	void gotoMarker(void);
 
 	void openDirectory(void);
+	void openFloatingDirectory(void);
 	void openTermianl(void);
 	void openFloatingTermianl(void);
 	void openLogClient(void);
