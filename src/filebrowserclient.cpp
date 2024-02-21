@@ -243,6 +243,7 @@ void FileBrowserClient::fileChange(void) {
 		if (
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".png") ||
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".gif") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".jpeg") ||
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".jpg")
 		) {
 			mSide.reset(new TerminalViewer(Format::format("termimg {} -a -d -c -k", file.path)));

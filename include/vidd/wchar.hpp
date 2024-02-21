@@ -97,6 +97,8 @@ struct WChar {
 		);
 	};
 
+	constexpr static WChar spacer(void) { return WChar(1); };
+
 	constexpr WChar(void) = default;
 
 	constexpr WChar(std::uint32_t value)
@@ -152,9 +154,7 @@ struct WChar {
 		return 4;
 	};
 
-	constexpr std::size_t visibleLength(void) const {
-		return 0;
-	};
+	constexpr std::size_t visibleLength(void) const;
 
 	constexpr bool operator==(const WChar& other) const {
 		return value == other.value;
