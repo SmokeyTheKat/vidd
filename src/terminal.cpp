@@ -328,9 +328,7 @@ bool Terminal::flush(void) {
 			lastStyle = px.style;
 		}
 
-		if (px.character.value != 1) {
-			sTextBuffer += px.character.view();
-		}
+		sTextBuffer += px.character.view();
 		x += 1;
 		atEnd = x == width;
 		if (atEnd) x = 0;
