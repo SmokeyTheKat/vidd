@@ -120,26 +120,28 @@ void FuzzyWindow::onLeftMouseButtonDoubleDown(Vec2 pos) {
 
 void FuzzyWindow::onKeyDown(Key key) {
 	switch (key) {
+	case Keys::Down:
 	case Keys::Tab: {
 		mCursor = std::min((int)mResults.size() - 1, mCursor + 1);
+		if (mCursor >= mView + mSize.y - 3) mView += 1;
 		requireRedraw();
 	} break;
-	case Keys::Down:
 	case Keys::ScrollDown: {
 		if (mView + 1 >= (int)mResults.size()) break;
 		mView += 1;
 		if (mCursor < mView) mCursor = mView;
 		requireRedraw();
 	} break;
-	case Keys::Up:
 	case Keys::ScrollUp: {
 		if (mView == 0) break;
 		mView -= 1;
 		if (mCursor >= mView + mSize.y - 3) mCursor = mView + mSize.y - 4;
 		requireRedraw();
 	} break;
+	case Keys::Up:
 	case Keys::ShiftTab: {
 		mCursor = std::max(0, mCursor - 1);
+		if (mCursor < mView) mView = mCursor;
 		requireRedraw();
 	} break;
 	default: {

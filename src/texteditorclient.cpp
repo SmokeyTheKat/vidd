@@ -875,7 +875,7 @@ void TextEditorClient::fuzzyEditFile(void) {
 		"edit",
 		FileSystem::getAllSubFilesAndDirectories("./"),
 		[this](std::string result) {
-			if (result.length() > 0) {
+			if (result.length() > 0 && FileSystem::isTextFile(result)) {
 				editFile(result);
 			}
 		}
@@ -887,7 +887,7 @@ void TextEditorClient::fuzzyOpenFile(void) {
 		"open",
 		FileSystem::getAllSubFilesAndDirectories("./"),
 		[this](std::string result) {
-			if (result.length() > 0) {
+			if (result.length() > 0 && FileSystem::isTextFile(result)) {
 				openFile(result);
 			}
 		}
@@ -899,7 +899,7 @@ void TextEditorClient::fuzzyOpenFloatingFile(void) {
 		"float",
 		FileSystem::getAllSubFilesAndDirectories("./"),
 		[this](std::string result) {
-			if (result.length() > 0) {
+			if (result.length() > 0 && FileSystem::isTextFile(result)) {
 				openFloatingFile(result);
 			}
 		}
