@@ -1,6 +1,12 @@
 #ifndef __VIDD_WSTRING_IPP__
 #define __VIDD_WSTRING_IPP__
 
+#include <vidd/wcharwidth.hpp>
+
+constexpr std::size_t WChar::visibleLength(void) const {
+	return WCharWidth::width(*this);
+}
+
 constexpr inline WString::WString(void) {};
 
 template<std::convertible_to<std::string_view> T>

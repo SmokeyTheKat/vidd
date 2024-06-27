@@ -284,6 +284,8 @@ bool Terminal::flush(void) {
 	auto mainPixels = sBuffer->collasped();
 	auto backPixels = sBackBuffer->collasped();
 
+	Style errorStyle = Style(Color("#A020F0"), Color("#ff0000"));
+
 	int width = sBuffer->getSize().x;
 
 	int x = 0;
@@ -294,13 +296,13 @@ bool Terminal::flush(void) {
 	for (
 		auto mainIt = mainPixels.begin(), backIt = backPixels.begin();
 		mainIt != mainPixels.end();
-		mainIt++, backIt++
+		++mainIt, ++backIt
 	) {
 		const auto& px = *mainIt;
 		const auto& bpx = *backIt;
 		if (px == bpx) {
 			x += 1;
-			if (x == width) {
+			if (x >= width) {
 				ySkipped += 1;
 				xSkipped = 0;
 				x = 0;
@@ -323,14 +325,21 @@ bool Terminal::flush(void) {
 			}
 		}
 
-		if (px.style != lastStyle) {
-			lastStyle.differenceString(sTextBuffer, px.style);
-			lastStyle = px.style;
+		if (px.character.visibleLength() != 1) {
+			if (errorStyle != lastStyle) {
+				lastStyle.differenceString(sTextBuffer, errorStyle);
+				lastStyle = errorStyle;
+			}
+			sTextBuffer += "?";
+		} else {
+			if (px.style != lastStyle) {
+				lastStyle.differenceString(sTextBuffer, px.style);
+				lastStyle = px.style;
+			}
+			sTextBuffer += px.character.view();
 		}
-
-		sTextBuffer += px.character.view();
 		x += 1;
-		atEnd = x == width;
+		atEnd = x >= width;
 		if (atEnd) x = 0;
 	}
 

@@ -111,7 +111,7 @@ void GrepWindow::calculateResults(void) {
 
 	std::vector<std::string_view> finds = Utils::splitAtSpaces(mPrompt.get());
 
-	std::string com = (std::string("rg -n --column '") + Utils::joinStrings(finds, "' | rg '") + "' 2>&1");
+	std::string com = (std::string("rg -n --column --hidden '") + Utils::joinStrings(finds, "' | rg '") + "' 2>&1");
 	FILE* fp = ::popen(com.c_str(), "r");
 	std::vector<std::string> lines = readAllLinesFp(fp);
 	::pclose(fp);

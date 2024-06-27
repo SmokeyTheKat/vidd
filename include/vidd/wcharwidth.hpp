@@ -7,7 +7,7 @@
 
 namespace WCharWidth {
 
-constexpr std::size_t width(WChar c, bool is_cjk);
+constexpr std::size_t width(WChar c);
 
 }; // namespace WCharWidth
 
