@@ -103,7 +103,6 @@ void FuzzyWindow::calculateResults(void) {
 }
 
 void FuzzyWindow::onDeselect(void) {
-	submit("");
 }
 
 void FuzzyWindow::onLeftMouseButtonDown(Vec2 pos) {
