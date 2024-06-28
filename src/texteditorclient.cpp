@@ -875,8 +875,10 @@ void TextEditorClient::fuzzyEditFile(void) {
 		"edit",
 		FileSystem::getAllSubFilesAndDirectories("./"),
 		[this](std::string result) {
-			if (result.length() > 0 && FileSystem::isTextFile(result)) {
-				editFile(result);
+			if (result.length() > 0) {
+				if (FileSystem::isTextFile(result)) {
+					editFile(result);
+				} else failedToOpenBinary();
 			}
 		}
 	);
@@ -887,11 +889,24 @@ void TextEditorClient::fuzzyOpenFile(void) {
 		"open",
 		FileSystem::getAllSubFilesAndDirectories("./"),
 		[this](std::string result) {
-			if (result.length() > 0 && FileSystem::isTextFile(result)) {
-				openFile(result);
+			if (result.length() > 0) {
+				if (FileSystem::isTextFile(result)) {
+					openFile(result);
+				} else failedToOpenBinary();
 			}
 		}
 	);
+}
+
+void TextEditorClient::failedToOpenBinary() {
+	mStatus = StatusMessage {
+		.type = StatusMessageType::UnsavedChanges,
+		.text = "cannot open binary file",
+	};
+	getDisplay()->delay(1.2, [this] {
+		setNoStatus();
+	}, std::size_t(this));
+	requireSelfRedraw();
 }
 
 void TextEditorClient::fuzzyOpenFloatingFile(void) {
@@ -899,8 +914,10 @@ void TextEditorClient::fuzzyOpenFloatingFile(void) {
 		"float",
 		FileSystem::getAllSubFilesAndDirectories("./"),
 		[this](std::string result) {
-			if (result.length() > 0 && FileSystem::isTextFile(result)) {
-				openFloatingFile(result);
+			if (result.length() > 0) {
+				if (FileSystem::isTextFile(result)) {
+					openFloatingFile(result);
+				} else failedToOpenBinary();
 			}
 		}
 	);

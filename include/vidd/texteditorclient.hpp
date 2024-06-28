@@ -163,6 +163,8 @@ public:
 	void renderStatus(void);
 	void renderLineNumbers(void);
 
+	void failedToOpenBinary(void);
+
 	void onAttach(void) override;
 	void onRightMouseButtonDown(Vec2 pos) override;
 	void onRightMouseButtonDrag(Vec2 pos) override;
