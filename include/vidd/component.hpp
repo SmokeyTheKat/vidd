@@ -33,6 +33,9 @@ class Component {
 
 	Vec2 mTextCursor;
 
+public:
+	bool mCtrl = false;
+
 protected:
 	Vec2 mPos;
 	Vec2 mSize;

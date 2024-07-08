@@ -9,7 +9,17 @@
 #define CLIENT self
 
 #define GLOBAL_KEY_BINDS(client) \
-	KEYBIND(client, ({ Keys::ctrl('z') }), Terminal::suspend())
+	KEYBIND(client, ({ Keys::ctrl('z') }), Terminal::suspend()) \
+	KEYBIND(client, ({ Keys::F1 }), TABAREA->setActive(0)) \
+	KEYBIND(client, ({ Keys::F2 }), TABAREA->setActive(1)) \
+	KEYBIND(client, ({ Keys::F3 }), TABAREA->setActive(2)) \
+	KEYBIND(client, ({ Keys::F4 }), TABAREA->setActive(3)) \
+	KEYBIND(client, ({ Keys::F5 }), TABAREA->setActive(4)) \
+	KEYBIND(client, ({ Keys::F6 }), TABAREA->setActive(5)) \
+	KEYBIND(client, ({ Keys::F7 }), TABAREA->setActive(6)) \
+	KEYBIND(client, ({ Keys::F8 }), TABAREA->setActive(7)) \
+	KEYBIND(client, ({ Keys::F9 }), TABAREA->setActive(8)) \
+	KEYBIND(client, ({ Keys::F10 }), TABAREA->setActive(9)) \
 
 #define WINDOW_KEY_BINDS(client) \
 	KEYBIND(client, ({ Keys::ctrl('h') }), TAB->incrementSplitPos(-0.05)) \
@@ -30,16 +40,6 @@
 	KEYBIND(client, ({ ' ', '8' }), TABAREA->setActive(7)) \
 	KEYBIND(client, ({ ' ', '9' }), TABAREA->setActive(8)) \
 	KEYBIND(client, ({ ' ', '0' }), TABAREA->setActive(9)) \
-	KEYBIND(client, ({ Keys::F1 }), TABAREA->setActive(0)) \
-	KEYBIND(client, ({ Keys::F2 }), TABAREA->setActive(1)) \
-	KEYBIND(client, ({ Keys::F3 }), TABAREA->setActive(2)) \
-	KEYBIND(client, ({ Keys::F4 }), TABAREA->setActive(3)) \
-	KEYBIND(client, ({ Keys::F5 }), TABAREA->setActive(4)) \
-	KEYBIND(client, ({ Keys::F6 }), TABAREA->setActive(5)) \
-	KEYBIND(client, ({ Keys::F7 }), TABAREA->setActive(6)) \
-	KEYBIND(client, ({ Keys::F8 }), TABAREA->setActive(7)) \
-	KEYBIND(client, ({ Keys::F9 }), TABAREA->setActive(8)) \
-	KEYBIND(client, ({ Keys::F10 }), TABAREA->setActive(9)) \
 	KEYBIND(client, ({ ' ', Keys::Tab }), TABAREA->setLastActive()) \
 	KEYBIND(client, ({ ' ', 'c' }), TAB->nextLayout()) \
 	KEYBIND(client, ({ Keys::CtrlSpace }), CLIENT->toggleFloating()) \

@@ -5,6 +5,7 @@
 #include <vidd/utils.hpp>
 #include <vidd/log.hpp>
 #include <vidd/format.hpp>
+#include <vidd/xterm.hpp>
 
 #include <cstdio>
 #include <string>
@@ -78,20 +79,20 @@ Event Terminal::getEvent(void) {
 		sLastPos = me.pos;
 		if (me.type == MouseEventType::LeftButtonDrag) {
 			switch (sClickDepth) {
-			case 1: return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonDrag, me.pos));
-			case 2: return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonDoubleDrag, me.pos));
-			case 3: return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonTripleDrag, me.pos));
+			case 1: return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonDrag, me.pos, me.ctrl, me.alt));
+			case 2: return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonDoubleDrag, me.pos, me.ctrl, me.alt));
+			case 3: return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonTripleDrag, me.pos, me.ctrl, me.alt));
 			default: break;
 			}
 		} else if (me.type == MouseEventType::LeftButtonDown) {
 			if (me.pos == sLastClick) {
 				if (me.pos == sLastLastClick) {
 					sClickDepth = 3;
-					return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonTripleDown, me.pos));
+					return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonTripleDown, me.pos, me.ctrl, me.alt));
 				} else {
 					sClickDepth = 2;
 					sLastLastClick = me.pos;
-					return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonDoubleDown, me.pos));
+					return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonDoubleDown, me.pos, me.ctrl, me.alt));
 				}
 			} else {
 				sClickDepth = 1;
@@ -210,17 +211,34 @@ Event Terminal::getUnprocessedEvent(void) {
 						::read(STDIN_FILENO, &y, 1);
 						Vec2 pos(x - 33, y - 33);
 
-						switch (next[2]) {
-						case 'C': return Event(EventType::Mouse, MouseEvent(MouseEventType::Move, pos));
-						case '@': return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonDrag, pos));
-						case ' ': return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonDown, pos));
-						case '"': return Event(EventType::Mouse, MouseEvent(MouseEventType::RightButtonDown, pos));
-						case 'B': return Event(EventType::Mouse, MouseEvent(MouseEventType::RightButtonDrag, pos));
-						case '#': return Event(EventType::Mouse, MouseEvent(MouseEventType::ButtonUp, pos));
-						case 'a': return Event(EventType::Key, KeyEvent(Keys::ScrollDown));
-						case '`': return Event(EventType::Key, KeyEvent(Keys::ScrollUp));
-						case 'b': return Event(EventType::Key, KeyEvent(Keys::ScrollLeft));
-						case 'c': return Event(EventType::Key, KeyEvent(Keys::ScrollRight));
+
+						int type = XTerm::maskMouseEventType(next[2]);
+						int button = XTerm::maskMouseEventButton(next[2]);
+						int scroll = XTerm::maskMouseEventScroll(next[2]);
+						bool ctrl = XTerm::maskMouseEventCtrl(next[2]);
+						bool alt = XTerm::maskMouseEventAlt(next[2]);
+
+						switch (type) {
+						case XTerm::MouseEventType::Click: {
+							switch (button) {
+							case XTerm::MouseEventButton::None: return Event(EventType::Mouse, MouseEvent(MouseEventType::ButtonUp, pos, ctrl, alt));
+							case XTerm::MouseEventButton::Left: return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonDown, pos, ctrl, alt));
+							case XTerm::MouseEventButton::Right: return Event(EventType::Mouse, MouseEvent(MouseEventType::RightButtonDown, pos, ctrl, alt));
+							}
+						} break;
+						case XTerm::MouseEventType::Move: {
+							switch (button) {
+							case XTerm::MouseEventButton::None: return Event(EventType::Mouse, MouseEvent(MouseEventType::Move, pos, ctrl, alt));
+							case XTerm::MouseEventButton::Left: return Event(EventType::Mouse, MouseEvent(MouseEventType::LeftButtonDrag, pos, ctrl, alt));
+							case XTerm::MouseEventButton::Right: return Event(EventType::Mouse, MouseEvent(MouseEventType::RightButtonDrag, pos, ctrl, alt));
+							}
+						} break;
+						case XTerm::MouseEventType::Scroll: {
+							switch (scroll) {
+							case XTerm::MouseEventScroll::Up: return Event(EventType::Key, KeyEvent(Keys::ScrollUp));
+							case XTerm::MouseEventScroll::Down: return Event(EventType::Key, KeyEvent(Keys::ScrollDown));
+							}
+						} break;
 						}
 					}
 				} else {
@@ -265,7 +283,7 @@ Event Terminal::getUnprocessedEvent(void) {
 						return Event(EventType::Key, KeyEvent(WChar(buf, chrlen).value));
 					}
 				}
-				return Event(EventType::Key, KeyEvent(0));
+				return Event(EventType::None, NoneEvent{});
 			}
 		} break;
 		}

@@ -402,7 +402,9 @@ void TextEditor::paste(void) {
 	if (mCopyBuffer.type == CopyType::Normal) {
 		mTrackUndos = false;
 
+#ifndef VIDD_DEFAULT_MODE_INSERT
 		cursorMoveX(1);
+#endif
 		Vec2 regionStart = mCursor.toVec2();
 		for (auto c : mCopyBuffer.data) {
 			insertCharAtCursor(c);
@@ -415,7 +417,9 @@ void TextEditor::paste(void) {
 			mCopyBuffer.data
 		);
 
+#ifndef VIDD_DEFAULT_MODE_INSERT
 		cursorMoveX(-1);
+#endif
 	} else if (mCopyBuffer.type == CopyType::Line) {
 		mTrackUndos = false;
 

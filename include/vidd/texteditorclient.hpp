@@ -50,6 +50,7 @@ class TextEditorClient : public Client {
 	bool mAutoSave = false;
 	StatusMessage mStatus;
 	Vec2 mWindowDragLatch;
+	Vec2 mWindowDragOrigSize;
 	std::vector<std::pair<std::string, Vec2>> mJumpPairs;
 	std::string mJumpInput;
 
@@ -92,6 +93,7 @@ public:
 
 	Key getKey(void);
 
+	void enterDefaultMode(void);
 	void enterInsertMode(void);
 	void enterInsertModeRight(void);
 	void enterInsertModeOnNewLineDown(void);

@@ -89,6 +89,8 @@ void Display::handleMouseEvent(MouseEvent me) {
 
 	if (!target) return;
 
+	target->mCtrl = me.ctrl;
+
 	switch (me.type) {
 	case MouseEventType::Move: {
 		target->onMouseMove(target->getPosFromReal(me.pos));

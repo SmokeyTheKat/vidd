@@ -183,19 +183,38 @@ const AliasBinds insertAliases = {
 
 const KeyBinds insertKeyBinds = {
 	GLOBAL_KEY_BINDS(TextEditorClient)
+	KEYBIND(TextEditorClient, ({ Keys::ctrl('u') }), EDITOR->undo())
+	KEYBIND(TextEditorClient, ({ Keys::ctrl('r') }), EDITOR->redo())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlBackslash }), CLIENT->duplicate())
+	KEYBIND(TextEditorClient, ({ Keys::ctrl('n') }), EDITOR->toggleCommentAtCursor())
+	KEYBIND(TextEditorClient, ({ Keys::ctrl('y') }), CLIENT->copyEditorCopyBufferToSystemCopyBuffer())
+	KEYBIND(TextEditorClient, ({ Keys::ctrl('w') }), CLIENT->enterWindowMoveMode())
+	KEYBIND(TextEditorClient, ({ Keys::ctrl('p') }), CLIENT->enterCommandMode())
+#ifndef VIDD_DEFAULT_MODE_INSERT
 	KEYBIND(TextEditorClient, ({ Keys::Escape }), CLIENT->exitInsertMode())
+#endif
 	KEYBIND(TextEditorClient, ({ Keys::ctrl('v') }), EDITOR->paste())
 	KEYBIND(TextEditorClient, ({ Keys::Return }), EDITOR->splitLineAtCursor())
-	KEYBIND(TextEditorClient, ({ '\n' }), EDITOR->splitLineAtCursor())
 	KEYBIND(TextEditorClient, ({ Keys::Backspace }), EDITOR->backspaceAtCursor())
 	KEYBIND(TextEditorClient, ({ Keys::Left }), EDITOR->cursorMoveX(-1))
 	KEYBIND(TextEditorClient, ({ Keys::Right }), EDITOR->cursorMoveX(1))
 	KEYBIND(TextEditorClient, ({ Keys::Down }), EDITOR->cursorMoveY(1))
 	KEYBIND(TextEditorClient, ({ Keys::Up }), EDITOR->cursorMoveY(-1))
-	KEYBIND(TextEditorClient, ({ Keys::ScrollUp }), EDITOR->viewScrollY(-1)) \
-	KEYBIND(TextEditorClient, ({ Keys::ScrollDown }), EDITOR->viewScrollY(1)) \
-	KEYBIND(TextEditorClient, ({ Keys::CtrlRight }), EDITOR->cursorMoveNextWord()) \
-	KEYBIND(TextEditorClient, ({ Keys::CtrlLeft }), EDITOR->cursorMovePrevWord()) \
+	KEYBIND(TextEditorClient, ({ Keys::ScrollUp }), EDITOR->viewScrollY(-1))
+	KEYBIND(TextEditorClient, ({ Keys::ScrollDown }), EDITOR->viewScrollY(1))
+	KEYBIND(TextEditorClient, ({ Keys::CtrlRight }), EDITOR->cursorMoveNextWord())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlLeft }), EDITOR->cursorMovePrevWord())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'l' }), CLIENT->openLogClient())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 't' }), CLIENT->openTermianl())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'y' }), CLIENT->openFloatingTermianl())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'r' }), CLIENT->executeLine())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'e' }), CLIENT->fuzzyEditFile())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'o' }), CLIENT->fuzzyOpenFile())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'f' }), CLIENT->fuzzyOpenFloatingFile())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'g' }), CLIENT->fuzzyGoto())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'h' }), CLIENT->fuzzyGrep())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'd' }), CLIENT->openDirectory())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 's' }), CLIENT->openFloatingDirectory())
 };
 
 const AliasBinds replaceAliases = {
@@ -280,8 +299,8 @@ TextEditorClient::TextEditorClient(Tab* tab, Input input)
 	if (Vidd::hasFlag("-hsb")) {
 		mShowStatusBar = false;
 	}
-	setNormalBinds();
 	setSelectable(true);
+	enterDefaultMode();
 }
 
 void TextEditorClient::onAttach(void) {
@@ -408,6 +427,17 @@ void TextEditorClient::setNoBinds(void) {
 	mAliases = &noAliases;
 }
 
+void TextEditorClient::enterDefaultMode(void) {
+#ifdef VIDD_DEFAULT_MODE_INSERT
+	enterInsertMode();
+#else
+	mEditor.setLineOverflow(false);
+	mMode = EditMode::Normal;
+	setNormalBinds();
+	requireRedraw();
+#endif
+}
+
 void TextEditorClient::enterInsertMode(void) {
 	mMode = EditMode::Insert;
 	mEditor.setLineOverflow(true);
@@ -433,11 +463,8 @@ void TextEditorClient::enterInsertModeOnNewLineUp(void) {
 }
 
 void TextEditorClient::exitInsertMode(void) {
-	mMode = EditMode::Normal;
 	mEditor.cursorMoveX(-1);
-	mEditor.setLineOverflow(false);
-	setNormalBinds();
-	requireRedraw();
+	enterDefaultMode();
 }
 
 void TextEditorClient::enterReplaceMode(void) {
@@ -448,11 +475,10 @@ void TextEditorClient::enterReplaceMode(void) {
 }
 
 void TextEditorClient::exitReplaceMode(void) {
-	mMode = EditMode::Normal;
+#ifndef VIDD_DEFAULT_MODE_INSERT
 	mEditor.cursorMoveX(-1);
-	mEditor.setLineOverflow(false);
-	setNormalBinds();
-	requireRedraw();
+#endif
+	enterDefaultMode();
 }
 
 void TextEditorClient::replaceChar(void) {
@@ -487,11 +513,8 @@ void TextEditorClient::enterWordSelectMode(void) {
 }
 
 void TextEditorClient::exitSelectMode(void) {
-	mMode = EditMode::Normal;
 	mEditor.stopSelection();
-	mEditor.setLineOverflow(false);
-	setNormalBinds();
-	requireRedraw();
+	enterDefaultMode();
 }
 
 void TextEditorClient::enterCommandMode(void) {
@@ -542,9 +565,7 @@ void TextEditorClient::enterCommandMode(void) {
 }
 
 void TextEditorClient::exitCommandMode(void) {
-	mMode = EditMode::Normal;
-	setNormalBinds();
-	requireRedraw();
+	enterDefaultMode();
 }
 
 using namespace std::string_literals;
@@ -1030,8 +1051,13 @@ Vec2 TextEditorClient::getCursor(void) {
 }
 
 void TextEditorClient::onRightMouseButtonDown(Vec2 pos) {
+	if (mCtrl) {
+		if (!mIsFloating) toggleFloating();
+		enterWindowMoveMode();
+	}
 	if (mMode == EditMode::WindowMove) {
-		onRightMouseButtonDrag(pos);
+		mWindowDragLatch = pos;
+		mWindowDragOrigSize = mSize;
 	} else {
 		mEditor.cursorMoveTo(mEditor.relativeToAbsolutePosition(getPosInOtherComponent(pos, &mCodeView)));
 	}
@@ -1039,15 +1065,20 @@ void TextEditorClient::onRightMouseButtonDown(Vec2 pos) {
 
 void TextEditorClient::onRightMouseButtonDrag(Vec2 pos) {
 	if (mMode == EditMode::WindowMove) {
-		Vec2 windowResizeDelta = pos - mSize;
-		windowResizeX(windowResizeDelta.x);
-		windowResizeY(windowResizeDelta.y);
+		Vec2 target = mWindowDragOrigSize + pos - mWindowDragLatch;
+		Vec2 delta = target - mSize;
+		windowResizeX(delta.x);
+		windowResizeY(delta.y);
 	} else {
 		onLeftMouseButtonDrag(pos);
 	}
 }
 
 void TextEditorClient::onLeftMouseButtonDown(Vec2 pos) {
+	if (mCtrl) {
+		if (!mIsFloating) toggleFloating();
+		enterWindowMoveMode();
+	}
 	if (mMode == EditMode::WindowMove) {
 		mWindowDragLatch = pos;
 	} else {
@@ -1076,8 +1107,13 @@ void TextEditorClient::onLeftMouseButtonDrag(Vec2 pos) {
 }
 
 void TextEditorClient::onLeftMouseButtonDoubleDown(Vec2 pos) {
-	enterWordSelectMode();
-	mEditor.cursorMoveToWordStart();
+	if (mCtrl && mIsFloating) {
+		toggleFloating();
+		if (mMode == EditMode::WindowMove) exitWindowMoveMode();
+	} else {
+		enterWordSelectMode();
+		mEditor.cursorMoveToWordStart();
+	}
 }
 
 void TextEditorClient::onLeftMouseButtonDoubleDrag(Vec2 pos) {

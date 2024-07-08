@@ -30,9 +30,11 @@ enum class MouseEventType {
 struct MouseEvent {
 	MouseEventType type;
 	Vec2 pos;
+	bool ctrl;
+	bool alt;
 
-	MouseEvent(MouseEventType type, Vec2 pos)
-	: type(type), pos(pos) {};
+	MouseEvent(MouseEventType type, Vec2 pos, bool ctrl = false, bool alt = false)
+	: type(type), pos(pos), ctrl(ctrl), alt(alt) {};
 };
 
 enum class PasteEventType {
