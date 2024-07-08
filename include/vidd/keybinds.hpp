@@ -20,6 +20,18 @@
 	KEYBIND(client, ({ Keys::F8 }), TABAREA->setActive(7)) \
 	KEYBIND(client, ({ Keys::F9 }), TABAREA->setActive(8)) \
 	KEYBIND(client, ({ Keys::F10 }), TABAREA->setActive(9)) \
+	KEYBIND(client, ({ Keys::CtrlSpace, '1' }), TABAREA->setActive(0)) \
+	KEYBIND(client, ({ Keys::CtrlSpace, '2' }), TABAREA->setActive(1)) \
+	KEYBIND(client, ({ Keys::CtrlSpace, '3' }), TABAREA->setActive(2)) \
+	KEYBIND(client, ({ Keys::CtrlSpace, '4' }), TABAREA->setActive(3)) \
+	KEYBIND(client, ({ Keys::CtrlSpace, '5' }), TABAREA->setActive(4)) \
+	KEYBIND(client, ({ Keys::CtrlSpace, '6' }), TABAREA->setActive(5)) \
+	KEYBIND(client, ({ Keys::CtrlSpace, '7' }), TABAREA->setActive(6)) \
+	KEYBIND(client, ({ Keys::CtrlSpace, '8' }), TABAREA->setActive(7)) \
+	KEYBIND(client, ({ Keys::CtrlSpace, '9' }), TABAREA->setActive(8)) \
+	KEYBIND(client, ({ Keys::CtrlSpace, '0' }), TABAREA->setActive(9)) \
+	KEYBIND(client, ({ Keys::CtrlSpace, Keys::Tab }), TABAREA->setLastActive()) \
+	KEYBIND(client, ({ Keys::CtrlSpace, 'c' }), TAB->nextLayout()) \
 
 #define WINDOW_KEY_BINDS(client) \
 	KEYBIND(client, ({ Keys::ctrl('h') }), TAB->incrementSplitPos(-0.05)) \
@@ -42,7 +54,6 @@
 	KEYBIND(client, ({ ' ', '0' }), TABAREA->setActive(9)) \
 	KEYBIND(client, ({ ' ', Keys::Tab }), TABAREA->setLastActive()) \
 	KEYBIND(client, ({ ' ', 'c' }), TAB->nextLayout()) \
-	KEYBIND(client, ({ Keys::CtrlSpace }), CLIENT->toggleFloating()) \
 
 #define WINDOW_ALIASES \
 	{ { ' ', ' ' }, { ' ' } }, \
