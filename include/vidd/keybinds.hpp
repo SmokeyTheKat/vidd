@@ -32,6 +32,7 @@
 	KEYBIND(client, ({ Keys::CtrlSpace, '0' }), TABAREA->setActive(9)) \
 	KEYBIND(client, ({ Keys::CtrlSpace, Keys::Tab }), TABAREA->setLastActive()) \
 	KEYBIND(client, ({ Keys::CtrlSpace, 'c' }), TAB->nextLayout()) \
+	KEYBIND(client, ({ Keys::CtrlSpace, 'w' }), CLIENT->toggleFloating()) \
 
 #define WINDOW_KEY_BINDS(client) \
 	KEYBIND(client, ({ Keys::ctrl('h') }), TAB->incrementSplitPos(-0.05)) \
@@ -54,6 +55,7 @@
 	KEYBIND(client, ({ ' ', '0' }), TABAREA->setActive(9)) \
 	KEYBIND(client, ({ ' ', Keys::Tab }), TABAREA->setLastActive()) \
 	KEYBIND(client, ({ ' ', 'c' }), TAB->nextLayout()) \
+	KEYBIND(client, ({ ' ', 'w' }), CLIENT->toggleFloating()) \
 
 #define WINDOW_ALIASES \
 	{ { ' ', ' ' }, { ' ' } }, \
