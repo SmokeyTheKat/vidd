@@ -502,11 +502,13 @@ void TextEditorClient::enterMultiLineInsertMode(void) {
 }
 
 void TextEditorClient::deleteThenEnterMultiLineInsertMode(void) {
+	mEditor.endSelection();
 	Selection sel = mEditor.getSelection().ordered();
 	int x = sel.curStart.x;
 	int fromY = sel.curStart.y->number;
 	int toY = sel.curEnd.y->number;
 	mEditor.deleteSelection();
+	exitSelectMode();
 	mEditor.cursorMoveTo(x, fromY);
 	enterBlockSelectMode();
 	mEditor.cursorMoveTo(x, toY);
