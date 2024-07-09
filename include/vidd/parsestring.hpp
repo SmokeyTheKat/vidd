@@ -1,9 +1,6 @@
 #ifndef __VIDD_PARSE_STRING_HPP__
 #define __VIDD_PARSE_STRING_HPP__
 
-#include <vidd/cstring.hpp>
-#include <vidd/utils.hpp>
-
 #include <string>
 #include <string_view>
 #include <vector>

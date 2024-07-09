@@ -157,6 +157,12 @@ void TextEditor::startWordSelection(void) {
 	mSelection.type = SelectionType::Word;
 }
 
+void TextEditor::startBlockSelection(void) {
+	mSelecting = true;
+	mSelection.curStart = mCursor;
+	mSelection.type = SelectionType::Block;
+}
+
 void TextEditor::endSelection(void) {
 	mSelection.curEnd = mCursor;
 }
@@ -220,6 +226,12 @@ void TextEditor::deleteSelection(void) {
 			Vec2(0, end.y + 1),
 			readNormalSelectionToString()
 		);
+	} else if (selection.type == SelectionType::Block) {
+		registerUndoAction<UndoBlockDeleteAction>(
+			selection.curStart.toVec2(),
+			selection.curEnd.toVec2(),
+			readLineSelectionToString()
+		);
 	} else {
 		registerUndoAction<UndoDeleteAction>(
 			selection.curStart.toVec2(),
@@ -279,10 +291,14 @@ void TextEditor::copyLineSelection(void) {
 }
 	
 void TextEditor::copySelection(void) {
-	if (mSelection.type == SelectionType::Line) {
+	switch (mSelection.type) {
+	case SelectionType::Line:
+	case SelectionType::Block: {
 		copyLineSelection();
-	} else {
+	} break;
+	default: {
 		copyNormalSelection();
+	} break;
 	}
 }
 
@@ -464,13 +480,28 @@ void TextEditor::pasteBack(void) {
 			mCopyBuffer.data
 		);
 	} else if (mCopyBuffer.type == CopyType::Line) {
+		mTrackUndos = false;
+
+		Cursor start = mCursor;
+
+		Vec2 regionStart = Vec2(0, start.y->number);
+
 		insertLineUpFromCursor();
 		cursorMoveY(-1);
-		Cursor start = mCursor;
+
 		for (auto c : mCopyBuffer.data) {
 			insertCharAtCursor(c);
 		}
+
+		Vec2 regionEnd = Vec2(0, mCursor.y->number + 1);
+		mTrackUndos = true;
+		registerUndoAction<UndoInsertAction>(
+			regionStart,
+			regionEnd,
+			mCopyBuffer.data + '\n'
+		);
 		cursorMoveTo(0, start.y->number);
+
 	}
 
 	mLineEndOverflow = savedOverflow;
@@ -569,10 +600,12 @@ void TextEditor::insertAtCursor(WStringView data) {
 	mLineEndOverflow = savedOverflow;
 }
 
-void TextEditor::insertCharAtCursor(WChar chr) {
+bool TextEditor::insertCharAtCursor(WChar chr) {
+	bool res = false;
 	switch (chr) {
 	case '\n': {
 		splitLineAtCursor();
+		res = true;
 	} break;
 	case '\t': {
 		registerUndoAction<UndoInsertAction>(
@@ -582,6 +615,7 @@ void TextEditor::insertCharAtCursor(WChar chr) {
 		);
 		mCursor.y->data.insert(mCursor.x, ' ', gTabWidth);
 		cursorMoveX(4);
+		res = true;
 	} break;
 	default: {
 		if (isVisibleWChar(chr)) {
@@ -592,11 +626,13 @@ void TextEditor::insertCharAtCursor(WChar chr) {
 			);
 			mCursor.y->data.insert(mCursor.x, chr);
 			cursorMoveX(1);
+			res = true;
 		}
 	} break;
 	}
 	mUnsavedChanges = true;
 	mViewChanged = true;
+	return res;
 }
 
 void TextEditor::replaceCharAtCursor(WChar chr) {

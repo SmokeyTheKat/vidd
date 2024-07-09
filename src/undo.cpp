@@ -1,6 +1,7 @@
 #include <vidd/undo.hpp>
 
 #include <vidd/texteditor.hpp>
+#include <vidd/utils.hpp>
 
 void UndoBuffer::registerAction(std::unique_ptr<UndoAction> action) {
 	if (mLocked == true) return;
@@ -121,6 +122,41 @@ void UndoDeleteAction::undo(TextEditor* editor) const {
 
 void UndoDeleteAction::redo(TextEditor* editor) const {
 	oppisite.undo(editor);
+}
+
+void UndoBlockDeleteAction::undo(TextEditor* editor) const {
+	std::vector<WStringView> lines = Utils::splitAt(text, '\n');
+	editor->setLineOverflow(true);
+
+	Vec2 p = start;
+	for (std::size_t i = 0; i < lines.size(); i++) {
+		editor->cursorMoveTo(p);
+		while (i < lines.size() && lines[i].length() == 0) {
+			p.y += 1;
+			i++;
+			editor->cursorMoveTo(p);
+		}
+		if (i >= lines.size()) break;
+		for (WChar chr : lines[i]) editor->insertCharAtCursor(chr);
+		p.y += 1;
+	}
+
+	editor->cursorMoveTo(start);
+
+	editor->setLineOverflow(false);
+}
+
+void UndoBlockDeleteAction::redo(TextEditor* editor) const {
+	editor->setLineOverflow(true);
+
+	editor->cursorMoveTo(start);
+	editor->startBlockSelection();
+	editor->cursorMoveTo(end);
+	editor->deleteSelection();
+	editor->cursorMoveTo(start);
+	editor->stopSelection();
+
+	editor->setLineOverflow(false);
 }
 
 void UndoCharacterReplaceAction::undo(TextEditor* editor) const {

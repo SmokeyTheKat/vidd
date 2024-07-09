@@ -93,6 +93,17 @@ struct UndoDeleteAction : public UndoAction {
 	void redo(TextEditor* editor) const override;
 };
 
+struct UndoBlockDeleteAction : public UndoAction {
+	Vec2 start;
+	Vec2 end;
+	WString text;
+
+	UndoBlockDeleteAction(Vec2 start, Vec2 end, WString text)
+	: start(start), end(end), text(text) {};
+	void undo(TextEditor* editor) const override;
+	void redo(TextEditor* editor) const override;
+};
+
 struct UndoCharacterReplaceAction : public UndoAction {
 	Vec2 pos;
 	WChar from;

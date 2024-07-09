@@ -10,6 +10,9 @@
 #include <ctime>
 #include <cmath>
 
+class WStringView;
+struct WChar;
+
 namespace Utils {
 
 template<class T>
@@ -127,5 +130,11 @@ bool stringIsUppercase(std::string_view str);
 std::string getPathBaseName(std::string path);
 
 }; // namepsace Utils
+
+#include <vidd/wchar.hpp>
+
+namespace Utils {
+std::vector<WStringView> splitAt(WStringView text, WChar at);
+}; // namespace Utils
 
 #endif

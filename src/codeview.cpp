@@ -105,8 +105,9 @@ void CodeView::render(void) {
 		Selection sel = mEditor->getSelection();
 		sel.curEnd = mEditor->getCursor();
 		sel = sel.ordered();
-		int y = sel.curStart.y->number - view.y;
 		for (auto range : sel) {
+			if (sel.type == SelectionType::Block && range.range.x == range.range.y) continue;
+			int y = range.line->number - view.y;
 			int x = std::max(0, range.range.x - view.x);
 			int xDiff = x - (range.range.x - view.x);
 			int minWidth = 0;
@@ -115,7 +116,7 @@ void CodeView::render(void) {
 				std::max(0, std::min(view.width, std::max(minWidth, range.range.y - range.range.x) - xDiff)),
 				1
 			);
-			paintFormat(Vec2(x, y++), size, theme->highlight);
+			paintFormat(Vec2(x, y), size, theme->highlight);
 		}
 	}
 

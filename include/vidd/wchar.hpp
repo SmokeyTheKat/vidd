@@ -1,8 +1,6 @@
 #ifndef __VIDD_WCHAR_HPP__
 #define __VIDD_WCHAR_HPP__
 
-#include <vidd/utils.hpp>
-#include <vidd/cstring.hpp>
 #include <vidd/parsestring.hpp>
 
 #include <cstdint>

@@ -135,12 +135,13 @@ const KeyBinds normalKeyBinds = {
 	KEYBIND(TextEditorClient, ({ 'y' }), CLIENT->copyMovement())
 	KEYBIND(TextEditorClient, ({ 'Y' }), CLIENT->lineCopyMovement())
 	KEYBIND(TextEditorClient, ({ Keys::ctrl('n') }), EDITOR->toggleCommentAtCursor())
-	KEYBIND(TextEditorClient, ({ Keys::ctrl('v') }), EDITOR->paste())
+//    KEYBIND(TextEditorClient, ({ Keys::ctrl('v') }), EDITOR->paste())
 	KEYBIND(TextEditorClient, ({ 'p' }), EDITOR->paste())
 	KEYBIND(TextEditorClient, ({ 'P' }), EDITOR->pasteBack())
 	KEYBIND(TextEditorClient, ({ ':' }), CLIENT->enterCommandMode())
 	KEYBIND(TextEditorClient, ({ 'v' }), CLIENT->enterSelectMode())
 	KEYBIND(TextEditorClient, ({ 'V' }), CLIENT->enterLineSelectMode())
+	KEYBIND(TextEditorClient, ({ Keys::ctrl('v') }), CLIENT->enterBlockSelectMode())
 	KEYBIND(TextEditorClient, ({ 'r' }), CLIENT->replaceChar())
 	KEYBIND(TextEditorClient, ({ 'R' }), CLIENT->enterReplaceMode())
 	KEYBIND(TextEditorClient, ({ 'i' }), CLIENT->enterInsertMode())
@@ -217,6 +218,13 @@ const KeyBinds insertKeyBinds = {
 	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 's' }), CLIENT->openFloatingDirectory())
 };
 
+const AliasBinds multiLineInsertAliases = {
+};
+
+const KeyBinds multiLineInsertKeyBinds = {
+};
+
+
 const AliasBinds replaceAliases = {
 };
 
@@ -238,6 +246,8 @@ const KeyBinds selectKeyBinds = {
 //    KEYBIND(TextEditorClient, ({ Keys::ctrl('c') }), EDITOR->exitSelectMode(); CLIENT->setNormalBinds(); EDITOR->restrictCursor();)
 	KEYBIND(TextEditorClient, ({ Keys::ctrl('c') }), EDITOR->copySelection())
 	KEYBIND(TextEditorClient, ({ Keys::ctrl('n') }), EDITOR->toggleCommentAtSelection())
+	KEYBIND(TextEditorClient, ({ 'i' }), CLIENT->enterMultiLineInsertMode())
+	KEYBIND(TextEditorClient, ({ 'r' }), CLIENT->deleteThenEnterMultiLineInsertMode())
 	KEYBIND(TextEditorClient, ({ 'y' }), EDITOR->copySelection())
 	KEYBIND(TextEditorClient, ({ 'd' }), EDITOR->deleteSelection(); CLIENT->exitSelectMode();)
 	KEYBIND(TextEditorClient, ({ 'c' }), EDITOR->deleteSelection(); CLIENT->exitSelectMode(); CLIENT->enterInsertMode();)
@@ -402,6 +412,11 @@ void TextEditorClient::setInsertBinds(void) {
 	mAliases = &insertAliases;
 }
 
+void TextEditorClient::setMultiLineInsertBinds(void) {
+	mKeyBinds = &multiLineInsertKeyBinds;
+	mAliases = &multiLineInsertAliases;
+}
+
 void TextEditorClient::setReplaceBinds(void) {
 	mKeyBinds = &replaceKeyBinds;
 	mAliases = &replaceAliases;
@@ -467,6 +482,64 @@ void TextEditorClient::exitInsertMode(void) {
 	enterDefaultMode();
 }
 
+void TextEditorClient::enterMultiLineInsertMode(void) {
+	mMode = EditMode::MultiLineInsert;
+	mEditor.setLineOverflow(true);
+	mEditor.endSelection();
+	mEditor.cursorMoveTo(mEditor.getSelection().ordered().curStart);
+	Log::log(Format::format("x: {}, {}",
+		mEditor.getSelection().ordered().curStart.x,
+		mEditor.getSelection().ordered().curEnd.x
+	));
+	Log::log(Format::format("y: {}, {}",
+		mEditor.getSelection().ordered().curStart.y->number,
+		mEditor.getSelection().ordered().curEnd.y->number
+	));
+	mMultiLineBuffer.clear();
+	mMultiLineBufferPtr = 0;
+	setMultiLineInsertBinds();
+	requireRedraw();
+}
+
+void TextEditorClient::deleteThenEnterMultiLineInsertMode(void) {
+	Selection sel = mEditor.getSelection().ordered();
+	int x = sel.curStart.x;
+	int fromY = sel.curStart.y->number;
+	int toY = sel.curEnd.y->number;
+	mEditor.deleteSelection();
+	mEditor.cursorMoveTo(x, fromY);
+	enterBlockSelectMode();
+	mEditor.cursorMoveTo(x, toY);
+	enterMultiLineInsertMode();
+}
+
+void TextEditorClient::exitMultiLineInsertMode(void) {
+	mEditor.stopSelection();
+	Selection sel = mEditor.getSelection().ordered();
+	Log::log(Format::format("x: {}, {}",
+		mEditor.getSelection().ordered().curStart.x,
+		mEditor.getSelection().ordered().curEnd.x
+	));
+	Log::log(Format::format("y: {}, {}",
+		mEditor.getSelection().ordered().curStart.y->number,
+		mEditor.getSelection().ordered().curEnd.y->number
+	));
+	bool first = true;
+	for (auto range : sel) {
+		if (first) {
+			first = false;
+			continue;
+		}
+		if (range.range.x != sel.curStart.x) continue;
+		mEditor.cursorMoveTo(range.range.x, range.line->number);
+		Log::log(Format::format("> {}, {}", range.range.x, range.line->number));
+		for (WChar c : mMultiLineBuffer) {
+			mEditor.insertCharAtCursor(c);
+		}
+	}
+	enterDefaultMode();
+}
+
 void TextEditorClient::enterReplaceMode(void) {
 	mMode = EditMode::Replace;
 	mEditor.setLineOverflow(true);
@@ -500,6 +573,14 @@ void TextEditorClient::enterLineSelectMode(void) {
 	mMode = EditMode::LineSelect;
 	setSelectBinds();
 	mEditor.startLineSelection();
+	mEditor.setLineOverflow(true);
+	requireRedraw();
+}
+
+void TextEditorClient::enterBlockSelectMode(void) {
+	mMode = EditMode::BlockSelect;
+	setSelectBinds();
+	mEditor.startBlockSelection();
 	mEditor.setLineOverflow(true);
 	requireRedraw();
 }
@@ -1035,6 +1116,8 @@ Vec2 TextEditorClient::getCursor(void) {
 	case EditMode::Select:
 	case EditMode::LineSelect:
 	case EditMode::WordSelect:
+	case EditMode::BlockSelect:
+	case EditMode::MultiLineInsert:
 	case EditMode::Insert: {
 		cursor = Terminal::CursorStyle::SteadyBar; break;
 	} break;
@@ -1156,6 +1239,38 @@ void TextEditorClient::unhandledKey(Key key) {
 	case EditMode::Insert: {
 		mEditor.insertCharAtCursor(key);
 	} break;
+	case EditMode::MultiLineInsert: {
+		switch (key) {
+		case Keys::Escape: {
+			exitMultiLineInsertMode();
+		} break;
+		case Keys::Backspace: {
+			if (mMultiLineBufferPtr == 0) break;
+			mMultiLineBufferPtr -= 1;
+			mMultiLineBuffer.erase(mMultiLineBuffer.begin() + mMultiLineBufferPtr);
+			mEditor.backspaceAtCursor();
+		} break;
+		case Keys::Left: {
+			if (mMultiLineBufferPtr == 0) break;
+			mMultiLineBufferPtr -= 1;
+			mEditor.cursorMoveX(-1);
+		} break;
+		case Keys::Right: {
+			if (mMultiLineBufferPtr > (int)mMultiLineBuffer.size()) break;
+			mMultiLineBufferPtr += 1;
+			mEditor.cursorMoveX(1);
+		} break;
+		default: {
+			if (mEditor.insertCharAtCursor(key)) {
+				mMultiLineBuffer.insert(
+					mMultiLineBuffer.begin() + mMultiLineBufferPtr,
+					key
+				);
+				mMultiLineBufferPtr += 1;
+			}
+		} break;
+		}
+	} break;
 	case EditMode::Replace: {
 		mEditor.replaceCharAtCursor(key);
 		mEditor.cursorMoveX(1);
@@ -1191,7 +1306,6 @@ void TextEditorClient::unhandledKey(Key key) {
 void TextEditorClient::onKeyDown(Key key) {
 	requireSelfRedraw();
 	if (sIsRecordingMacro) {
-		Log::log(Format::format("{}: {}", (int)mMode, key));
 		sMacroBuffer.push_back(key);
 	}
 	interpret(key);
@@ -1247,6 +1361,12 @@ void TextEditorClient::renderStatusBar(void) {
 	} break;
 	case EditMode::WordSelect: {
 		drawText(pos, WString("[WORD-SELECT]"));
+	} break;
+	case EditMode::BlockSelect: {
+		drawText(pos, WString("[BLOCK-SELECT]"));
+	} break;
+	case EditMode::MultiLineInsert: {
+		drawText(pos, WString("[MULTI-INSERT]"));
 	} break;
 	case EditMode::WindowMove: {
 		drawText(pos, WString("[WINDOW-MOVE]"));

@@ -1,6 +1,9 @@
 #ifndef __VIDD_PARSE_STRING_IPP__
 #define __VIDD_PARSE_STRING_IPP__
 
+#include <vidd/utils.hpp>
+#include <vidd/cstring.hpp>
+
 constexpr ParseString::ParseString(const char* data)
 : mOrigData(data), mData(data) {
 	mOrigLength = CString::length(data);

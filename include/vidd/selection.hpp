@@ -12,6 +12,7 @@ enum class SelectionType {
 	Normal,
 	Word,
 	Line,
+	Block,
 };
 
 enum class SelectionRangeType {
@@ -35,18 +36,12 @@ struct SelectionRange {
 struct SelectionIterator {
 private:
 	Line* mLine;
+	Line* mLineEnd;
 	Line* mNextLine;
 	const Selection& mSel;
 
 public:
-	SelectionIterator(Line* line, const Selection& sel)
-	: mLine(line), mSel(sel) {
-		if (line) {
-			mNextLine = line->next();
-		} else {
-			mNextLine = line;
-		}
-	}
+	SelectionIterator(Line* line, Line* end, const Selection& sel);
 
 	SelectionRange operator*(void);
 	SelectionIterator& operator++(void);
@@ -59,26 +54,10 @@ struct Selection {
 	Cursor curEnd;
 	SelectionType type = SelectionType::Normal;
 
-	Selection(void) {};
+	Selection ordered(void) const;
 
-	Selection ordered(void) const {
-		Selection selection = *this;
-		if (curStart.y->number < curEnd.y->number) {
-			selection = *this;
-		} else if (curStart.y->number > curEnd.y->number) {
-			selection.curStart = curEnd;
-			selection.curEnd = curStart;
-		} else if (curStart.x < curEnd.x) {
-			selection = *this;
-		} else if (curStart.x > curEnd.x) {
-			selection.curStart = curEnd;
-			selection.curEnd = curStart;
-		}
-		return selection;
-	};
-
-	SelectionIterator begin(void) { return SelectionIterator(curStart.y, *this); }
-	SelectionIterator end(void) { return SelectionIterator(curEnd.y->next(), *this); }
+	SelectionIterator begin(void) { return SelectionIterator(curStart.y, curEnd.y->next(), *this); }
+	SelectionIterator end(void) { return SelectionIterator(curEnd.y->next(), curEnd.y->next(), *this); }
 };
 
 #endif

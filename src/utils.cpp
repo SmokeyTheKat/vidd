@@ -20,6 +20,21 @@ std::vector<std::string_view> splitAt(std::string_view text, char at) {
 	return words;
 }
 
+std::vector<WStringView> splitAt(WStringView text, WChar at) {
+	std::vector<WStringView> words;
+
+	std::size_t start = 0;
+	for (std::size_t i = 0; i < text.length(); i++) {
+		if (text[i] == at) {
+			words.push_back(text.subString(start, i));
+			start = i + 1;
+		}
+	}
+	words.push_back(text.subString(start, text.length()));
+
+	return words;
+}
+
 std::vector<std::string_view> splitAtFirst(std::string_view text, char at, int n) {
 	std::vector<std::string_view> words;
 

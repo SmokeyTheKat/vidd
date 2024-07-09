@@ -12,19 +12,21 @@
 #include <array>
 #include <map>
 
-class TextEditorClient : public Client {
-	enum class EditMode {
-		Normal,
-		Insert,
-		Replace,
-		Select,
-		LineSelect,
-		WordSelect,
-		WindowMove,
-		Prompt,
-		Jump,
-	};
+enum class EditMode {
+	Normal,
+	Insert,
+	MultiLineInsert,
+	Replace,
+	Select,
+	LineSelect,
+	WordSelect,
+	BlockSelect,
+	WindowMove,
+	Prompt,
+	Jump,
+};
 
+class TextEditorClient : public Client {
 	enum class StatusMessageType {
 		None,
 		FileWrite,
@@ -53,6 +55,8 @@ class TextEditorClient : public Client {
 	Vec2 mWindowDragOrigSize;
 	std::vector<std::pair<std::string, Vec2>> mJumpPairs;
 	std::string mJumpInput;
+	std::vector<WChar> mMultiLineBuffer;
+	int mMultiLineBufferPtr = 0;
 
 	static bool sIsRecordingMacro;
 	static std::vector<Key> sMacroBuffer;
@@ -85,6 +89,7 @@ public:
 
 	void setNormalBinds(void);
 	void setInsertBinds(void);
+	void setMultiLineInsertBinds(void);
 	void setReplaceBinds(void);
 	void setWindowMoveBinds(void);
 	void setSelectBinds(void);
@@ -99,6 +104,9 @@ public:
 	void enterInsertModeOnNewLineDown(void);
 	void enterInsertModeOnNewLineUp(void);
 	void exitInsertMode(void);
+	void enterMultiLineInsertMode(void);
+	void deleteThenEnterMultiLineInsertMode(void);
+	void exitMultiLineInsertMode(void);
 
 	void enterReplaceMode(void);
 	void exitReplaceMode(void);
@@ -107,6 +115,7 @@ public:
 	void enterSelectMode(void);
 	void enterLineSelectMode(void);
 	void enterWordSelectMode(void);
+	void enterBlockSelectMode(void);
 	void exitSelectMode(void);
 
 	void enterCommandMode(void);

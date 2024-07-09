@@ -132,12 +132,14 @@ public:
 	void startSelection(void);
 	void startLineSelection(void);
 	void startWordSelection(void);
+	void startBlockSelection(void);
 	void endSelection(void);
 	void stopSelection(void);
 
 	void deleteSelection(void);
 	WString readNormalSelectionToString(void);
 	WString readLineSelectionToString(void);
+	WString readBlockSelectionToString(void);
 	void copyNormalSelection(void);
 	void copyLineSelection(void);
 	void copySelection(void);
@@ -168,7 +170,7 @@ public:
 
 	void insertAtCursor(WStringView data);
 
-	void insertCharAtCursor(WChar chr);
+	bool insertCharAtCursor(WChar chr);
 	void replaceCharAtCursor(WChar chr);
 
 	void deleteLineAtCursor(void);
