@@ -8,6 +8,7 @@ const Language cpp {
 /*fcall any braket*/ true,
 /*hglt nums*/        true,
 /*string tokens*/    { "'", "\"" },
+/*multi strings*/    { { "R\"(", ")\"" } },
 /*multi comments*/   { 
 						 { "/*", "*/" },
 						 { "#if 0", "#endif" }

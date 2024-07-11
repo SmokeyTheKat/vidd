@@ -8,6 +8,7 @@ const Language html {
 		false,
 		true,
 		{ "'", "\"" },
+/*multi strings*/    {},
 		{ { "<!--", "-->" } },
 		{ },
 		{ "<", ">", "/", "!" },

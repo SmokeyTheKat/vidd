@@ -10,6 +10,7 @@ const Language makefile {
 		false,
 		false,
 		{ "'", "\"", "`" },
+/*multi strings*/    {},
 		{},
 		{ "#" },
 		{ "|", ">", "<", "&", "$", "@", ":", "=" },

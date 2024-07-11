@@ -38,6 +38,7 @@ struct Syntax {
 	bool functionCallsAnyBrackets;
 	bool highlightNumbers;
 	std::vector<std::string_view> stringSymbols;
+	std::vector<std::pair<std::string_view, std::string_view>> multiStringSymbols;
 	std::vector<std::pair<std::string_view, std::string_view>> multiLineCommentSymbols;
 	std::vector<std::string_view> singleLineCommentSymbols;
 	std::vector<std::string_view> operators;

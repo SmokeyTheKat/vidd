@@ -711,17 +711,13 @@ void TextEditorClient::enterJumpMode(void) {
 }
 
 void TextEditorClient::exitJumpMode(void) {
-	mMode = EditMode::Normal;
 	mCodeView.exitJumpMode();
 	mJumpInput.clear();
-	setNormalBinds();
-	requireRedraw();
+	enterDefaultMode();
 }
 
 void TextEditorClient::exitPrompt(void) {
-	mMode = EditMode::Normal;
-	setNormalBinds();
-	requireRedraw();
+	enterDefaultMode();
 }
 
 void TextEditorClient::enterWindowMoveMode(void) {
@@ -731,9 +727,7 @@ void TextEditorClient::enterWindowMoveMode(void) {
 }
 
 void TextEditorClient::exitWindowMoveMode(void) {
-	mMode = EditMode::Normal;
-	setNormalBinds();
-	requireRedraw();
+	enterDefaultMode();
 }
 
 void TextEditorClient::getEnv(std::string_view get) {

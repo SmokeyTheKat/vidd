@@ -100,6 +100,30 @@ std::vector<Syntaxer::Token> Syntaxer::tokenize(WStringView line) {
 		return {};
 	};
 
+	auto isAtMultiLineStringBegin = [this, &i, &line](void) -> std::optional<std::string_view> {
+		if (i >= line.length()) return {};
+		for (const auto& ml : mLang->syntax.multiStringSymbols) {
+			const auto& st = std::get<0>(ml);
+			if (
+				i + st.length() <= line.length() &&
+				line.subString(i, i + st.length()) == st
+			) return st;
+		}
+		return {};
+	};
+
+	auto isAtMultiLineStringEnd = [this, &i, &line](void) -> std::optional<std::string_view> {
+		if (i >= line.length()) return {};
+		for (const auto& ml : mLang->syntax.multiStringSymbols) {
+			const auto& se = std::get<1>(ml);
+			if (
+				i + se.length() <= line.length() &&
+				line.subString(i, i + se.length()) == se
+			) return se;
+		}
+		return {};
+	};
+
 	auto isAtSingleLineComment = [this, &i, &line](void) -> std::optional<std::string_view> {
 		if (i >= line.length()) return {};
 		for (const auto& sl : mLang->syntax.singleLineCommentSymbols) {
@@ -125,7 +149,12 @@ std::vector<Syntaxer::Token> Syntaxer::tokenize(WStringView line) {
 
 	while (i < line.length()) {
 		if (mState == State::Global) {
-			if (auto opt = isAtStringSymbol()) {
+			if (auto opt = isAtMultiLineStringBegin()) {
+				std::string_view st = *opt;
+				tokens.push_back(Token{ line.subString(i, i + st.length()), TokenType::String });
+				i += st.length();
+				mState = State::MultiLineString;
+			} else if (auto opt = isAtStringSymbol()) {
 				std::string_view ss = *opt;
 				WStringView stringSymbol = line.subString(i, i + ss.length());
 				i += ss.length();
@@ -198,6 +227,21 @@ std::vector<Syntaxer::Token> Syntaxer::tokenize(WStringView line) {
 				tokens.push_back(Token{ line.subString(start, i), TokenType::String });
 			}
 			continue;
+		} else if (mState == State::MultiLineString) {
+			int start = i;
+			while (i < line.length() && !isAtMultiLineStringEnd()) {
+				i++;
+			}
+
+			if (auto opt = isAtMultiLineStringEnd()) {
+				std::string_view se = *opt;
+				i += se.length();
+				tokens.push_back(Token{ line.subString(start, i), TokenType::String });
+				mState = State::Global;
+				continue;
+			} else {
+				tokens.push_back(Token{ line.subString(start, i), TokenType::String });
+			}
 		} else if (mState == State::Comment) {
 			int start = i;
 			while (i < line.length() && !isAtMultiLineCommentEnd()) {

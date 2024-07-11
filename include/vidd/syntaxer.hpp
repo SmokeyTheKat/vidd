@@ -21,6 +21,7 @@ struct Theme;
 class Syntaxer {
 	enum class State {
 		String,
+		MultiLineString,
 		Comment,
 		Global
 	};

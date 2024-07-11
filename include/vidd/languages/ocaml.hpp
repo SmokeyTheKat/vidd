@@ -8,6 +8,7 @@ const Language ocaml {
 /*fcall any braket*/ false,
 /*hglt nums*/        true,
 /*string tokens*/    { "\"" },
+/*multi strings*/    {},
 /*multi comments*/   { { "(*", "*)" }  },
 /*single comments*/  {},
 /*operators*/        { "+", "-", "*", "/", "=", "!", "~", "<", ">", "?", ":", "&", "%", "|", "^", ";" },

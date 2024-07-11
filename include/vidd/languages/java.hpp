@@ -8,6 +8,7 @@ const Language java {
 /*fcall any braket*/ true,
 /*hglt nums*/        true,
 /*string tokens*/    { "'", "\"" },
+/*multi strings*/    {},
 /*multi comments*/   { 
 						 { "/*", "*/" },
 					 },

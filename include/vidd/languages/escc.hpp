@@ -10,6 +10,7 @@ const Language escc {
 		false,
 		false,
 		{ "\"" },
+/*multi strings*/    {},
 		{},
 		{ ";" },
 		{},

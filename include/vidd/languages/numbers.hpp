@@ -8,6 +8,7 @@ const Language numbers {
 /*fcall any braket*/ false,
 /*hglt nums*/        false,
 /*string tokens*/    {},
+/*multi strings*/    {},
 /*multi comments*/   {},
 /*single comments*/  {},
 /*operators*/        {},
