@@ -46,10 +46,14 @@ const CommandList commandList = {
 	COMMAND("number", 0, CLIENT->toggleLineNumbers())
 	COMMAND("notabs", 0, EDITOR->setNoTabs())
 	COMMAND("e", 1, CLIENT->editFile(params[0]))
+	COMMAND("f", 1, CLIENT->floatFile(params[0]))
+	COMMAND("vs", 1, CLIENT->editFile(params[0]))
+	COMMAND("sp", 1, CLIENT->editFile(params[0]))
 	COMMAND("o", 1, CLIENT->openFile(params[0]))
 	COMMAND("q", 0, CLIENT->tryClose())
 	COMMAND("q!", 0, CLIENT->close())
 	COMMAND("wq", 0, CLIENT->saveFile(); CLIENT->tryClose())
+	COMMAND("wq!", 0, CLIENT->saveFile(); CLIENT->tryClose())
 	COMMAND("theme", 1, Vidd::setTheme(Themes::getThemeByName(params[0])))
 };
 
@@ -153,6 +157,7 @@ const KeyBinds normalKeyBinds = {
 	KEYBIND(TextEditorClient, ({ 'D' }), EDITOR->deleteLineAtCursor())
 	KEYBIND(TextEditorClient, ({ Keys::Return }), TAB->swapSelectedWithMaster())
 	KEYBIND(TextEditorClient, ({ ' ', 'l' }), CLIENT->openLogClient()) \
+	KEYBIND(TextEditorClient, ({ ' ', 'k' }), CLIENT->commentHeader()) \
 	KEYBIND(TextEditorClient, ({ ' ', 't' }), CLIENT->openTermianl())
 	KEYBIND(TextEditorClient, ({ ' ', 'y' }), CLIENT->openFloatingTermianl())
 	KEYBIND(TextEditorClient, ({ ' ', 'r' }), CLIENT->executeLine())
@@ -331,6 +336,10 @@ void TextEditorClient::saveFile(void) {
 
 void TextEditorClient::editFile(std::string_view file) {
 	mEditor.editFile(file);
+}
+
+void TextEditorClient::floatFile(std::string_view file) {
+	openFloatingFile(file);
 }
 
 void TextEditorClient::openFile(std::string_view file) {
@@ -1104,6 +1113,16 @@ void TextEditorClient::runMacro(void) {
 
 void TextEditorClient::openLogClient(void) {
 	getTab()->addClient<LogClient>();
+}
+
+void TextEditorClient::commentHeader(void) {
+	if (mEditor.getLineAtCursor()->data.length() != 0) {
+		mEditor.insertLineUpFromCursor();
+		mEditor.cursorMoveY(-1);
+	}
+	mEditor.insertAtCursor(WString(R"(///////////////////////////////////  ///////////////////////////////////)"));
+	mEditor.cursorMoveToX(36);
+	enterInsertMode();
 }
 
 Vec2 TextEditorClient::getCursor(void) {

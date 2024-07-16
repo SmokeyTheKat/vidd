@@ -78,6 +78,7 @@ public:
 
 	void saveFile(void);
 	void editFile(std::string_view file);
+	void floatFile(std::string_view file);
 	void openFile(std::string_view file);
 	TextEditorClient* openFloatingFile(std::string_view file);
 
@@ -167,6 +168,8 @@ public:
 	void openTermianl(void);
 	void openFloatingTermianl(void);
 	void openLogClient(void);
+
+	void commentHeader(void);
 
 	void executeLine(void);
 
