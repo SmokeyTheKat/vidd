@@ -57,6 +57,7 @@ class TextEditorClient : public Client {
 	std::string mJumpInput;
 	std::vector<WChar> mMultiLineBuffer;
 	int mMultiLineBufferPtr = 0;
+	bool mStartedWindowModeFromMouse = false;
 
 	static bool sIsRecordingMacro;
 	static std::vector<Key> sMacroBuffer;
@@ -180,6 +181,7 @@ public:
 	void failedToOpenBinary(void);
 
 	void onAttach(void) override;
+	void onMouseButtonUp(Vec2 pos) override;
 	void onRightMouseButtonDown(Vec2 pos) override;
 	void onRightMouseButtonDrag(Vec2 pos) override;
 	void onLeftMouseButtonDown(Vec2 pos) override;

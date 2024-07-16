@@ -452,6 +452,7 @@ void TextEditorClient::setNoBinds(void) {
 }
 
 void TextEditorClient::enterDefaultMode(void) {
+	mStartedWindowModeFromMouse = false;
 #ifdef VIDD_DEFAULT_MODE_INSERT
 	enterInsertMode();
 #else
@@ -1148,10 +1149,17 @@ Vec2 TextEditorClient::getCursor(void) {
 	}
 }
 
+void TextEditorClient::onMouseButtonUp(Vec2 pos) {
+	if (mStartedWindowModeFromMouse && mMode == EditMode::WindowMove) {
+		exitWindowMoveMode();
+	}
+}
+
 void TextEditorClient::onRightMouseButtonDown(Vec2 pos) {
 	if (mCtrl) {
 		if (!mIsFloating) toggleFloating();
 		enterWindowMoveMode();
+		mStartedWindowModeFromMouse = true;
 	}
 	if (mMode == EditMode::WindowMove) {
 		mWindowDragLatch = pos;
@@ -1176,6 +1184,7 @@ void TextEditorClient::onLeftMouseButtonDown(Vec2 pos) {
 	if (mCtrl) {
 		if (!mIsFloating) toggleFloating();
 		enterWindowMoveMode();
+		mStartedWindowModeFromMouse = true;
 	}
 	if (mMode == EditMode::WindowMove) {
 		mWindowDragLatch = pos;
