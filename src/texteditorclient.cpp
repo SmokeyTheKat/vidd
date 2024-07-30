@@ -55,6 +55,7 @@ const CommandList commandList = {
 	COMMAND("wq", 0, CLIENT->saveFile(); CLIENT->tryClose())
 	COMMAND("wq!", 0, CLIENT->saveFile(); CLIENT->tryClose())
 	COMMAND("theme", 1, Vidd::setTheme(Themes::getThemeByName(params[0])))
+	COMMAND("80", 0, Vidd::setShow80Line(!Vidd::getShow80Line()))
 };
 
 #define MOVEMENT_KEY_BINDS \
@@ -399,7 +400,7 @@ void TextEditorClient::resizeEditor(void) {
 		leftOffset = WString(Format::vformat(theme->numberFormat, mOldLineCount, lineCountWidth)).length();
 	}
 	int bottomOffset = mShowStatusBar ? 1 : 0;
-	Vec2 size = mSize - Vec2(leftOffset, bottomOffset) - Vec2(1, 0);
+	Vec2 size = (mSize - Vec2(leftOffset, bottomOffset) - Vec2(1, 0)).max(0);
 	Vec2 pos = Vec2(leftOffset, 0);
 	mEditor.resize(size);
 	mCodeView.setSize(size);
@@ -975,6 +976,7 @@ void TextEditorClient::openFuzzy(const std::string& title, const std::vector<std
 		delete fw;
 	});
 	getTabArea()->addChild(fw);
+	getTab()->setLastSelected();
 	getDisplay()->setSelected(fw);
 }
 

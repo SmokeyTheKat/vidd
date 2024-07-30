@@ -42,6 +42,8 @@ public:
 
 	int getClientIndex(Client* find);
 
+	void setLastSelected(void);
+
 	void activate(void);
 
 	std::vector<Client*> getClients(void);

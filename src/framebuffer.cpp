@@ -1,6 +1,7 @@
 #include <vidd/framebuffer.hpp>
 
 #include <cassert>
+#include <algorithm>
 
 FrameBufferRow FrameBufferSubArea::getRow(int y) {
 //    assert(y >= 0 && y < mSize.y);
@@ -17,18 +18,41 @@ FrameBufferRow FrameBufferSubArea::collasped(void) {
 }
 
 FrameBuffer::FrameBuffer(Vec2 size)
-: mSize(size) {
-	mData = new Pixel[mSize.x * mSize.y];
+: mData(new Pixel[size.x * size.y]), mSize(size) {
 }
 
 FrameBuffer::~FrameBuffer(void) {
-	delete[] mData;
+	if (mData != nullptr) delete[] mData;
+}
+
+FrameBuffer::FrameBuffer(const FrameBuffer& other)
+: mData(new Pixel[other.mSize.x * other.mSize.y]), mSize(other.mSize) {
+	std::copy(&other.mData[0], &other.mData[other.mSize.x * other.mSize.y], mData);
+}
+
+FrameBuffer::FrameBuffer(FrameBuffer&& other)
+: mData(std::exchange(other.mData, nullptr)), mSize(other.mSize) {
+}
+
+FrameBuffer& FrameBuffer::operator=(const FrameBuffer& other) {
+	if (mData != nullptr) delete[] mData;
+	mSize = other.mSize;
+	mData = new Pixel[mSize.x * mSize.y];
+	std::copy(&other.mData[0], &other.mData[other.mSize.x * other.mSize.y], mData);
+	return *this;
+}
+
+FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other) {
+	if (mData != nullptr) delete[] mData;
+	mSize = other.mSize;
+	mData = std::exchange(other.mData, nullptr);
+	return *this;
 }
 
 void FrameBuffer::resize(Vec2 size) {
 	if (size.x < 0 || size.y < 0 || mSize.x < 0 || mSize.y < 0) return;
 
-	FrameBuffer copy = *this;
+	FrameBuffer copy = std::move(*this);
 
 	mSize = size;
 	mData = new Pixel[size.x * size.y];
@@ -69,6 +93,7 @@ void FrameBuffer::merge(FrameBuffer& other, Vec2 at) {
 }
 
 FrameBufferSubArea FrameBuffer::subArea(Vec2 pos, Vec2 size) {
+//    assert(pos.x + size.x <= mSize.x && pos.y + size.y <= mSize.y);
 	return FrameBufferSubArea(this, pos, size);
 }
 

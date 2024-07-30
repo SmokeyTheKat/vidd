@@ -10,19 +10,19 @@
 #include <cstdint>
 
 struct Pixel {
-    WChar character{' '};
-    Style style;
+	Style style;
+	WChar character{' '};
 
-    Pixel(void) = default;
-    Pixel(WChar character)
-    : character(character) {};
-    Pixel(WChar character, Style style)
-    : character(character), style(style) {};
-    Pixel(Style style)
-    : character(' '), style(style) {};
-    bool operator==(const Pixel& other) const {
-        return character == other.character && style == other.style;
-    };
+	Pixel(void) = default;
+	Pixel(WChar character)
+	: character(character) {};
+	Pixel(WChar character, Style style)
+	: style(style), character(character) {};
+	Pixel(Style style)
+	: style(style), character(' ') {};
+	bool operator==(const Pixel& other) const {
+		return character == other.character && style == other.style;
+	};
 };
 
 #endif

@@ -3,6 +3,8 @@
 #include <vidd/terminal.hpp>
 #include <vidd/utils.hpp>
 #include <vidd/framebuffer.hpp>
+#include <vidd/log.hpp>
+#include <vidd/format.hpp>
 
 namespace Cursor = Terminal::Cursor;
 

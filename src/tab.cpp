@@ -81,6 +81,10 @@ int Tab::getClientIndex(Client* find) {
 	return -1;
 }
 
+void Tab::setLastSelected(void) {
+	mLastSelected = getSelected();
+}
+
 void Tab::activate(void) {
 	setSelected(mSelected);
 }
@@ -92,11 +96,10 @@ void Tab::addClientFrame(std::unique_ptr<ClientFrame> pframe) {
 }
 
 void Tab::addAndSelectClientFrame(std::unique_ptr<ClientFrame> pframe) {
-	ClientFrame* frame = mClientFrames.insert(mClientFrames.begin(), std::move(pframe))->get();
-	mSelected += 1 * (clientCount() > 1);
+	ClientFrame* frame = mClientFrames.insert(mClientFrames.end(), std::move(pframe))->get();
 	addChild(frame);
-	setSelected(0);
 	reorganize();
+	setSelected(frame->getClient());
 }
 
 std::vector<Client*> Tab::getClients(void) {

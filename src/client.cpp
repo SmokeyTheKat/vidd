@@ -3,6 +3,7 @@
 #include <vidd/tab.hpp>
 #include <vidd/tabarea.hpp>
 #include <vidd/log.hpp>
+#include <vidd/format.hpp>
 #include <vidd/matcher.hpp>
 #include <vidd/vidd.hpp>
 
@@ -18,7 +19,7 @@ void ClientFrame::onAttach(void) {
 
 void ClientFrame::onResize(void) {
 	if (mClient->isFloating()) {
-		mClient->setSize(mSize - Vec2(2, 2));
+		mClient->setSize((mSize - Vec2(2, 2)).max(0));
 		mClient->setPos(Vec2(1, 1));
 		setLayer(10);
 	} else {
@@ -49,7 +50,6 @@ void Client::quit(void) {
 
 void Client::setFloating(void) {
 	mIsFloating = true;
-	setSize(Vec2(30, 20));
 	mTab->reorganize();
 }
 
@@ -89,7 +89,7 @@ void Client::windowResizeX(int dx) {
 	Vec2 mySize = getParent()->getSize();
 	Vec2 myPos = getParent()->getPos();
 	Vec2 size = mySize + Vec2(dx, 0);
-	size.x = std::clamp(size.x, 1, tabSize.x - myPos.x);
+	size.x = std::clamp(size.x, 6, tabSize.x - myPos.x);
 	getParent()->setSize(size);
 }
 
@@ -98,7 +98,7 @@ void Client::windowResizeY(int dy) {
 	Vec2 mySize = getParent()->getSize();
 	Vec2 myPos = getParent()->getPos();
 	Vec2 size = mySize + Vec2(0, dy);
-	size.y = std::clamp(size.y, 1, tabSize.y - myPos.y);
+	size.y = std::clamp(size.y, 3, tabSize.y - myPos.y);
 	getParent()->setSize(size);
 }
 

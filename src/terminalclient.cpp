@@ -70,6 +70,63 @@ WString TerminalClient::getTitle(void) {
 	return mVt.getTitle();
 }
 
+void TerminalClient::onMouseButtonUp(Vec2 pos) {
+	if (mStartedWindowModeFromMouse && mKeyBinds == &windowMoveKeyBinds) {
+		exitWindowMoveMode();
+	}
+}
+
+void TerminalClient::onRightMouseButtonDown(Vec2 pos) {
+	if (mCtrl) {
+		if (!mIsFloating) toggleFloating();
+		enterWindowMoveMode();
+		mStartedWindowModeFromMouse = true;
+	}
+
+	if (mKeyBinds == &windowMoveKeyBinds) {
+		mWindowDragLatch = pos;
+		mWindowDragOrigSize = mSize;
+	}
+}
+
+void TerminalClient::onRightMouseButtonDrag(Vec2 pos) {
+	if (mKeyBinds == &windowMoveKeyBinds) {
+		Vec2 target = mWindowDragOrigSize + pos - mWindowDragLatch;
+		Vec2 delta = target - mSize;
+		windowResizeX(delta.x);
+		windowResizeY(delta.y);
+	} else {
+		onLeftMouseButtonDrag(pos);
+	}
+}
+
+void TerminalClient::onLeftMouseButtonDown(Vec2 pos) {
+	if (mCtrl) {
+		if (!mIsFloating) toggleFloating();
+		enterWindowMoveMode();
+		mStartedWindowModeFromMouse = true;
+	}
+	if (mKeyBinds == &windowMoveKeyBinds) {
+		mWindowDragLatch = pos;
+	}
+}
+
+void TerminalClient::onLeftMouseButtonDrag(Vec2 pos) {
+	if (mKeyBinds == &windowMoveKeyBinds) {
+		Vec2 windowMoveDelta = pos - mWindowDragLatch;
+		mWindowDragLatch = pos - windowMoveDelta;
+		windowMoveX(windowMoveDelta.x);
+		windowMoveY(windowMoveDelta.y);
+	}
+}
+
+void TerminalClient::onLeftMouseButtonDoubleDown(Vec2 pos) {
+	if (mCtrl && mIsFloating) {
+		toggleFloating();
+		if (mKeyBinds == &windowMoveKeyBinds) exitWindowMoveMode();
+	}
+}
+
 Vec2 TerminalClient::getCursor(void) {
 	if (mVt.isCursorHidden() == false) {
 		return getRealPos(mVt.getCursorPos());

@@ -12,6 +12,13 @@ struct Vec2 {
 	Vec2(int x, int y)
 	: x(x), y(y) {};
 
+	Vec2 max(int val) {
+		Vec2 out = *this;
+		if (out.x < val) out.x = val;
+		if (out.y < val) out.y = val;
+		return out;
+	}
+
 	bool operator==(const Vec2& other) const {
 		return x == other.x && y == other.y;
 	}

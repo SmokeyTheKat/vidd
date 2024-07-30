@@ -62,9 +62,9 @@
 using StyleFlags = uint8_t;
 
 struct Style {
-	StyleFlags format = 0;
 	Color fg;
 	Color bg;
+	StyleFlags format = 0;
 
 	enum {
 		none =      (0),
@@ -78,9 +78,9 @@ struct Style {
 	Style(StyleFlags format)
 	: format(format) {};
 	Style(Color fg, Color bg)
-	: format(0), fg(fg), bg(bg) {};
+	: fg(fg), bg(bg), format(0) {};
 	Style(Color fg, Color bg, StyleFlags format)
-	: format(format), fg(fg), bg(bg) {};
+	: fg(fg), bg(bg), format(format) {};
 
 	std::string string(void) const {
 		std::string out;

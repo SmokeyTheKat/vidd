@@ -8,6 +8,7 @@
 #include <vidd/charsets.hpp>
 #include <vidd/syntaxer.hpp>
 #include <vidd/log.hpp>
+#include <vidd/format.hpp>
 #include <vidd/language.hpp>
 #include <vidd/theme.hpp>
 #include <vidd/vidd.hpp>
@@ -32,6 +33,7 @@ void CodeView::exitJumpMode(void) {
 void CodeView::render(void) {
 	const Theme* theme = Vidd::getTheme();
 	Draw::style(theme->text);
+	
 	drawFilledBox(Vec2(0, 0), mSize, ' ');
 
 	const Cursor& cur = mEditor->getCursor();
@@ -120,11 +122,16 @@ void CodeView::render(void) {
 		}
 	}
 
+	if (view.width >= 80 && Vidd::getShow80Line() && lang != getLanguageByName("")) {
+		Style style(Color::none(), theme->bg.bg.augment(0.02));
+		paintFormat(Vec2(80, 0), Vec2(1, view.height), style);
+	}
+
 	if (mJumpModeWords.size() > 0) {
-		Vec2 view = Vec2(mEditor->getViewPort().x, mEditor->getViewPort().y);
+		Vec2 vpos = Vec2(view.x, view.y);
 		Draw::style(theme->text + Style(theme->important, Color()));
 		for (auto [key, pos] : mJumpModeWords) {
-			drawText(pos - view, WString(key));
+			drawText(pos - vpos, WString(key));
 		}
 	}
 

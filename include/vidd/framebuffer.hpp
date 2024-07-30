@@ -6,6 +6,7 @@
 
 #include <string>
 #include <cassert>
+#include <utility>
 
 class IFrameBufferArea;
 class FrameBuffer;
@@ -152,6 +153,12 @@ class FrameBuffer : public IFrameBufferArea {
 public:
 	FrameBuffer(Vec2 size);
 	~FrameBuffer(void);
+
+	FrameBuffer(const FrameBuffer& other);
+	FrameBuffer(FrameBuffer&& other);
+
+	FrameBuffer& operator=(const FrameBuffer& other);
+	FrameBuffer& operator=(FrameBuffer&& other);
 
 	void resize(Vec2 size);
 

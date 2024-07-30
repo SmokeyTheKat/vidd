@@ -11,6 +11,8 @@ class Vidd {
 	Display mDisplay;
 	TabArea mTabArea;
 
+	bool mShow80Line = true;
+
 	const Theme* mTheme = nullptr;
 
 public:
@@ -42,6 +44,16 @@ public:
 	static const Theme* getTheme(void) { 
 		if (instance == nullptr) return nullptr;
 		return instance->mTheme;
+	};
+
+	static bool getShow80Line(void) { 
+		if (instance == nullptr) return true;
+		return instance->mShow80Line;
+	};
+
+	static void setShow80Line(bool value) { 
+		if (instance == nullptr) return;
+		instance->mShow80Line = value;
 	};
 
 private:

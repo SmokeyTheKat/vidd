@@ -64,6 +64,10 @@ struct Color {
 		b = Utils::stringToInt(blue, 16);
 	};
 
+	static Color none(void) {
+		return Color();
+	};
+
 	std::string fgStr(void) const {
 		return Format::format("\e[38;2;{};{};{}m", r, g, b);
 	};
