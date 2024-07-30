@@ -1405,17 +1405,18 @@ void TextEditorClient::onPrerender(void) {
 			mEditor.insertAtCursor(WString(line));
 			mEditor.insertLineDownFromCursor();
 		}
-		mEditor.cursorMoveTo(curPos);
-		mEditor.getViewPort() = view;
-		if (below) {
-			mEditor.cursorMoveY(lines.size());
-		}
 
 		if (!mExecuter->isOpen()) {
 			mExecuter.reset();
 			mEditor.cursorMoveTo(0, mExecuterPos++);
 			mEditor.insertAtCursor("."_ws);
 			mEditor.insertLineDownFromCursor();
+		}
+
+		mEditor.cursorMoveTo(curPos);
+		mEditor.getViewPort() = view;
+		if (below) {
+			mEditor.cursorMoveY(lines.size());
 		}
 	}
 }
