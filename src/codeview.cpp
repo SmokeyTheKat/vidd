@@ -42,7 +42,7 @@ void CodeView::render(void) {
 	Line* first = cur.y->get(view.y);
 	Line* last = first->skip(view.height - 1);
 
-	const Language* lang = getLanguageFromFileName(mEditor->getFileName());
+	const Language* lang = mEditor->getLanguage();
 	if (lang != getLanguageByName("") && mJumpModeWords.size() == 0) {
 		Syntaxer syntax(lang, theme);
 	

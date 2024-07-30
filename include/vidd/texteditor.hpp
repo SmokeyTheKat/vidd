@@ -8,6 +8,7 @@
 #include <vidd/selection.hpp>
 #include <vidd/undo.hpp>
 #include <vidd/input.hpp>
+#include <vidd/language.hpp>
 
 #include <memory>
 #include <string>
@@ -52,6 +53,8 @@ class TextEditor {
 
 	bool mOutputTabs = true;
 
+	std::string mLanguageOverride;
+
 	static CopyBuffer mCopyBuffer;
 
 public:
@@ -74,6 +77,18 @@ public:
 	std::string_view getFileExtension(void) const {
 		return std::string_view(mName).substr(mName.find_last_of(".") + 1, mName.length());
 	};
+
+	const Language* getLanguage(void) const {
+		if (mLanguageOverride.length() > 0) {
+			return getLanguageFromFileName(mLanguageOverride);
+		} else {
+			return getLanguageFromFileName(mName);
+		}
+	}
+
+	void setLanguageOverride(std::string name) {
+		mLanguageOverride = name;
+	}
 
 	bool isSelecting(void) const {
 		return mSelecting;

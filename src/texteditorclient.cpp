@@ -56,6 +56,10 @@ const CommandList commandList = {
 	COMMAND("wq!", 0, CLIENT->saveFile(); CLIENT->tryClose())
 	COMMAND("theme", 1, Vidd::setTheme(Themes::getThemeByName(params[0])))
 	COMMAND("80", 0, Vidd::setShow80Line(!Vidd::getShow80Line()))
+	COMMAND("make", 0, CLIENT->runMakeText())
+	COMMAND("setmake", 0, Vidd::setMakeText(Utils::joinStrings(params, " ")))
+	COMMAND("stop", 0, CLIENT->getExecuter().reset())
+	COMMAND("lang", 0, EDITOR->setLanguageOverride(params.size() > 0 ? std::string(params[0]) : std::string()); CLIENT->requireRedraw())
 };
 
 #define MOVEMENT_KEY_BINDS \
@@ -169,6 +173,8 @@ const KeyBinds normalKeyBinds = {
 	KEYBIND(TextEditorClient, ({ ' ', 'h' }), CLIENT->fuzzyGrep()) \
 	KEYBIND(TextEditorClient, ({ ' ', 'd' }), CLIENT->openDirectory()) \
 	KEYBIND(TextEditorClient, ({ ' ', 's' }), CLIENT->openFloatingDirectory()) \
+	KEYBIND(TextEditorClient, ({ ' ', 'm' }), CLIENT->runMakeText())
+	KEYBIND(TextEditorClient, ({ ' ', 'n' }), CLIENT->openEmpty())
 };
 
 const AliasBinds windowMoveAliases = {
@@ -325,6 +331,7 @@ void TextEditorClient::onAttach(void) {
 }
 
 void TextEditorClient::saveFile(void) {
+	if (mNoSave) return;
 	mStatus = StatusMessage {
 		.type = StatusMessageType::FileWrite,
 		.text = Format::format("saving file '{}'", mEditor.getFileName()),
@@ -360,9 +367,9 @@ TextEditorClient* TextEditorClient::openFloatingFile(std::string_view file) {
 
 void TextEditorClient::tryClose(void) {
 	if (mAutoSave) {
-		saveFile();
+		if (!mNoSave) saveFile();
 		close();
-	} else if (mEditor.hasUnsavedChanges() && mStatus.type != StatusMessageType::UnsavedChanges) {
+	} else if (!mNoSave && mEditor.hasUnsavedChanges() && mStatus.type != StatusMessageType::UnsavedChanges) {
 		mStatus = StatusMessage {
 			.type = StatusMessageType::UnsavedChanges,
 			.text = "unsaved changes",
@@ -739,6 +746,48 @@ void TextEditorClient::enterWindowMoveMode(void) {
 
 void TextEditorClient::exitWindowMoveMode(void) {
 	enterDefaultMode();
+}
+
+void TextEditorClient::runMakeText(void) {
+	TextEditorClient* client = getTab()->addAndSelectClient<TextEditorClient>(Input("__/\\__"));
+	client->setFloating();
+	Component* parent = client->getParent();
+	Vec2 tabSize = getTab()->getSize();
+	Vec2 windowSize(
+		tabSize.x,
+		tabSize.y * 0.4
+	);
+	parent->setSize(windowSize);
+	parent->setPos(Vec2(
+		(tabSize.x - windowSize.x) / 2,
+		tabSize.y - windowSize.y - 1
+	));
+
+	client->setNoSave(true);
+	client->getEditor()->cursorMoveTo(0, 0);
+	client->getEditor()->insertAtCursor(WString(Vidd::getMakeText()));
+	client->getEditor()->cursorMoveTo(0, 0);
+	client->executeLine();
+	client->getEditor()->cursorMoveTo(0, 0);
+	client->getEditor()->setLanguageOverride(getEditor()->getFileName());
+}
+
+void TextEditorClient::openEmpty(void) {
+	TextEditorClient* client = getTab()->addAndSelectClient<TextEditorClient>(Input("__/\\__"));
+	client->setFloating();
+	Component* parent = client->getParent();
+	Vec2 tabSize = getTab()->getSize();
+	Vec2 windowSize(
+		tabSize.x,
+		tabSize.y * 0.4
+	);
+	parent->setSize(windowSize);
+	parent->setPos(Vec2(
+		(tabSize.x - windowSize.x) / 2,
+		tabSize.y - windowSize.y - 1
+	));
+
+	client->setNoSave(true);
 }
 
 void TextEditorClient::getEnv(std::string_view get) {
@@ -1345,6 +1394,30 @@ void TextEditorClient::onPrerender(void) {
 		mEditor.unsetViewChanged();
 		requireRedraw();
 	}
+
+	if (mExecuter) {
+		std::vector<std::string> lines = mExecuter->readLines();
+		Vec2 curPos = mEditor.getCursorPosition();
+		ViewPort view = mEditor.getViewPort();
+		bool below = curPos.y >= mExecuterPos;
+		for (const std::string& line : lines) {
+			mEditor.cursorMoveTo(0, mExecuterPos++);
+			mEditor.insertAtCursor(WString(line));
+			mEditor.insertLineDownFromCursor();
+		}
+		mEditor.cursorMoveTo(curPos);
+		mEditor.getViewPort() = view;
+		if (below) {
+			mEditor.cursorMoveY(lines.size());
+		}
+
+		if (!mExecuter->isOpen()) {
+			mExecuter.reset();
+			mEditor.cursorMoveTo(0, mExecuterPos++);
+			mEditor.insertAtCursor("."_ws);
+			mEditor.insertLineDownFromCursor();
+		}
+	}
 }
 
 void TextEditorClient::renderStatusBar(void) {
@@ -1500,31 +1573,12 @@ void TextEditorClient::openFloatingTermianl(void) {
 }
 
 void TextEditorClient::executeLine(void) {
-	Process proc({ mEditor.getCursor().y->data.string(), "2>&1" });
+	if (!!mExecuter) return;
 
-	Timer fullTimer;
-	fullTimer.start();
+	mExecuter.emplace(std::vector<std::string>{ mEditor.getCursor().y->data.string(), "2>&1" });
 
-	Timer hangTimer;
-	hangTimer.start();
-
-	enterInsertModeOnNewLineDown();
-	while (proc.isOpen()) {
-		if (fullTimer.now() > 10.0) {
-			break;
-		}
-
-		if (proc.readReady() == false) {
-			if (hangTimer.now() > 1.0) break;
-			continue;
-		}
-		hangTimer.reset();
-
-		for (auto c : proc.read(128)) {
-			mEditor.insertCharAtCursor(c);
-		}
-	}
-	exitInsertMode();
+	mEditor.insertLineDownFromCursor();
+	mExecuterPos = mEditor.getCursor().y->number + 1;
 }
 
 void TextEditorClient::render(void) {

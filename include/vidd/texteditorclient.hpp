@@ -7,10 +7,12 @@
 #include <vidd/codeview.hpp>
 #include <vidd/textprompt.hpp>
 #include <vidd/input.hpp>
+#include <vidd/procstream.hpp>
 
 #include <string>
 #include <array>
 #include <map>
+#include <optional>
 
 enum class EditMode {
 	Normal,
@@ -58,6 +60,10 @@ class TextEditorClient : public Client {
 	std::vector<WChar> mMultiLineBuffer;
 	int mMultiLineBufferPtr = 0;
 	bool mStartedWindowModeFromMouse = false;
+	bool mNoSave = false;
+
+	std::optional<Process> mExecuter;
+	int mExecuterPos;
 
 	static bool sIsRecordingMacro;
 	static std::vector<Key> sMacroBuffer;
@@ -77,11 +83,15 @@ public:
 
 	void toggleLineNumbers(void);
 
+	std::optional<Process>& getExecuter(void) { return mExecuter; };
+
 	void saveFile(void);
 	void editFile(std::string_view file);
 	void floatFile(std::string_view file);
 	void openFile(std::string_view file);
 	TextEditorClient* openFloatingFile(std::string_view file);
+
+	void setNoSave(bool value) { mNoSave = value; };
 
 	void tryClose(void);
 
@@ -130,6 +140,9 @@ public:
 
 	void enterWindowMoveMode(void);
 	void exitWindowMoveMode(void);
+
+	void runMakeText(void);
+	void openEmpty(void);
 
 	void getEnv(std::string_view);
 

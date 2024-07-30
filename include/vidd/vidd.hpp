@@ -6,12 +6,15 @@
 #include <vidd/tabarea.hpp>
 #include <vidd/theme.hpp>
 
+#include <string>
+
 class Vidd {
 	Arguments mArgs;
 	Display mDisplay;
 	TabArea mTabArea;
 
 	bool mShow80Line = true;
+	std::string mMakeText = "make";
 
 	const Theme* mTheme = nullptr;
 
@@ -54,6 +57,16 @@ public:
 	static void setShow80Line(bool value) { 
 		if (instance == nullptr) return;
 		instance->mShow80Line = value;
+	};
+
+	static std::string getMakeText(void) { 
+		if (instance == nullptr) return "make";
+		return instance->mMakeText;
+	};
+
+	static void setMakeText(const std::string& value) { 
+		if (instance == nullptr) return;
+		instance->mMakeText = value;
 	};
 
 private:
