@@ -1406,7 +1406,7 @@ void TextEditorClient::onPrerender(void) {
 			mEditor.insertLineDownFromCursor();
 		}
 
-		if (!mExecuter->isOpen()) {
+		if (!mExecuter->readReady() && !mExecuter->isOpen()) {
 			mExecuter.reset();
 			mEditor.cursorMoveTo(0, mExecuterPos++);
 			mEditor.insertAtCursor("."_ws);

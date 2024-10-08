@@ -249,6 +249,8 @@ void FileBrowserClient::fileChange(void) {
 			mSide.reset(new TerminalViewer(Format::format("termimg {} -a -d -c -k", file.path)));
 		} else if (
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".mp3") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".ogg") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".falc") ||
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".wav")
 		) {
 			mSide.reset(new TerminalViewer(Format::format("mpv --loop {}", file.path)));

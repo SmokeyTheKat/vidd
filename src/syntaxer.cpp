@@ -292,7 +292,7 @@ std::vector<Word> Syntaxer::highlight(WStringView line) {
 			if (mLang->syntax.wordStyles.find(word) != mLang->syntax.wordStyles.end()) {
 				words.push_back(Word{ token.word, mTheme->getSyntaxStyle(mLang->syntax.wordStyles.at(word)) });
 			} else {
-				if (mLang->syntax.highlightFunctionCalls && isAtFunctionCall(i)) {
+				if (mLang->syntax.highlightFunctionCalls && isAtFunctionCall(i) && (mLang != getLanguageFromFileName(".cpp") || !std::isupper(token.word[0]))) {
 					words.push_back(Word{ token.word, mTheme->getSyntaxStyle(StyleType::Function) });
 				} else if (mLang->syntax.highlightConsts && isAllUpper(token.word) && countUpper(token.word) > 1) {
 					words.push_back(Word{ token.word, mTheme->getSyntaxStyle(StyleType::Const) });
