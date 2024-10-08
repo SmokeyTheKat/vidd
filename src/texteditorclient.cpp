@@ -115,7 +115,7 @@ const AliasBinds normalAliases = {
 	{ { 'd', 'k' }, { 'k', 'D', 'D' } },
 	{ { 'd', 'a', 'w' }, { 'l', 'b', 'v', 'e', 'l', 'x' } },
 
-	{ { 'c', 'a', 'w' }, { 'd', 'a', 'w', 'i' } },
+	{ { 'c', 'a', 'w' }, { 'l', 'b', 'e', 'a', ' ', Keys::Escape, 'v', 'b', 'x', 'a', Keys::Backspace } },
 
 	{ { 'y', 'y' }, { 'V', 'y', Keys::Escape } },
 	{ { 'y', 'j' }, { 'V', 'j', 'y', 'k', Keys::Escape } },
