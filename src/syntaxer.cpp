@@ -61,10 +61,12 @@ std::vector<Syntaxer::Token> Syntaxer::tokenize(WStringView line) {
 			) {
 				switch (range.type) {
 				case Syntax::Range::Type::While: {
-					if (!(
-						i + range.from.length() < line.length() &&
-						range.chars.find(line[i + range.from.length()]) != std::string_view::npos
-					)) {
+					if (
+						!range.inclusive && (
+							i + range.from.length() >= line.length() ||
+							range.chars.find(line[i + range.from.length()]) == std::string_view::npos
+						)
+					) {
 						return {};
 					}
 				} break;
@@ -310,7 +312,12 @@ std::vector<Word> Syntaxer::highlight(WStringView line) {
 			for (const auto& lr : mLang->syntax.lineRanges) {
 				const auto& range = std::get<0>(lr);
 				if (token.word.subString(0, range.from.length()) == range.from) {
-					words.push_back(Word{ tokens[i].word, mTheme->getSyntaxStyle(std::get<1>(lr)) });
+					if (!range.inclusive) {
+						words.push_back(Word{ tokens[i].word.subString(0, 1), mTheme->getSyntaxStyle(StyleType::Operator) });
+						words.push_back(Word{ tokens[i].word.subString(1, tokens[i].word.length()), mTheme->getSyntaxStyle(std::get<1>(lr)) });
+					} else {
+						words.push_back(Word{ tokens[i].word, mTheme->getSyntaxStyle(std::get<1>(lr)) });
+					}
 					break;
 				}
 			}

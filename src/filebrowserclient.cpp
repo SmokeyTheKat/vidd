@@ -28,8 +28,10 @@ const KeyBinds normalKeyBinds = {
 	KEYBIND(FileBrowserClient, ({ 'g', 'm', 'p' }), CLIENT->loadDirectory("/home/william/Documents/Projects"))
 	KEYBIND(FileBrowserClient, ({ 'y', 'y' }), CLIENT->copyFile())
 	KEYBIND(FileBrowserClient, ({ 'p' }), CLIENT->pasteFile())
+	KEYBIND(FileBrowserClient, ({ 'P' }), CLIENT->pasteFileAs())
 	KEYBIND(FileBrowserClient, ({ 'd', 'd' }), CLIENT->deleteFile())
 	KEYBIND(FileBrowserClient, ({ 'r' }), CLIENT->renameFile())
+	KEYBIND(FileBrowserClient, ({ 'c', 'c' }), CLIENT->duplicateFile())
 	KEYBIND(FileBrowserClient, ({ 'c', 'd' }), CLIENT->makeDir())
 	KEYBIND(FileBrowserClient, ({ 'c', 'f' }), CLIENT->makeFile())
 	KEYBIND(FileBrowserClient, ({ 's' }), CLIENT->setCwd())
@@ -136,6 +138,16 @@ void FileBrowserClient::loadDirectory(const std::string& path) {
 	mParentDv.setPtr(FileSystem::getFileName(mPath));
 }
 
+void FileBrowserClient::reloadDirectory(void) {
+	if (mDv.getFiles().size() == 0) {
+		mDv.loadDirectory(mPath);
+	} else {
+		std::string file = mDv.getSelectedFile().path;
+		mDv.loadDirectory(mPath);
+		mDv.setPtr(FileSystem::getFileName(file));
+	}
+}
+
 void FileBrowserClient::selectFile(void) {
 	if (mDv.getFiles().size() == 0) return;
 	const FileInfo& file = mDv.getSelectedFile();
@@ -170,7 +182,40 @@ void FileBrowserClient::copyFile(void) {
 
 void FileBrowserClient::pasteFile(void) {
 	FileSystem::copy(mCopyedPath, mPath);
-	loadDirectory(mPath);
+	reloadDirectory();
+}
+
+void FileBrowserClient::pasteFileAs(void) {
+	InputBox* fw = new InputBox("paste with name", [this](InputBox* fw, std::string name) {
+		if (name.length() > 0) {
+			FileSystem::copy(
+				mCopyedPath,
+				FileSystem::getContainingDirectory(mCopyedPath) + name
+			);
+			reloadDirectory();
+		}
+		delete fw;
+	});
+	getTabArea()->addChild(fw);
+	getDisplay()->setSelected(fw);
+}
+
+void FileBrowserClient::duplicateFile(void) {
+	if (mDv.getFiles().size() == 0) return;
+	const FileInfo& file = mDv.getSelectedFile();
+	if (!file.hasPermission) return;
+	InputBox* fw = new InputBox("duplicate with name", [this, path = file.path](InputBox* fw, std::string name) {
+		if (name.length() > 0) {
+			FileSystem::copy(
+				path,
+				FileSystem::getContainingDirectory(path) + name
+			);
+			reloadDirectory();
+		}
+		delete fw;
+	});
+	getTabArea()->addChild(fw);
+	getDisplay()->setSelected(fw);
 }
 
 void FileBrowserClient::deleteFile(void) {
@@ -179,7 +224,7 @@ void FileBrowserClient::deleteFile(void) {
 		InputBox* fw = new InputBox("type \"yes\" to confirm", [this, path = file.path](InputBox* fw, std::string text) {
 			if (text == "yes") {
 				FileSystem::remove(path);
-				loadDirectory(mPath);
+				reloadDirectory();
 			}
 			delete fw;
 		});
@@ -207,7 +252,7 @@ void FileBrowserClient::makeFile(void) {
 	InputBox* fw = new InputBox("create file", [this](InputBox* fw, std::string name) {
 		if (name.length() > 0) {
 			FileSystem::createFile(mPath + "/" + name);
-			loadDirectory(mPath);
+			reloadDirectory();
 		}
 		delete fw;
 	});
@@ -223,7 +268,7 @@ void FileBrowserClient::makeDir(void) {
 	InputBox* fw = new InputBox("create directory", [this](InputBox* fw, std::string name) {
 		if (name.length() > 0) {
 			FileSystem::createDirectory(mPath + "/" + name);
-			loadDirectory(mPath);
+			reloadDirectory();
 		}
 		delete fw;
 	});
@@ -250,10 +295,12 @@ void FileBrowserClient::fileChange(void) {
 		} else if (
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".mp3") ||
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".ogg") ||
-			FileSystem::hasExtension(Utils::stringToLower(file.path), ".falc") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".opus") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".m4a") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".flac") ||
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".wav")
 		) {
-			mSide.reset(new TerminalViewer(Format::format("mpv --loop {}", file.path)));
+			mSide.reset(new TerminalViewer(Format::format("mpv --loop '{}'", file.path)));
 		}
 	} else if (file.type == FileType::Text) {
 		mSide.reset(new CodeViewer(Input(file.path)));

@@ -128,6 +128,9 @@ struct Vec2 {
 		return x <= other.x && y <= other.y;
 	}
 
+	Vec2& setX(int v) { x = v; return *this; }
+	Vec2& setY(int v) { y = v; return *this; }
+
 	static Vec2 zero(void) { return Vec2(0, 0); };
 	static Vec2 ones(void) { return Vec2(1, 1); };
 };

@@ -382,14 +382,27 @@ void TextEditor::toggleCommentAtCursor(void) {
 	std::string_view commentChar = lang->syntax.singleLineCommentSymbols[0];
 
 	WStringView line = mCursor.y->data;
+	mTrackUndos = false;
 
 	if (
 		line.length() >= commentChar.length() &&
 		line.subString(0, commentChar.length()) == commentChar
 	) {
 		mCursor.y->data.removeNAt(0, commentChar.length());
+		mTrackUndos = true;
+		registerUndoAction<UndoDeleteAction>(
+			mCursor.toVec2().setX(0),
+			mCursor.toVec2().setX(commentChar.length()),
+			commentChar
+		);
 	} else {
 		mCursor.y->data.insert(mCursor.y->data.begin(), commentChar.begin(), commentChar.end());
+		mTrackUndos = true;
+		registerUndoAction<UndoInsertAction>(
+			mCursor.toVec2().setX(0),
+			mCursor.toVec2().setX(commentChar.length()),
+			commentChar
+		);
 	}
 
 	mViewChanged = true;
@@ -888,6 +901,48 @@ bool TextEditor::cursorIsAtTab(void) {
 	int i = 0;
 	while (i < mCursor.x && line[i] == ' ') i++;
 	return i == mCursor.x && line[i] == ' ';
+}
+
+void TextEditor::cursorMoveNextTextWord(void) {
+	cursorMoveX(1);
+
+	if (mCursor.x == getLineEnd()) return;
+
+	while (
+		mCursor.x != getLineEnd() &&
+		!CharSets::upperLetters.contains(getCharAtCursor()) &&
+		getCharAtCursor() != '_' &&
+		getCharAtCursor() != ' ' && (
+			CharSets::lowerLetters.contains(getCharAtCursor()) ||
+			CharSets::numbers.contains(getCharAtCursor())
+		)
+	) cursorMoveX(1);
+	if (getCharAtCursor() == '_') cursorMoveX(1);
+	else if (getCharAtCursor() == ' ') cursorMoveX(1);
+
+	viewChangedIfSelecting();
+}
+
+void TextEditor::cursorMovePrevTextWord(void) {
+	cursorMoveX(-1);
+
+	if (mCursor.x == 0) return;
+
+	while (
+		mCursor.x != 0 &&
+		!CharSets::upperLetters.contains(getCharAtCursor()) &&
+		getCharAtCursor() != '_' &&
+		getCharAtCursor() != ' ' && (
+			CharSets::lowerLetters.contains(getCharAtCursor()) ||
+			CharSets::numbers.contains(getCharAtCursor())
+		)
+	) cursorMoveX(-1);
+	if (mCursor.x == 0) {}
+	else if (getCharAtCursor() == '_') cursorMoveX(1);
+	else if (getCharAtCursor() == ' ') cursorMoveX(1);
+	else if (!CharSets::characters.contains(getCharAtCursor())) cursorMoveX(1);
+
+	viewChangedIfSelecting();
 }
 
 void TextEditor::cursorMoveNextWord(void) {

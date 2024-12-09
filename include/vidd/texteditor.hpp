@@ -210,6 +210,8 @@ public:
 	bool cursorIsAtEndOfWord(void);
 	bool cursorIsAtTab(void);
 
+	void cursorMoveNextTextWord(void);
+	void cursorMovePrevTextWord(void);
 	void cursorMoveNextWord(void);
 	void cursorMovePrevWord(void);
 	void cursorMoveNextWordEnd(void);

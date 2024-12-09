@@ -26,6 +26,7 @@ public:
 
 	void adjustView(void);
 	void loadDirectory(const std::string& path);
+	void reloadDirectory(void);
 
 	void gotoLetter(void);
 
@@ -36,6 +37,8 @@ public:
 
 	void copyFile(void);
 	void pasteFile(void);
+	void pasteFileAs(void);
+	void duplicateFile(void);
 	void deleteFile(void);
 	void renameFile(void);
 	void makeFile(void);

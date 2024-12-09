@@ -177,6 +177,7 @@ public:
 	void setMarker(void);
 	void gotoMarker(void);
 
+	void openMathBoard(void);
 	void openDirectory(void);
 	void openFloatingDirectory(void);
 	void openTermianl(void);

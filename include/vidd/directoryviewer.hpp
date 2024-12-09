@@ -32,6 +32,7 @@ public:
 	};
 
 	void setPtr(std::size_t ptr);
+	std::size_t getPtr(void) { return mPtr; };
 	void setPtr(std::string name);
 
 	void fileChange(void);

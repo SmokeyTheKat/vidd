@@ -18,6 +18,7 @@
 #include <vidd/procstream.hpp>
 #include <vidd/virtualterminal.hpp>
 #include <vidd/terminalclient.hpp>
+#include <vidd/mathboardclient.hpp>
 #include <vidd/format.hpp>
 #include <vidd/charsets.hpp>
 #include <cstdlib>
@@ -82,6 +83,8 @@ const CommandList commandList = {
 	KEYBIND(TextEditorClient, ({ Keys::ScrollDown }), EDITOR->viewScrollY(2)) \
 	KEYBIND(TextEditorClient, ({ Keys::ScrollLeft }), EDITOR->viewScrollX(-2)) \
 	KEYBIND(TextEditorClient, ({ Keys::ScrollRight }), EDITOR->viewScrollX(2)) \
+	KEYBIND(TextEditorClient, ({ 'g', 'w' }), EDITOR->cursorMoveNextTextWord()) \
+	KEYBIND(TextEditorClient, ({ 'g', 'b' }), EDITOR->cursorMovePrevTextWord()) \
 	KEYBIND(TextEditorClient, ({ 'g', 'g' }), EDITOR->cursorMoveToFirstLine(); EDITOR->cursorMoveToLineStart();) \
 	KEYBIND(TextEditorClient, ({ 'g', 'j' }), EDITOR->cursorMoveToNextIndentationLevel()) \
 	KEYBIND(TextEditorClient, ({ 'g', 'k' }), EDITOR->cursorMoveToPrevionsIndentationLevel()) \
@@ -175,6 +178,7 @@ const KeyBinds normalKeyBinds = {
 	KEYBIND(TextEditorClient, ({ ' ', 's' }), CLIENT->openFloatingDirectory()) \
 	KEYBIND(TextEditorClient, ({ ' ', 'm' }), CLIENT->runMakeText())
 	KEYBIND(TextEditorClient, ({ ' ', 'n' }), CLIENT->openEmpty())
+	KEYBIND(TextEditorClient, ({ ' ', 'q' }), CLIENT->openMathBoard())
 };
 
 const AliasBinds windowMoveAliases = {
@@ -228,6 +232,7 @@ const KeyBinds insertKeyBinds = {
 	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'h' }), CLIENT->fuzzyGrep())
 	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'd' }), CLIENT->openDirectory())
 	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 's' }), CLIENT->openFloatingDirectory())
+	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'q' }), CLIENT->openMathBoard())
 };
 
 const AliasBinds multiLineInsertAliases = {
@@ -1543,6 +1548,10 @@ void TextEditorClient::renderLineNumbers(void) {
 void TextEditorClient::openDirectory(void) {
 	std::string path = mEditor.getFileName();
 	getTab()->replaceClientWithNew<FileBrowserClient>(this, FileSystem::getParentDirectory(path), FileSystem::getFileName(path));
+}
+
+void TextEditorClient::openMathBoard(void) {
+	getTab()->addAndSelectClient<MathBoardClient>();
 }
 
 void TextEditorClient::openFloatingDirectory(void) {

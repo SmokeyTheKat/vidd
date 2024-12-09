@@ -1,3 +1,5 @@
+#define E_CHARACTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+#define E_NUMBERS "0123456789"
 const Language cpp {
 /*name*/    "c++",
 /*exts*/    { ".cpp", ".h", ".hpp", ".hxx", ".tpp", ".ipp", ".cxx", ".cc" },
@@ -17,8 +19,10 @@ const Language cpp {
 /*operators*/        { "+", "-", "*", "/", "=", "!", "~", "<", ">", "?", ":", "&", "%", "|", "^" },
 /*syntax ranges*/    {
 						 { { Syntax::Range::Type::UntilLineEnd, true, "#", "" }, StyleType::Macro },
+						{ { Syntax::Range::Type::While, true, "$", E_CHARACTERS }, StyleType::KeyWord },
 					 },
 /*syntax words*/     { 
+						 { "$", StyleType::KeyWord },
 						 { "xor", StyleType::KeyWord },
 						 { "xor_eq", StyleType::KeyWord },
 						 { "or", StyleType::KeyWord },
@@ -27,12 +31,16 @@ const Language cpp {
 						 { "not_eq", StyleType::KeyWord },
 						 { "and", StyleType::KeyWord },
 						 { "and_eq", StyleType::KeyWord },
+						 { "co_yield", StyleType::KeyWord },
+						 { "co_await", StyleType::KeyWord },
+						 { "co_return", StyleType::KeyWord },
 						 { "bitand", StyleType::KeyWord },
 						 { "bitor", StyleType::KeyWord },
 						 { "compl", StyleType::KeyWord },
 						 { "constinit", StyleType::KeyWord },
 						 { "decltype", StyleType::KeyWord },
 						 { "explicit", StyleType::KeyWord },
+						 { "final", StyleType::KeyWord },
 						 { "export", StyleType::KeyWord },
 						 { "asm", StyleType::KeyWord },
 						 { "goto", StyleType::KeyWord },
@@ -130,3 +138,5 @@ const Language cpp {
 					 }
 				 }
 };
+#undef E_CHARACTERS
+#undef E_NUMBERS

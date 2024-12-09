@@ -116,12 +116,15 @@ FileType FileSystem::getFileType(std::string path) {
 }
 
 void FileSystem::copy(std::string from, std::string to) {
-	std::filesystem::copy(
-		from,
-		to,
-		std::filesystem::copy_options::overwrite_existing
-		| std::filesystem::copy_options::recursive
-	);
+	try {
+		std::filesystem::copy(
+			from,
+			to,
+			std::filesystem::copy_options::overwrite_existing
+			| std::filesystem::copy_options::recursive
+		);
+	} catch (...) {
+	}
 }
 
 void FileSystem::remove(std::string path) {
