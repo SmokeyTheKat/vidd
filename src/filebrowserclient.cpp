@@ -295,6 +295,8 @@ void FileBrowserClient::fileChange(void) {
 		} else if (
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".mp3") ||
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".ogg") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".ogg") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".caf") ||
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".opus") ||
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".m4a") ||
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".flac") ||

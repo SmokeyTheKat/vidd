@@ -14,7 +14,7 @@ const Language zig {
 /*operators*/        { "+", "-", "*", "/", "=", "!", "~", "<", ">", "?", ":", "&", "%", "|", "^" },
 /*syntax ranges*/    {
 						 { { Syntax::Range::Type::Until, false, "@", "(" }, StyleType::Macro },
-						 { { Syntax::Range::Type::While, true, "i", "0123456789" }, StyleType::Type },
+						 { { Syntax::Range::Type::While, true, "i", "0123456789", true }, StyleType::Type },
 					 },
 /*syntax words*/     { 
 						 { "addrspace", StyleType::KeyWord },

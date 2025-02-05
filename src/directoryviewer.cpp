@@ -127,10 +127,10 @@ void DirectoryViewer::render(void) {
 		Style style;
 
 		switch (it->type) {
-		case FileType::Directory: style = Style(Color("#00f"), theme->bg.bg); break;
-		case FileType::Binary: style = Style(Color("#0f0"), theme->bg.bg); break;
+		case FileType::Directory: style = theme->getSyntaxStyle(StyleType::Number); break;
+		case FileType::Binary: style = theme->getSyntaxStyle(StyleType::KeyWord); break;
 		case FileType::Text: style = theme->text; break;
-		case FileType::Special: style = Style(Color("#ff0"), theme->bg.bg); break;
+		case FileType::Special: style = theme->getSyntaxStyle(StyleType::String); break;
 		}
 
 		if (y + mView == mPtr) {

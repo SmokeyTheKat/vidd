@@ -62,7 +62,7 @@ std::vector<Syntaxer::Token> Syntaxer::tokenize(WStringView line) {
 				switch (range.type) {
 				case Syntax::Range::Type::While: {
 					if (
-						!range.inclusive && (
+						(!range.inclusive || range.required) && (
 							i + range.from.length() >= line.length() ||
 							range.chars.find(line[i + range.from.length()]) == std::string_view::npos
 						)
@@ -265,9 +265,202 @@ std::vector<Syntaxer::Token> Syntaxer::tokenize(WStringView line) {
 	return tokens;
 }
 
+void Syntaxer::skimTokenize(WStringView line) {
+	std::size_t i = 0;
+
+	auto isAtStringSymbol = [this, &i, &line](void) -> std::optional<std::string_view> {
+		if (i >= line.length()) return {};
+		for (const auto& ss : mLang->syntax.stringSymbols) {
+			if (
+				i + ss.length() <= line.length() &&
+				line.subString(i, i + ss.length()) == ss &&
+				!(i > 0 && line[i-1] == '\\' && (i <= 1 || line[i-2] != '\\'))
+			) return ss;
+		}
+		return {};
+	};
+
+	auto isAtMatchingStringSymbol = [this, isAtStringSymbol](void) -> bool {
+		if (auto opt = isAtStringSymbol()) {
+			return *opt == mStringOpener;
+		}
+		return false;
+	};
+
+	auto isAtLineRange = [this, &i, &line](void) -> std::optional<std::reference_wrapper<const decltype(mLang->syntax.lineRanges)::value_type>> {
+		if (i >= line.length()) return {};
+		for (const auto& lrp : mLang->syntax.lineRanges) {
+			const auto& range = std::get<0>(lrp);
+			if (
+				i + range.from.length() <= line.length() &&
+				line.subString(i, i + range.from.length()) == range.from
+			) {
+				switch (range.type) {
+				case Syntax::Range::Type::While: {
+					if (
+						(!range.inclusive || range.required) && (
+							i + range.from.length() >= line.length() ||
+							range.chars.find(line[i + range.from.length()]) == std::string_view::npos
+						)
+					) {
+						return {};
+					}
+				} break;
+				default: break;
+				}
+				return std::cref(lrp);
+			}
+		}
+		return {};
+	};
+
+	auto isAtMultiLineCommentBegin = [this, &i, &line](void) -> std::optional<std::string_view> {
+		if (i >= line.length()) return {};
+		for (const auto& ml : mLang->syntax.multiLineCommentSymbols) {
+			const auto& st = std::get<0>(ml);
+			if (
+				i + st.length() <= line.length() &&
+				line.subString(i, i + st.length()) == st
+			) return st;
+		}
+		return {};
+	};
+
+	auto isAtMultiLineCommentEnd = [this, &i, &line](void) -> std::optional<std::string_view> {
+		if (i >= line.length()) return {};
+		for (const auto& ml : mLang->syntax.multiLineCommentSymbols) {
+			const auto& se = std::get<1>(ml);
+			if (
+				i + se.length() <= line.length() &&
+				line.subString(i, i + se.length()) == se
+			) return se;
+		}
+		return {};
+	};
+
+	auto isAtMultiLineStringBegin = [this, &i, &line](void) -> std::optional<std::string_view> {
+		if (i >= line.length()) return {};
+		for (const auto& ml : mLang->syntax.multiStringSymbols) {
+			const auto& st = std::get<0>(ml);
+			if (
+				i + st.length() <= line.length() &&
+				line.subString(i, i + st.length()) == st
+			) return st;
+		}
+		return {};
+	};
+
+	auto isAtMultiLineStringEnd = [this, &i, &line](void) -> std::optional<std::string_view> {
+		if (i >= line.length()) return {};
+		for (const auto& ml : mLang->syntax.multiStringSymbols) {
+			const auto& se = std::get<1>(ml);
+			if (
+				i + se.length() <= line.length() &&
+				line.subString(i, i + se.length()) == se
+			) return se;
+		}
+		return {};
+	};
+
+	auto isAtSingleLineComment = [this, &i, &line](void) -> std::optional<std::string_view> {
+		if (i >= line.length()) return {};
+		for (const auto& sl : mLang->syntax.singleLineCommentSymbols) {
+			if (
+				i + sl.length() <= line.length() &&
+				line.subString(i, i + sl.length()) == sl
+			) return sl;
+		}
+		return {};
+	};
+
+
+	while (i < line.length()) {
+		if (mState == State::Global) {
+			if (auto opt = isAtMultiLineStringBegin()) {
+				std::string_view st = *opt;
+				i += st.length();
+				mState = State::MultiLineString;
+			} else if (auto opt = isAtStringSymbol()) {
+				std::string_view ss = *opt;
+				WStringView stringSymbol = line.subString(i, i + ss.length());
+				i += ss.length();
+				mState = State::String;
+				mStringOpener = stringSymbol;
+			} else if (auto opt = isAtMultiLineCommentBegin()) {
+				std::string_view st = *opt;
+				i += st.length();
+				mState = State::Comment;
+			} else if (auto opt = isAtLineRange()) {
+				const auto& lrp = opt->get();
+				const auto& range = std::get<0>(lrp);
+				std::size_t end = i + range.from.length();
+				switch (range.type) {
+				case Syntax::Range::Type::UntilLineEnd: {
+					end = line.length();
+				} break;
+				case Syntax::Range::Type::Until: {
+					while (end < line.length() && range.chars.find(line[end]) == std::string_view::npos) end++;
+					if (range.inclusive == true) {
+						end += 1;
+					}
+				} break;
+				case Syntax::Range::Type::While: {
+					while (end < line.length() && range.chars.find(line[end]) != std::string_view::npos) end++;
+				} break;
+				}
+				i = end;
+			} else if (isAtSingleLineComment()) {
+				i = line.length();
+			} else {
+				i++;
+			}
+		} else if (mState == State::String) {
+			int start = i;
+			while (i < line.length() && !isAtMatchingStringSymbol()) {
+				i++;
+			}
+
+			if (auto opt = isAtStringSymbol()) {
+				std::string_view ss = *opt;
+				i += ss.length();
+				mState = State::Global;
+				continue;
+			} else {
+			}
+			continue;
+		} else if (mState == State::MultiLineString) {
+			int start = i;
+			while (i < line.length() && !isAtMultiLineStringEnd()) {
+				i++;
+			}
+
+			if (auto opt = isAtMultiLineStringEnd()) {
+				std::string_view se = *opt;
+				i += se.length();
+				mState = State::Global;
+				continue;
+			} else {
+			}
+		} else if (mState == State::Comment) {
+			int start = i;
+			while (i < line.length() && !isAtMultiLineCommentEnd()) {
+				i++;
+			}
+
+			if (auto opt = isAtMultiLineCommentEnd()) {
+				std::string_view se = *opt;
+				i += se.length();
+				mState = State::Global;
+				continue;
+			} else {
+			}
+		}
+	}
+}
+
 
 void Syntaxer::skimState(WStringView line) {
-	tokenize(line);
+	skimTokenize(line);
 }
 
 std::vector<Word> Syntaxer::highlight(WStringView line) {

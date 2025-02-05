@@ -36,7 +36,24 @@ namespace CharSets {
 	const CharSet numbers = { "0123456789" };
 	const CharSet numberCharacters = { "0123456789.xXaAbBcCdDeEfF" };
 	const CharSet specials = { "`~!@#$%^&*()-=+[]{}\\|;:'\",<.>/?" };
+	const CharSet brackets = { "{}()<>[]" };
+	const CharSet openBrackets = { "{(<[" };
+	const CharSet closeBrackets = { "})>]" };
 	const CharSet stringcharacters = { "\"'`" };
+
+	constexpr char oppositeBracket(char c) {
+		switch (c) {
+		case '{': return '}';
+		case '}': return '{';
+		case '(': return ')';
+		case ')': return '(';
+		case '<': return '>';
+		case '>': return '<';
+		case '[': return ']';
+		case ']': return '[';
+		default: return c;
+		}
+	}
 
 	const CharSet getCharSetOf(char c);
 };

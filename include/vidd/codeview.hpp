@@ -15,6 +15,7 @@ public:
 	void enterJumpMode(const std::vector<std::pair<std::string, Vec2>>& words);
 	void exitJumpMode(void);
 
+	void onPrerender(void) override;
 	void render(void) override;
 };
 

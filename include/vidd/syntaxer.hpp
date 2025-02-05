@@ -55,6 +55,7 @@ public:
 
 private:
 	std::vector<Token> tokenize(WStringView line);
+	void skimTokenize(WStringView line);
 };
 
 

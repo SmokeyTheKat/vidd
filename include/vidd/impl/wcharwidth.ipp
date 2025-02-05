@@ -1,7 +1,9 @@
 #ifndef __VIDD_WCHAR_WIDTH_IPP__
 #define __VIDD_WCHAR_WIDTH_IPP__
 
-#ifdef __USE_XOPEN
+#ifndef __USE_XOPEN
+#define __USE_XOPEN
+#endif
 #include <wchar.h>
 
 namespace WCharWidth {

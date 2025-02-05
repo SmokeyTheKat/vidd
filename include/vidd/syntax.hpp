@@ -30,6 +30,7 @@ struct Syntax {
 		bool inclusive;
 		std::string_view from;
 		std::string_view chars;
+		bool required = false;
 	};
 
 	bool highlightTypes;

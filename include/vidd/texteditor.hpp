@@ -50,6 +50,7 @@ class TextEditor {
 	bool mTrackUndos = true;
 	bool mViewChanged = false;
 	bool mUnsavedChanges = false;
+	bool mCaps = false;
 
 	bool mOutputTabs = true;
 
@@ -151,6 +152,10 @@ public:
 	void endSelection(void);
 	void stopSelection(void);
 
+	void toggleCaps(void);
+
+	bool caps(void) { return mCaps; };
+
 	void deleteSelection(void);
 	WString readNormalSelectionToString(void);
 	WString readLineSelectionToString(void);
@@ -215,6 +220,7 @@ public:
 	void cursorMoveNextWord(void);
 	void cursorMovePrevWord(void);
 	void cursorMoveNextWordEnd(void);
+	void cursorMoveOppositeBracket(void);
 
 	void cursorMoveNextParagraph(void);
 	void cursorMovePrevParagraph(void);

@@ -12,6 +12,7 @@
 #include <vidd/language.hpp>
 #include <vidd/theme.hpp>
 #include <vidd/vidd.hpp>
+#include <vidd/charsets.hpp>
 
 #include <map>
 #include <memory>
@@ -30,6 +31,10 @@ void CodeView::exitJumpMode(void) {
 	mJumpModeWords.clear();
 }
 
+void CodeView::onPrerender(void) {
+	requireRedraw();
+}
+
 void CodeView::render(void) {
 	const Theme* theme = Vidd::getTheme();
 	Draw::style(theme->text);
@@ -45,7 +50,7 @@ void CodeView::render(void) {
 	const Language* lang = mEditor->getLanguage();
 	if (lang != getLanguageByName("") && mJumpModeWords.size() == 0) {
 		Syntaxer syntax(lang, theme);
-	
+
 		Line* ptr = first->first();
 		while (ptr != first) {
 			syntax.skimState(ptr->data);
@@ -61,7 +66,7 @@ void CodeView::render(void) {
 				s.fg = s.bg.augment(0.2);
 				Draw::style(s);
 				for (int i = 1; i < previousIndentLevel; i++) {
-					drawText(Vec2(x + i * 4, y), "┆"_ws);
+					drawText(Vec2(x + i * 4, y), "│"_ws);
 				}
 			} else {
 				previousIndentLevel = 0;
@@ -76,7 +81,7 @@ void CodeView::render(void) {
 					s.fg = s.bg.augment(0.2);
 					Draw::style(s);
 					if (tx > x) {
-						drawText(Vec2(tx, y), "┆"_ws);
+						drawText(Vec2(tx, y), "│"_ws);
 					}
 					sv = sv.subString(4, WStringView::npos);
 					previousIndentLevel++;
@@ -103,6 +108,11 @@ void CodeView::render(void) {
 		}
 	}
 
+	{
+		Style style(Color::none(), theme->bg.bg.augment(0.02));
+		paintFormat(Vec2(0, cur.y->number - view.y), Vec2(view.width, 1), style);
+	}
+
 	if (mEditor->isSelecting()) {
 		Selection sel = mEditor->getSelection();
 		sel.curEnd = mEditor->getCursor();
@@ -122,9 +132,51 @@ void CodeView::render(void) {
 		}
 	}
 
-	if (view.width >= 80 && Vidd::getShow80Line() && lang != getLanguageByName("")) {
+	if (view.width >= 80 - view.x && Vidd::getShow80Line() && lang != getLanguageByName("")) {
 		Style style(Color::none(), theme->bg.bg.augment(0.02));
-		paintFormat(Vec2(80, 0), Vec2(1, view.height), style);
+		paintFormat(Vec2(80 - view.x, 0), Vec2(1, view.height), style);
+	}
+
+	if (cur.x < cur.y->data.length() && CharSets::brackets.contains(cur.y->data[cur.x])) {
+		char bracket = cur.y->data[cur.x];
+		char opposite = CharSets::oppositeBracket(bracket);
+		if (CharSets::openBrackets.contains(cur.y->data[cur.x])) {
+			int layer = 1;
+			Line* line = cur.y;
+			int x = cur.x + 1;
+			while (line && line->number < view.y + view.height) {
+				for (; x < line->data.length(); x++) {
+					if (line->data[x] == opposite) layer -= 1;
+					else if (line->data[x] == bracket) layer += 1;
+					if (layer == 0) break;
+				}
+				if (layer == 0) break;
+				x = 0;
+				line = line->next();
+			}
+			if (line && line->number < view.y + view.height) {
+				paintFormat(Vec2(cur.x - view.x, cur.y->number - view.y), Vec2(1, 1), theme->highlight);
+				paintFormat(Vec2(x - view.x, line->number - view.y), Vec2(1, 1), Style(Style::reverse));
+			}
+		} else {
+			int layer = 1;
+			Line* line = cur.y;
+			int x = cur.x - 1;
+			while (line && line->number >= view.y) {
+				for (; x >= 0; x--) {
+					if (line->data[x] == opposite) layer -= 1;
+					else if (line->data[x] == bracket) layer += 1;
+					if (layer == 0) break;
+				}
+				if (layer == 0) break;
+				line = line->prev();
+				if (line) x = line->data.length() - 1;
+			}
+			if (line && line->number >= view.y) {
+				paintFormat(Vec2(cur.x - view.x, cur.y->number - view.y), Vec2(1, 1), theme->highlight);
+				paintFormat(Vec2(x - view.x, line->number - view.y), Vec2(1, 1), Style(Style::reverse));
+			}
+		}
 	}
 
 	if (mJumpModeWords.size() > 0) {

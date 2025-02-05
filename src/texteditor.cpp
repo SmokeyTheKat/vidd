@@ -122,7 +122,7 @@ void TextEditor::saveFile(std::string name) {
 				ofs << str[i].view();
 			}
 		}
-		if (ptr->next()) ofs << '\n';
+		ofs << '\n';
 		ptr = ptr->next();
 	}
 	ofs.close();
@@ -169,6 +169,10 @@ void TextEditor::endSelection(void) {
 
 void TextEditor::stopSelection(void) {
 	mSelecting = false;
+}
+
+void TextEditor::toggleCaps(void) {
+	mCaps = !mCaps;
 }
 
 void TextEditor::editDeleteSelection(void) {
@@ -632,6 +636,9 @@ bool TextEditor::insertCharAtCursor(WChar chr) {
 	} break;
 	default: {
 		if (isVisibleWChar(chr)) {
+			if (mCaps && std::islower(chr)) {
+				chr = std::toupper(chr);
+			}
 			registerUndoAction<UndoInsertAction>(
 				mCursor.toVec2(),
 				mCursor.toVec2() + Vec2(1, 0),
@@ -1060,6 +1067,64 @@ void TextEditor::cursorMoveNextWordEnd(void) {
 	}
 
 	viewChangedIfSelecting();
+}
+
+void TextEditor::cursorMoveOppositeBracket(void) {
+	if (CharSets::closeBrackets.contains(getCharAtCursor())) {
+		char bracket = mCursor.y->data[mCursor.x];
+		char opposite = CharSets::oppositeBracket(bracket);
+		int layer = 1;
+		Line* line = mCursor.y;
+		int x = mCursor.x - 1;
+		while (line && line->number >= mView.y) {
+			for (; x >= 0; x--) {
+				if (line->data[x] == opposite) layer -= 1;
+				else if (line->data[x] == bracket) layer += 1;
+				if (layer == 0) break;
+			}
+			if (layer == 0) break;
+			line = line->prev();
+			if (line) x = line->data.length() - 1;
+		}
+		if (line && line->number >= mView.y) {
+			cursorMoveTo(x, line->number);
+		}
+	} else if (CharSets::openBrackets.contains(getCharAtCursor())) {
+		char bracket = mCursor.y->data[mCursor.x];
+		char opposite = CharSets::oppositeBracket(bracket);
+		int layer = 1;
+		Line* line = mCursor.y;
+		int x = mCursor.x + 1;
+		while (line && line->number < mView.y + mView.height) {
+			for (; x < line->data.length(); x++) {
+				if (line->data[x] == opposite) layer -= 1;
+				else if (line->data[x] == bracket) layer += 1;
+				if (layer == 0) break;
+			}
+			if (layer == 0) break;
+			x = 0;
+			line = line->next();
+		}
+		if (line && line->number < mView.y + mView.height) {
+			cursorMoveTo(x, line->number);
+		}
+	} else {
+		Line* line = mCursor.y;
+		int x = mCursor.x - 1;
+		while (line && line->number >= mView.y) {
+			bool found = false;
+			for (; x >= 0; x--) {
+				if (CharSets::openBrackets.contains(line->data[x])) {
+					found = true;
+					break;
+				}
+			}
+			if (found) break;
+			line = line->prev();
+			if (line) x = line->data.length() - 1;
+		}
+		cursorMoveTo(x, line->number);
+	}
 }
 
 void TextEditor::cursorMoveNextParagraph(void) {

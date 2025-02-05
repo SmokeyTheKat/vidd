@@ -13,7 +13,15 @@ Buffer::Buffer(Input input) {
 	data.reserve(1024);
 	std::string lineData;
 	lineData.reserve(128);
+	bool first = true;
 	while (input.getLine(data)) {
+		if (!first) {
+			line = line->insertLine();
+			if (!head) {
+				head = line;
+			}
+		}
+		first = false;
 		lineData.clear();
 		for (char c : data) {
 			switch (c) {
@@ -32,10 +40,6 @@ Buffer::Buffer(Input input) {
 			}
 		}
 		line->data = lineData;
-		line = line->insertLine();
-		if (!head) {
-			head = line;
-		}
 	}
 	tail = line;
 }

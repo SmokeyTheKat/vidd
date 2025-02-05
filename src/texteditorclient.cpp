@@ -85,6 +85,7 @@ const CommandList commandList = {
 	KEYBIND(TextEditorClient, ({ Keys::ScrollRight }), EDITOR->viewScrollX(2)) \
 	KEYBIND(TextEditorClient, ({ 'g', 'w' }), EDITOR->cursorMoveNextTextWord()) \
 	KEYBIND(TextEditorClient, ({ 'g', 'b' }), EDITOR->cursorMovePrevTextWord()) \
+	KEYBIND(TextEditorClient, ({ 'g', 'o' }), EDITOR->cursorMoveOppositeBracket()) \
 	KEYBIND(TextEditorClient, ({ 'g', 'g' }), EDITOR->cursorMoveToFirstLine(); EDITOR->cursorMoveToLineStart();) \
 	KEYBIND(TextEditorClient, ({ 'g', 'j' }), EDITOR->cursorMoveToNextIndentationLevel()) \
 	KEYBIND(TextEditorClient, ({ 'g', 'k' }), EDITOR->cursorMoveToPrevionsIndentationLevel()) \
@@ -138,6 +139,7 @@ const KeyBinds normalKeyBinds = {
 	KEYBIND(TextEditorClient, ({ 31 }), CLIENT->inputReplace())
 	KEYBIND(TextEditorClient, ({ 'u' }), EDITOR->undo())
 	KEYBIND(TextEditorClient, ({ Keys::ctrl('r') }), EDITOR->redo())
+	KEYBIND(TextEditorClient, ({ Keys::ctrl('o') }), EDITOR->toggleCaps())
 	KEYBIND(TextEditorClient, ({ 'q' }), CLIENT->toggleRecordingMacro())
 	KEYBIND(TextEditorClient, ({ '@' }), CLIENT->runMacro())
 	KEYBIND(TextEditorClient, ({ '~' }), EDITOR->toggleCaptailizationAtCursor(); EDITOR->cursorMoveX(1))
@@ -211,6 +213,7 @@ const KeyBinds insertKeyBinds = {
 	KEYBIND(TextEditorClient, ({ Keys::Escape }), CLIENT->exitInsertMode())
 #endif
 	KEYBIND(TextEditorClient, ({ Keys::ctrl('v') }), EDITOR->paste())
+	KEYBIND(TextEditorClient, ({ Keys::ctrl('o') }), EDITOR->toggleCaps())
 	KEYBIND(TextEditorClient, ({ Keys::Return }), EDITOR->splitLineAtCursor())
 	KEYBIND(TextEditorClient, ({ Keys::Backspace }), EDITOR->backspaceAtCursor())
 	KEYBIND(TextEditorClient, ({ Keys::Left }), EDITOR->cursorMoveX(-1))
@@ -1451,12 +1454,15 @@ void TextEditorClient::renderStatusBar(void) {
 	switch (mMode) {
 	case EditMode::Normal: {
 		drawText(pos, WString("[NORMAL]"));
+		if (mEditor.caps()) drawText(" !CAPS!"_ws);
 	} break;
 	case EditMode::Insert: {
 		drawText(pos, WString("[INSERT]"));
+		if (mEditor.caps()) drawText(" !CAPS!"_ws);
 	} break;
 	case EditMode::Replace: {
 		drawText(pos, WString("[REPLACE]"));
+		if (mEditor.caps()) drawText(" !CAPS!"_ws);
 	} break;
 	case EditMode::Select: {
 		drawText(pos, WString("[SELECT]"));
@@ -1472,6 +1478,7 @@ void TextEditorClient::renderStatusBar(void) {
 	} break;
 	case EditMode::MultiLineInsert: {
 		drawText(pos, WString("[MULTI-INSERT]"));
+		if (mEditor.caps()) drawText(" !CAPS!"_ws);
 	} break;
 	case EditMode::WindowMove: {
 		drawText(pos, WString("[WINDOW-MOVE]"));
