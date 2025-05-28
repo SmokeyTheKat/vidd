@@ -77,6 +77,7 @@ public:
 
 	void setLayer(int layer) { mLayer = layer; if (mParent) mParent->sortChildren(); };
 	int getLayer(void) const { return mLayer; };
+	void moveToTopLayer(void);
 
 	bool isSelected(void);
 

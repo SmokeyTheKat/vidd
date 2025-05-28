@@ -749,6 +749,7 @@ void TextEditorClient::exitPrompt(void) {
 void TextEditorClient::enterWindowMoveMode(void) {
 	mMode = EditMode::WindowMove;
 	setWindowMoveBinds();
+	if (mIsFloating) getParent()->moveToTopLayer();
 	requireRedraw();
 }
 

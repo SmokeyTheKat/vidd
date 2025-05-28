@@ -21,11 +21,9 @@ void ClientFrame::onResize(void) {
 	if (mClient->isFloating()) {
 		mClient->setSize((mSize - Vec2(2, 2)).max(0));
 		mClient->setPos(Vec2(1, 1));
-		setLayer(10);
 	} else {
 		mClient->setSize(mSize);
 		mClient->setPos(Vec2::zero());
-		setLayer(0);
 	}
 	mLateClientHasBorder = mClient->isFloating();
 }

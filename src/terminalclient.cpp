@@ -60,6 +60,7 @@ TerminalClient::TerminalClient(Tab* tab, std::string command)
 
 void TerminalClient::enterWindowMoveMode(void) {
 	mKeyBinds = &windowMoveKeyBinds;
+	if (mIsFloating) getParent()->moveToTopLayer();
 }
 
 void TerminalClient::exitWindowMoveMode(void) {

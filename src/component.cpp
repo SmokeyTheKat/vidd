@@ -48,6 +48,18 @@ bool Component::isInBounds(Vec2 pos) {
 	return pos >= 0 && pos < mSize;
 }
 
+void Component::moveToTopLayer(void) {
+	Component* parent = getParent();
+	if (parent) {
+		int max = getLayer();
+		parent->forEachChild([&max](Component* c) {
+			if (c->getLayer() > max) max = c->getLayer();
+			return true;
+		});
+		setLayer(max + 1);
+	}
+}
+
 bool Component::isSelected(void) {
 	return mDisplay->getSelected() == this;
 }
