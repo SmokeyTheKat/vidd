@@ -47,7 +47,7 @@ void Draw::filledBox(Vec2 tl, Vec2 size, WChar chr, FrameBuffer* fb) {
 	Pixel pixel(chr, sStyle);
 
 	for (auto row : fb->subArea(tl, size)) {
-		std::fill(row.begin(), row.end(), pixel);
+		for (auto& p : row) p = pixel;
 	}
 }
 
@@ -71,11 +71,9 @@ void Draw::vLine(Vec2 pos, int length, WChar chr, FrameBuffer* fb) {
 
 	Pixel pixel(chr, sStyle);
 	auto col = fb->getCol(pos.x);
-	std::fill(
-		col.begin() + pos.y,
-		col.begin() + pos.y + length,
-		pixel
-	);
+	for (auto it = col.begin() + pos.y; it != col.begin() + pos.y + length; ++it) {
+		*it = pixel;
+	}
 }
 
 void Draw::vLine(Vec2 pos, int length, Draw::Line line, FrameBuffer* fb) {
@@ -92,11 +90,9 @@ void Draw::hLine(Vec2 pos, int length, WChar chr, FrameBuffer* fb) {
 
 	Pixel pixel(chr, sStyle);
 	auto row = fb->getRow(pos.y);
-	std::fill(
-		row.begin() + pos.x,
-		row.begin() + pos.x + length,
-		pixel
-	);
+	for (auto it = row.begin() + pos.x; it != row.begin() + pos.x + length; ++it) {
+		*it = pixel;
+	}
 }
 
 void Draw::hLine(Vec2 pos, int length, Draw::Line line, FrameBuffer* fb) {

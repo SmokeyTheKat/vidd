@@ -35,6 +35,7 @@ const Language none {
 #include <vidd/languages/java.hpp>
 #include <vidd/languages/numbers.hpp>
 #include <vidd/languages/ket.hpp>
+#include <vidd/languages/glsl.hpp>
 const std::vector<const Language*> languages {
 	&none,
 	&cpp,
@@ -52,6 +53,7 @@ const std::vector<const Language*> languages {
 	&java,
 	&numbers,
 	&ket,
+	&glsl,
 };
 
 }; // namespace

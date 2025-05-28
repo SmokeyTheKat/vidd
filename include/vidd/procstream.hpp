@@ -5,6 +5,7 @@
 #include <vidd/log.hpp>
 
 #include <iostream>
+#include <signal.h>
 #include <string>
 #include <cstdio>
 #include <unistd.h>

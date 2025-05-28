@@ -128,7 +128,7 @@ void VirtualTerminal::shiftRowsUp(void) {
 		std::copy(row2.begin(), row2.end(), row1.begin());
 	}
 	auto lastRow = mFrameBuffer->getRow(height-1);
-	std::fill(lastRow.begin(), lastRow.end(), Pixel());
+	for (auto& p : lastRow) p = Pixel();
 }
 
 void VirtualTerminal::shiftRowsDown(void) {
@@ -139,7 +139,7 @@ void VirtualTerminal::shiftRowsDown(void) {
 		std::copy(row2.begin(), row2.end(), row1.begin());
 	}
 	auto lastRow = mFrameBuffer->getRow(0);
-	std::fill(lastRow.begin(), lastRow.end(), Pixel());
+	for (auto& p : lastRow) p = Pixel();
 }
 
 void VirtualTerminal::newLine(void) {
@@ -246,7 +246,7 @@ void VirtualTerminal::interpretCsi(ParseString seq) {
 			case 3:
 			case 2: {
 				for (auto row : *mFrameBuffer) {
-					std::fill(row.begin(), row.end(), Pixel(' ', mBrush));
+					for (auto& p : row) p = Pixel(' ', mBrush);
 				}
 			};
 			default: break;

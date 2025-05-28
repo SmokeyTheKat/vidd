@@ -28,6 +28,7 @@ const Language c {
 			{ "default", StyleType::KeyWord },
 			{ "inline", StyleType::KeyWord },
 			{ "volatile", StyleType::KeyWord },
+			{ "goto", StyleType::KeyWord },
 			{ "sizeof", StyleType::KeyWord },
 			{ "typeof", StyleType::KeyWord },
 			{ "return", StyleType::KeyWord },

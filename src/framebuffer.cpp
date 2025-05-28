@@ -113,5 +113,5 @@ FrameBufferCol FrameBuffer::getCol(int x) {
 
 void FrameBuffer::clear(void) {
 	auto clspdBuf = collasped();
-	std::fill(clspdBuf.begin(), clspdBuf.end(), Pixel());
+	for (auto& p : clspdBuf) p = Pixel();
 }
