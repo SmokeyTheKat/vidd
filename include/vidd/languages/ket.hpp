@@ -18,9 +18,9 @@ const Language ket {
 /*single comments*/  { "//" },
 /*operators*/        { "+", "-", "*", "/", "=", "!", "~", "<", ">", "?", ":", "&", "%", "|", "^" },
 /*syntax ranges*/    {
-						 { { Syntax::Range::Type::UntilLineEnd, false , "#", "" }, StyleType::Macro },
 						{ { Syntax::Range::Type::While, false, ":", E_CHARACTERS "_" }, StyleType::Function },
 						{ { Syntax::Range::Type::While, true, "$", E_CHARACTERS }, StyleType::KeyWord },
+						{ { Syntax::Range::Type::While, true, "#", E_CHARACTERS }, StyleType::Macro },
 					 },
 /*syntax words*/     { 
 						 { "xor", StyleType::KeyWord },
@@ -33,6 +33,8 @@ const Language ket {
 						 { "var", StyleType::KeyWord },
 						 { "let", StyleType::KeyWord },
 						 { "self", StyleType::KeyWord },
+						 { "overlaod", StyleType::KeyWord },
+						 { "locals", StyleType::KeyWord },
 						 { "interface", StyleType::KeyWord },
 						 { "trait", StyleType::KeyWord },
 						 { "and", StyleType::KeyWord },

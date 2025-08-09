@@ -263,3 +263,4 @@ bool Display::render(void) {
 
 	return Terminal::flush();
 }
+

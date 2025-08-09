@@ -7,12 +7,28 @@
 
 namespace {
 
+bool contains(std::string_view find, std::string_view in) {
+	if (find.length() == 0 && in.length() == 0) return true;
+	if (find.length() > in.length()) return false;
+	for (int i = 0; i + find.length() <= in.length(); i++) {
+		bool found = true;
+		for (int j = 0; j < find.length(); j++) {
+			if (std::tolower(find[j]) != std::tolower(in[i + j])) {
+				found = false;
+				break;
+			}
+		}
+		if (found) return true;
+	}
+	return false;
+}
+
 std::vector<std::string> fuzzyFind(std::vector<std::string_view> finds, const std::vector<std::string>& data) {
 	std::vector<std::string> matches;
 	for (const std::string& str : data) {
 		bool found = true;
 		for (const std::string_view& find : finds) {
-			if (str.find(find) == std::string::npos) {
+			if (!contains(find, str)) {
 				found = false;
 				break;
 			}
