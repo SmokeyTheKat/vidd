@@ -15,6 +15,8 @@ struct WChar;
 
 namespace Utils {
 
+std::string getPwd(void);
+
 template<class T>
 inline T roundTo(T v, T to) {
 	return to * std::round(v / to);

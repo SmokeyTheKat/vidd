@@ -127,6 +127,14 @@ void TabArea::render(void) {
 	Draw::style(activeStyle);
 	drawFilledBox(pos, Vec2(mSize.x, 1), " ");
 
+	Draw::style(activeStyle);
+	drawTextReverse(Vec2(mSize.x - 1, 0), WStringView(Format::format(
+		"[{}]", Utils::getTimeString()
+	)));
+	drawTextReverse(WStringView(Format::format(
+		"[{}]", Utils::getPwd()
+	)));
+
 	Draw::style(inactiveStyle);
 	int i = 0;
 	for (const auto& tab : mTabs) {
@@ -151,9 +159,5 @@ void TabArea::render(void) {
 	Draw::style(activeStyle);
 	drawText(" "_ws);
 	drawText(getActive()->getSelected()->getTitle());
-
-	Draw::style(activeStyle);
-	drawTextReverse(Vec2(mSize.x - 1, 0), WStringView(Format::format(
-		"[{}]", Utils::getTimeString()
-	)));
+	drawText("  "_ws);
 }

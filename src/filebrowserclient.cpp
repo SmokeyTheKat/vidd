@@ -303,6 +303,16 @@ void FileBrowserClient::fileChange(void) {
 			FileSystem::hasExtension(Utils::stringToLower(file.path), ".wav")
 		) {
 			mSide.reset(new TerminalViewer(Format::format("mpv --loop '{}'", file.path)));
+		} else if (
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".mp4") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".webm") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".mov") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".avi") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".wmv") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".mkv") ||
+			FileSystem::hasExtension(Utils::stringToLower(file.path), ".flv")
+		) {
+			mSide.reset(new TerminalViewer(Format::format("mpv --vo=tct '{}'", file.path)));
 		}
 	} else if (file.type == FileType::Text) {
 		mSide.reset(new CodeViewer(Input(file.path)));

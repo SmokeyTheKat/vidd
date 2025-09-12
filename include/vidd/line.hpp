@@ -3,8 +3,6 @@
 
 #include <vidd/wchar.hpp>
 
-#include <string>
-
 struct Line {
 private:
 	Line* mNext = nullptr;

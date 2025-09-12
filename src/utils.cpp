@@ -2,8 +2,13 @@
 
 #include <cctype>
 #include <cstdlib>
+#include <filesystem>
 
 namespace Utils {
+
+std::string getPwd(void) {
+	return std::filesystem::current_path();
+}
 
 std::vector<std::string_view> splitAt(std::string_view text, char at) {
 	std::vector<std::string_view> words;

@@ -180,7 +180,6 @@ const KeyBinds normalKeyBinds = {
 	KEYBIND(TextEditorClient, ({ ' ', 's' }), CLIENT->openFloatingDirectory()) \
 	KEYBIND(TextEditorClient, ({ ' ', 'm' }), CLIENT->runMakeText())
 	KEYBIND(TextEditorClient, ({ ' ', 'n' }), CLIENT->openEmpty())
-	KEYBIND(TextEditorClient, ({ ' ', 'q' }), CLIENT->openMathBoard())
 };
 
 const AliasBinds windowMoveAliases = {
@@ -235,7 +234,6 @@ const KeyBinds insertKeyBinds = {
 	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'h' }), CLIENT->fuzzyGrep())
 	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'd' }), CLIENT->openDirectory())
 	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 's' }), CLIENT->openFloatingDirectory())
-	KEYBIND(TextEditorClient, ({ Keys::CtrlSpace, 'q' }), CLIENT->openMathBoard())
 };
 
 const AliasBinds multiLineInsertAliases = {
@@ -1556,10 +1554,6 @@ void TextEditorClient::renderLineNumbers(void) {
 void TextEditorClient::openDirectory(void) {
 	std::string path = mEditor.getFileName();
 	getTab()->replaceClientWithNew<FileBrowserClient>(this, FileSystem::getParentDirectory(path), FileSystem::getFileName(path));
-}
-
-void TextEditorClient::openMathBoard(void) {
-	getTab()->addAndSelectClient<MathBoardClient>();
 }
 
 void TextEditorClient::openFloatingDirectory(void) {
