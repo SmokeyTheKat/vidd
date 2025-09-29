@@ -135,6 +135,10 @@ void FileSystem::rename(std::string path, std::string name) {
 	std::filesystem::rename(path, getContainingDirectory(path) + name);
 }
 
+void FileSystem::move(std::string pathFrom, std::string pathTo) {
+	std::filesystem::rename(pathFrom, pathTo);
+}
+
 void FileSystem::createFile(std::string name) {
 	std::FILE* fp = std::fopen(name.c_str(), "w");
 	std::fclose(fp);

@@ -27,6 +27,7 @@ const KeyBinds normalKeyBinds = {
 	KEYBIND(FileBrowserClient, ({ 'g', 'm', 'm' }), CLIENT->loadDirectory("/mnt"))
 	KEYBIND(FileBrowserClient, ({ 'g', 'm', 'p' }), CLIENT->loadDirectory("/home/william/Documents/Projects"))
 	KEYBIND(FileBrowserClient, ({ 'y', 'y' }), CLIENT->copyFile())
+	KEYBIND(FileBrowserClient, ({ 'y', 'c' }), CLIENT->cutFile())
 	KEYBIND(FileBrowserClient, ({ 'p' }), CLIENT->pasteFile())
 	KEYBIND(FileBrowserClient, ({ 'P' }), CLIENT->pasteFileAs())
 	KEYBIND(FileBrowserClient, ({ 'd', 'd' }), CLIENT->deleteFile())
@@ -38,6 +39,7 @@ const KeyBinds normalKeyBinds = {
 	KEYBIND(FileBrowserClient, ({ 'G' }), DV->lastFile())
 	KEYBIND(FileBrowserClient, ({ 'j' }), DV->nextFile())
 	KEYBIND(FileBrowserClient, ({ 'k' }), DV->prevFile())
+	KEYBIND(FileBrowserClient, ({ 'v' }), CLIENT->select())
 	KEYBIND(FileBrowserClient, ({ 'J' }), DV->moveView(1))
 	KEYBIND(FileBrowserClient, ({ 'K' }), DV->moveView(-1))
 	KEYBIND(FileBrowserClient, ({ 'l' }), CLIENT->selectFile())
@@ -99,7 +101,7 @@ public:
 FileBrowserClient::FileBrowserClient(Tab* tab, const std::string& path)
 : Client(tab),
   mPath(FileSystem::realPath(path)),
-  mDv(path),
+  mDv(path, &mSelected),
   mParentDv(FileSystem::getParentDirectory(path)),
   mOrigionalDirectory(path) {
 	mDv.onChange = std::bind(&FileBrowserClient::fileChange, this);
@@ -133,6 +135,7 @@ void FileBrowserClient::gotoLetter(void) {
 
 void FileBrowserClient::loadDirectory(const std::string& path) {
 	mPath = FileSystem::realPath(path);
+	mSelected.clear();
 	mDv.loadDirectory(mPath);
 	mParentDv.loadDirectory(FileSystem::getParentDirectory(mPath));
 	mParentDv.setPtr(FileSystem::getFileName(mPath));
@@ -145,6 +148,17 @@ void FileBrowserClient::reloadDirectory(void) {
 		std::string file = mDv.getSelectedFile().path;
 		mDv.loadDirectory(mPath);
 		mDv.setPtr(FileSystem::getFileName(file));
+	}
+}
+
+
+void FileBrowserClient::select(void) {
+	if (mDv.getFiles().size() == 0) return;
+	const FileInfo& file = mDv.getSelectedFile();
+	if (mSelected.count(file.path) == 0) {
+		mSelected.insert(file.path);
+	} else {
+		mSelected.erase(file.path);
 	}
 }
 
@@ -174,24 +188,67 @@ void FileBrowserClient::backDirectory(void) {
 
 void FileBrowserClient::copyFile(void) {
 	if (mDv.getFiles().size() == 0) return;
-	const FileInfo& file = mDv.getSelectedFile();
-	if (file.hasPermission) {
-		mCopyedPath = file.path;
+	mDoCut = false;
+	mCopyedPath.clear();
+	if (mSelected.size() == 0) {
+		const FileInfo& file = mDv.getSelectedFile();
+		if (file.hasPermission) {
+			mCopyedPath.push_back(file.path);
+		}
+	} else {
+		for (const std::string& path : mSelected) {
+			mCopyedPath.push_back(path);
+		}
 	}
 }
 
+void FileBrowserClient::cutFile(void) {
+	if (mDv.getFiles().size() == 0) return;
+	copyFile();
+	mDoCut = true;
+}
+
 void FileBrowserClient::pasteFile(void) {
-	FileSystem::copy(mCopyedPath, mPath);
+	for (const std::string& path : mCopyedPath) {
+		if (mDoCut) FileSystem::move(path, mPath + "/" + FileSystem::getFileName(path));
+		else FileSystem::copy(path, mPath + "/" + FileSystem::getFileName(path));
+	}
 	reloadDirectory();
 }
 
 void FileBrowserClient::pasteFileAs(void) {
+	if (mCopyedPath.size() == 0) return;
 	InputBox* fw = new InputBox("paste with name", [this](InputBox* fw, std::string name) {
 		if (name.length() > 0) {
-			FileSystem::copy(
-				mCopyedPath,
-				FileSystem::getContainingDirectory(mCopyedPath) + name
-			);
+			if (mCopyedPath.size() == 1) {
+				if (mDoCut) {
+					FileSystem::move(
+						mCopyedPath[0],
+						FileSystem::getContainingDirectory(mPath) + name
+					);
+				} else {
+					FileSystem::copy(
+						mCopyedPath[0],
+						FileSystem::getContainingDirectory(mPath) + name
+					);
+				}
+			} else {
+				int i = 0;
+				for (const std::string& path : mCopyedPath) {
+					if (mDoCut) {
+						FileSystem::move(
+							path,
+							FileSystem::getContainingDirectory(mPath) + name + std::to_string(i)
+						);
+					} else {
+						FileSystem::copy(
+							path,
+							FileSystem::getContainingDirectory(mPath) + name + std::to_string(i)
+						);
+					}
+					i += 1;
+				}
+			}
 			reloadDirectory();
 		}
 		delete fw;

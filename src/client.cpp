@@ -108,22 +108,22 @@ Tab* Client::getTab(void) const {
 	return mTab;
 }
 
-bool Client::interpretBindSet(const KeyBinds& bindSet) {
+std::pair<bool, bool> Client::interpretBindSet(const KeyBinds& bindSet) {
 	std::vector<Key> keys(mKeyBuffer.begin(), mKeyBuffer.end());
 	auto res = bindSet.get(keys);
 	if (res.type == MatcherResult::Exact && res.position == MatcherPosition::End) {
 		mKeyBuffer.clear();
 		res.value(this);
-		return true;
+		return {true, false};
 	} else if (res.type == MatcherResult::Closest) {
 		Terminal::stageEvent(Event(EventType::Key, KeyEvent(mKeyBuffer.back())));
 		mKeyBuffer.clear();
 		res.value(this);
-		return true;
+		return {true, true};
 	} else if (res.type == MatcherResult::Invalid && res.position == MatcherPosition::End) {
-		return false;
+		return {false, false};
 	}
-	return true;
+	return {true, false};
 }
 
 bool Client::interpretAliasSet(const AliasBinds& aliasSet) {
@@ -143,14 +143,16 @@ bool Client::interpretAliasSet(const AliasBinds& aliasSet) {
 
 bool Client::interpret(Key key) {
 	mKeyBuffer.push_back(key);
+	bool staged = false;
 	if (!interpretAliasSet(*mAliases)) {
-		if (!interpretBindSet(*mKeyBinds)) {
+		bool ran;
+		if ((std::tie(ran, staged) = interpretBindSet(*mKeyBinds), !ran)) {
 			mKeyBuffer.clear();
 			unhandledKey(key);
-			return false;
+			return staged;
 		}
 	}
-	return true;
+	return staged;
 }
 
 void Client::close(void) {

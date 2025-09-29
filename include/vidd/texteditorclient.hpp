@@ -26,6 +26,7 @@ enum class EditMode {
 	WindowMove,
 	Prompt,
 	Jump,
+	NumberRepeat,
 };
 
 class TextEditorClient : public Client {
@@ -164,6 +165,8 @@ public:
 
 	void toggleRecordingMacro(void);
 	void runMacro(void);
+
+	void enterColorDraw(void);
 
 	void inputFindNext(void);
 	void inputFindPrev(void);

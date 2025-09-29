@@ -26,6 +26,24 @@ int TabArea::getTabId(Tab* tab) {
 	return 0;
 }
 
+void TabArea::setNextActive(void) {
+	for (int i = mActiveTab + 1; i < mTabs.size(); i++) {    
+		if (mTabs[i]->clientCount() > 0) {
+			setActive(i);
+			break;
+		}
+	}
+}
+
+void TabArea::setPrevActive(void) {
+	for (int i = mActiveTab - 1; i >= 0; i--) {    
+		if (mTabs[i]->clientCount() > 0) {
+			setActive(i);
+			break;
+		}
+	}
+}
+
 void TabArea::setLastActive(void) {
 	setActive(mLastTab);
 }

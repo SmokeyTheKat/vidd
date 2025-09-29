@@ -17,12 +17,19 @@ FrameBufferRow FrameBufferSubArea::collasped(void) {
 	return {};
 }
 
+void FrameBufferSubArea::fill(Pixel pixel) {
+	for (auto row : *this) {
+		std::fill(row.begin(), row.end(), pixel);
+	}
+}
+
 FrameBuffer::FrameBuffer(Vec2 size)
 : mData(new Pixel[size.x * size.y]), mSize(size) {
 }
 
 FrameBuffer::~FrameBuffer(void) {
 	if (mData != nullptr) delete[] mData;
+	mData = nullptr;
 }
 
 FrameBuffer::FrameBuffer(const FrameBuffer& other)
@@ -80,20 +87,39 @@ void FrameBuffer::copy(FrameBuffer& other) {
 	std::copy(otherBuf.begin(), otherBuf.end(), myBuf.begin());
 }
 
-void FrameBuffer::merge(FrameBuffer& other, Vec2 at) {
-	if (other.getSize() < 1) return;
+void FrameBuffer::merge(IFrameBufferArea& other, Vec2 at) {
+	if (other.getSize().x < 1 || other.getSize().y < 1) return;
+	if (at.x >= getSize().x) return;
+	if (at.y >= getSize().y) return;
 
+	int colWidth = std::min(mSize.x - at.x, other.getSize().x);
+
+	int y = 0;
 	for (auto row : other) {
+		if (y + at.y >= mSize.y) break;
 		std::copy(
 			row.begin(),
-			row.end(),
-			this->getRow(row.getY() + at.y).begin() + at.x
+			row.begin() + colWidth,
+			(*this)[y + at.y].begin() + at.x
 		);
+		y += 1;
 	}
 }
 
 FrameBufferSubArea FrameBuffer::subArea(Vec2 pos, Vec2 size) {
 //    assert(pos.x + size.x <= mSize.x && pos.y + size.y <= mSize.y);
+	if (size.x < 0) {
+		pos.x += size.x + 1;
+		size.x *= -1;
+	}
+	if (size.y < 0) {
+		pos.y += size.y + 1;
+		size.y *= -1;
+	}
+	
+	size.x = std::min(mSize.x - pos.x, size.x);
+	size.y = std::min(mSize.y - pos.y, size.y);
+
 	return FrameBufferSubArea(this, pos, size);
 }
 
@@ -114,4 +140,10 @@ FrameBufferCol FrameBuffer::getCol(int x) {
 void FrameBuffer::clear(void) {
 	auto clspdBuf = collasped();
 	for (auto& p : clspdBuf) p = Pixel();
+}
+
+void FrameBuffer::fill(Pixel pixel) {
+	for (auto row : *this) {
+		std::fill(row.begin(), row.end(), pixel);
+	}
 }

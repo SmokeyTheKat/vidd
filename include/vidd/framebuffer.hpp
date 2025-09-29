@@ -135,6 +135,7 @@ public:
 	FrameBufferRow getRow(int y);
 	FrameBufferCol getCol(int x);
 	FrameBufferRow collasped(void);
+	void fill(Pixel pixel);
 
 	FrameBufferRow operator[](int y) { return getRow(y); };
 
@@ -165,13 +166,15 @@ public:
 	Vec2 getSize(void) { return mSize; };
 
 	void copy(FrameBuffer& other);
-	void merge(FrameBuffer& other, Vec2 at);
+	void merge(IFrameBufferArea& other, Vec2 at);
 
 	FrameBufferRow collasped(void);
 	FrameBufferSubArea subArea(Vec2 pos, Vec2 size);
 
 	FrameBufferRow getRow(int y);
 	FrameBufferCol getCol(int x);
+
+	void fill(Pixel pixel);
 
 	void clear(void);
 

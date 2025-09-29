@@ -18,9 +18,9 @@
 #include <vidd/procstream.hpp>
 #include <vidd/virtualterminal.hpp>
 #include <vidd/terminalclient.hpp>
-#include <vidd/mathboardclient.hpp>
 #include <vidd/format.hpp>
 #include <vidd/charsets.hpp>
+#include <vidd/colordrawclient.hpp>
 #include <cstdlib>
 
 #include <map>
@@ -111,6 +111,7 @@ const CommandList commandList = {
 	KEYBIND(TextEditorClient, ({ '*' }), CLIENT->findNextUnderCursor()) \
 	KEYBIND(TextEditorClient, ({ '#' }), CLIENT->findPrevUnderCursor()) \
 	KEYBIND(TextEditorClient, ({ ' ', 'j' }), CLIENT->enterJumpMode()) \
+	KEYBIND(TextEditorClient, ({ ' ', '!' }), CLIENT->enterColorDraw()) \
 
 const AliasBinds normalAliases = {
 	WINDOW_ALIASES
@@ -725,6 +726,10 @@ std::vector<std::pair<std::string, Vec2>> TextEditorClient::generateJumpKeys(std
 	return pairs;
 }
 
+void TextEditorClient::enterColorDraw(void) {
+	getTab()->addAndSelectClient<ColorDrawClient>();
+}
+
 void TextEditorClient::enterJumpMode(void) {
 	mMode = EditMode::Jump;
 	setNoBinds();
@@ -808,6 +813,7 @@ Key TextEditorClient::getKey(void) {
 	Key key = Terminal::getKey();
 	if (sIsRecordingMacro) {
 		sMacroBuffer.push_back(key);
+		Log::log(Format::format("gk: {}", (char)key));
 	}
 	return key;
 }
@@ -834,8 +840,13 @@ void TextEditorClient::cursorMoveToPrevChar(void) {
 void TextEditorClient::deleteMovement(void) {
 	enterSelectMode();
 
-	do getDisplay()->nextEvent();
-	while (keysBuffered());
+	do {
+		Key k = getKey();
+		int mbIdx = sMacroBuffer.size() - 1;
+		if (interpret(k) && sIsRecordingMacro) {
+			sMacroBuffer.erase(sMacroBuffer.begin() + mbIdx);
+		}
+	} while (keysBuffered());
 
 	mEditor.deleteSelection();
 	exitSelectMode();
@@ -847,8 +858,13 @@ void TextEditorClient::copyMovement(void) {
 
 	enterSelectMode();
 
-	do getDisplay()->nextEvent();
-	while (keysBuffered());
+	do {
+		Key k = getKey();
+		int mbIdx = sMacroBuffer.size() - 1;
+		if (interpret(k) && sIsRecordingMacro) {
+			sMacroBuffer.erase(sMacroBuffer.begin() + mbIdx);
+		}
+	} while (keysBuffered());
 
 	mEditor.copySelection();
 	exitSelectMode();
@@ -863,8 +879,13 @@ void TextEditorClient::lineCopyMovement(void) {
 
 	enterLineSelectMode();
 
-	do getDisplay()->nextEvent();
-	while (keysBuffered());
+	do {
+		Key k = getKey();
+		int mbIdx = sMacroBuffer.size() - 1;
+		if (interpret(k) && sIsRecordingMacro) {
+			sMacroBuffer.erase(sMacroBuffer.begin() + mbIdx);
+		}
+	} while (keysBuffered());
 
 	mEditor.copySelection();
 	exitSelectMode();
@@ -1159,6 +1180,10 @@ void TextEditorClient::runMacro(void) {
 		return;
 	}
 
+	std::string str;
+	for (Key k : sMacroBuffer) str += (char)k;
+	Log::log(Format::format("run macro '{}'", str));
+
 	std::size_t top = Terminal::stagedEventsLeft();
 
 	for (auto it = sMacroBuffer.rbegin(); it != sMacroBuffer.rend(); it++) {
@@ -1314,8 +1339,59 @@ void TextEditorClient::onPaste(WStringView data) {
 void TextEditorClient::unhandledKey(Key key) {
 	switch (mMode) {
 	case EditMode::Normal: {
-		if (CharSets::numbers.contains(key) && key != 0) {
-			Log::log(std::to_string(key));
+		if (CharSets::numbers.contains(key) && key != '0') {
+			mMode = EditMode::NumberRepeat;
+			setNoBinds();
+			mNumberRepeatBuffer.clear();
+			mNumberRepeatBuffer.push_back(key);
+		}
+	} break;
+	case EditMode::NumberRepeat: {
+		if (CharSets::numbers.contains(key)) {
+			mNumberRepeatBuffer.push_back(key);
+		} else {
+			int count = std::stoi(mNumberRepeatBuffer);
+			enterDefaultMode();
+			if (key == '@') {
+				for (int i = 0; i < count; i++) {
+					runMacro();
+				}
+				break;
+			}
+			Terminal::stageEvent(Event(EventType::Key, KeyEvent(key)));
+			bool ir = sIsRecordingMacro;
+			if (ir) sMacroBuffer.pop_back();
+			std::vector<Key> mb = std::move(sMacroBuffer);
+			sIsRecordingMacro = true;
+			
+			do {
+				Key k = getKey();
+				int mbIdx = sMacroBuffer.size() - 1;
+				if (interpret(k) && sIsRecordingMacro) {
+					sMacroBuffer.erase(sMacroBuffer.begin() + mbIdx);
+				}
+			} while (keysBuffered());
+			sIsRecordingMacro = false;
+
+			std::string str;
+			for (Key k : sMacroBuffer) str += (char)k;
+			Log::log(Format::format("repeat macro {} times: '{}'", count, str));
+
+			if (ir) for (Key k : sMacroBuffer) mb.push_back(k);
+			std::size_t top = Terminal::stagedEventsLeft();
+			for (int i = 1; i < count; i++) {
+				str += 'l';
+				for (auto it = sMacroBuffer.rbegin(); it != sMacroBuffer.rend(); it++) {
+					Terminal::stageEvent(Event(EventType::Key, KeyEvent(*it)));
+				}
+
+				while (Terminal::stagedEventsLeft() != top) {
+					getDisplay()->nextEvent();
+				}
+			}
+
+			sMacroBuffer = std::move(mb);
+			sIsRecordingMacro = ir;
 		}
 	} break;
 	case EditMode::Insert: {
@@ -1389,8 +1465,12 @@ void TextEditorClient::onKeyDown(Key key) {
 	requireSelfRedraw();
 	if (sIsRecordingMacro) {
 		sMacroBuffer.push_back(key);
+		Log::log(Format::format("okd: {}", (char)key));
 	}
-	interpret(key);
+	int mbIdx = sMacroBuffer.size() - 1;
+	if (interpret(key) && sIsRecordingMacro) {
+		sMacroBuffer.erase(sMacroBuffer.begin() + mbIdx);
+	}
 }
 
 void TextEditorClient::onPrerender(void) {

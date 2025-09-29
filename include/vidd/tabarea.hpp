@@ -35,6 +35,8 @@ public:
 	void showTabBar(bool state) { mShowTabBar = state; resizeTabs(); requireRedraw(); };
 	void toggleBar(void) { showTabBar(!mShowTabBar); };
 
+	void setNextActive(void);
+	void setPrevActive(void);
 	void setActive(int idx);
 	void setActive(Tab* tab);
 	void setLastActive(void);

@@ -4,9 +4,13 @@
 #include <vidd/pos.hpp>
 #include <vidd/keybinds.hpp>
 #include <vidd/component.hpp>
+#include <vidd/format.hpp>
+#include <vidd/log.hpp>
 
 #include <memory>
+#include <optional>
 #include <vector>
+#include <tuple>
 
 class Tab;
 class TabArea;
@@ -36,11 +40,12 @@ public:
 	void windowResizeX(int dx);
 	void windowResizeY(int dy);
 
-	bool interpretBindSet(const KeyBinds& bindSet);
+	std::pair<bool, bool> interpretBindSet(const KeyBinds& bindSet);
 	bool interpretAliasSet(const AliasBinds& aliasSet);
 	bool interpret(Key key);
 
 	bool keysBuffered(void) const {
+		Log::log(Format::format("key buf: {}", mKeyBuffer.size()));
 		return mKeyBuffer.size() > 0;
 	};
 

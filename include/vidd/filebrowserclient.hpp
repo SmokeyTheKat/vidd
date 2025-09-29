@@ -8,14 +8,17 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <set>
 
 class FileBrowserClient : public Client {
 	std::string mPath;
 	DirectoryViewer mDv;
 	DirectoryViewer mParentDv;
 	std::unique_ptr<Component> mSide = nullptr;
-	std::string mCopyedPath;
+	std::vector<std::string> mCopyedPath;
+	bool mDoCut = false;
 	std::string mOrigionalDirectory;
+	std::set<std::string> mSelected;
 
 public:
 	FileBrowserClient(Tab* tab, const std::string& path);
@@ -30,12 +33,15 @@ public:
 
 	void gotoLetter(void);
 
+	void select(void);
+
 	void selectFile(void);
 	void selectFileNewWindow(void);
 
 	void backDirectory(void);
 
 	void copyFile(void);
+	void cutFile(void);
 	void pasteFile(void);
 	void pasteFileAs(void);
 	void duplicateFile(void);

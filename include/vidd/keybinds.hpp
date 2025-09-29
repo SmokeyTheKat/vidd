@@ -43,6 +43,8 @@
 	KEYBIND(client, ({ Keys::ctrl('t') }), TAB->toggleTabBar()) \
 	KEYBIND(client, ({ Keys::ctrl('i') }), TAB->incrementMasterCount(1)) \
 	KEYBIND(client, ({ Keys::ctrl('d') }), TAB->incrementMasterCount(-1)) \
+	KEYBIND(client, ({ 'g', 't' }), TABAREA->setNextActive()) \
+	KEYBIND(client, ({ 'g', 'T' }), TABAREA->setPrevActive()) \
 	KEYBIND(client, ({ ' ', '1' }), TABAREA->setActive(0)) \
 	KEYBIND(client, ({ ' ', '2' }), TABAREA->setActive(1)) \
 	KEYBIND(client, ({ ' ', '3' }), TABAREA->setActive(2)) \

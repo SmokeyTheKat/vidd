@@ -4,7 +4,8 @@
 #include <vidd/log.hpp>
 #include <vidd/vidd.hpp>
 
-DirectoryViewer::DirectoryViewer(const std::string& path) {
+DirectoryViewer::DirectoryViewer(const std::string& path, std::set<std::string>* sel) {
+	mSelected = sel;
 	onChange = [](){};
 	loadDirectory(path);
 }
@@ -135,6 +136,11 @@ void DirectoryViewer::render(void) {
 
 		if (y + mView == mPtr) {
 			style += Style(Style::reverse);
+		}
+		if (mSelected != nullptr) {
+			if (mSelected->count(it->path) > 0) {
+				style += Style(theme->highlight);
+			}
 		}
 		Draw::style(style);
 

@@ -28,6 +28,7 @@ namespace FileSystem {
 	void copy(std::string from, std::string to);
 	void remove(std::string path);
 	void rename(std::string path, std::string name);
+	void move(std::string path, std::string name);
 
 	void createFile(std::string name);
 	void createDirectory(std::string name);

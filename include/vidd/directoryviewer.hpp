@@ -19,12 +19,13 @@ class DirectoryViewer : public Component {
 	std::vector<FileInfo> mFiles;
 	std::size_t mView = 0;
 	std::size_t mPtr = 0;
+	std::set<std::string>* mSelected;
 
 public:
 	std::function<void(void)> onChange;
 
 public:
-	DirectoryViewer(const std::string& path);
+	DirectoryViewer(const std::string& path, std::set<std::string>* sel = nullptr);
 
 	const std::vector<FileInfo>& getFiles(void) { return mFiles; };
 	const FileInfo& getSelectedFile(void) {
