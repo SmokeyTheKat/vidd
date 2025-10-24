@@ -12,6 +12,7 @@ class Input {
 	std::string mBackBuffer;
 	std::size_t mLineLimit = 0;
 	std::size_t mLinesRead = 0;
+	bool mOnNewLine = false;
 
 public:
 	template <std::convertible_to<std::string_view> T>

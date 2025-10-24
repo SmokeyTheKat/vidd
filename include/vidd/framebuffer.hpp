@@ -167,6 +167,7 @@ public:
 
 	void copy(FrameBuffer& other);
 	void merge(IFrameBufferArea& other, Vec2 at);
+	void merge2(IFrameBufferArea& other, Vec2 at);
 
 	FrameBufferRow collasped(void);
 	FrameBufferSubArea subArea(Vec2 pos, Vec2 size);

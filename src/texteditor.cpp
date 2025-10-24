@@ -122,8 +122,8 @@ void TextEditor::saveFile(std::string name) {
 				ofs << str[i].view();
 			}
 		}
-		ofs << '\n';
 		ptr = ptr->next();
+		if (ptr) ofs << '\n';
 	}
 	ofs.close();
 	mUnsavedChanges = false;

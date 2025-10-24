@@ -18,7 +18,7 @@ struct Color {
 	: r(r), g(g), b(b) {};
 	constexpr Color(uint8_t v)
 	: r(v), g(v), b(v) {};
-	consteval Color(std::string_view hex) {
+	constexpr Color(std::string_view hex) {
 		if (hex[0] == '#') hex.remove_prefix(1);
 		std::size_t len = hex.length();
 		char red[3] = {0};

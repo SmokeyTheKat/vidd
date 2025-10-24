@@ -96,12 +96,39 @@ void FrameBuffer::merge(IFrameBufferArea& other, Vec2 at) {
 
 	int y = 0;
 	for (auto row : other) {
+		if (y + at.y < 0) { y += 1; continue; }
 		if (y + at.y >= mSize.y) break;
 		std::copy(
 			row.begin(),
 			row.begin() + colWidth,
 			(*this)[y + at.y].begin() + at.x
 		);
+		y += 1;
+	}
+}
+
+void FrameBuffer::merge2(IFrameBufferArea& other, Vec2 at) {
+	if (other.getSize().x < 1 || other.getSize().y < 1) return;
+	if (at.x >= getSize().x) return;
+	if (at.y >= getSize().y) return;
+
+	int colWidth = std::min(mSize.x - at.x, other.getSize().x);
+
+	int y = 0;
+	for (auto row : other) {
+		if (y + at.y < 0) { y += 1; continue; }
+		if (y + at.y >= mSize.y) break;
+		for (int x = 0; x < colWidth; x++) {
+			Pixel& pFrom = row[x];
+			Pixel& pTo = (*this)[y + at.y][at.x + x];
+			if (pFrom.style.bg != Color::none()) {
+				pTo.style.bg = pFrom.style.bg;
+			}
+			if (pFrom.character != ' ') {
+				pTo.character = pFrom.character;
+				pTo.style.fg = pFrom.style.fg;
+			}
+		}
 		y += 1;
 	}
 }

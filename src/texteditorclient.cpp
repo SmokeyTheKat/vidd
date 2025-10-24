@@ -727,7 +727,7 @@ std::vector<std::pair<std::string, Vec2>> TextEditorClient::generateJumpKeys(std
 }
 
 void TextEditorClient::enterColorDraw(void) {
-	getTab()->addAndSelectClient<ColorDrawClient>();
+	getTab()->replaceClientWithNew<ColorDrawClient>(this, mEditor.getFileName());
 }
 
 void TextEditorClient::enterJumpMode(void) {
@@ -1333,7 +1333,11 @@ void TextEditorClient::onDeselect(void) {
 }
 
 void TextEditorClient::onPaste(WStringView data) {
-	mEditor.insertAtCursor(data);
+	if (mMode == EditMode::Prompt) {
+		for (WChar c : data) mPrompt.input(c);
+	} else {
+		mEditor.insertAtCursor(data);
+	}
 }
 
 void TextEditorClient::unhandledKey(Key key) {

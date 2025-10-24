@@ -7,6 +7,12 @@
 #include <iostream>
 
 Buffer::Buffer(Input input) {
+	static int a = 0;
+	static int b = 0;
+	a += 1;
+	if (a == 1) {
+		b += 1;
+	}
 	Line* line = Line::createChain()->first();
 	head = line;
 	std::string data;

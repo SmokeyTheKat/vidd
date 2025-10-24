@@ -9,6 +9,13 @@ std::size_t Input::getLine(std::string& buffer) {
 			std::size_t len = std::fread(buf, 1, sizeof(buf), mFp);
 			if (len == 0) {
 				buffer.clear();
+				if (mBackBuffer.size() == 0) {
+					if (mOnNewLine) {
+						mOnNewLine = false;
+						return 1;
+					} else return 0;
+				}
+				mOnNewLine = false;
 				buffer.insert(
 					buffer.end(),
 					mBackBuffer.begin(),
@@ -16,7 +23,7 @@ std::size_t Input::getLine(std::string& buffer) {
 				);
 				std::size_t length = mBackBuffer.size();
 				mBackBuffer.clear();
-				return length;
+				return 1;
 			}
 			mBackBuffer.insert(mBackBuffer.end(), buf, buf + len);
 		} else {
@@ -27,8 +34,9 @@ std::size_t Input::getLine(std::string& buffer) {
 				mBackBuffer.begin() + lbPos
 			);
 			mBackBuffer.erase(0, lbPos + 1);
+			mOnNewLine = true;
 			mLinesRead += 1;
-			return lbPos + 1;
+			return 1;
 		}
 	}
 	return 0;

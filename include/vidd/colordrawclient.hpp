@@ -28,6 +28,8 @@ class ColorDrawClient : public Client {
 	Vec2 mWindowDragOrigSize;
 	bool mStartedWindowModeFromMouse = false;
 
+	std::string mFileName;
+
 	std::vector<Color> mPalette;
 
 	Vec2 mCanvasSize;
@@ -36,13 +38,19 @@ class ColorDrawClient : public Client {
 	Vec2 mActionStart;
 
 	FrameBuffer mCopyBuffer;
-	FrameBuffer mFb;
+	FrameBuffer* mFb;
+	std::vector<FrameBuffer> mFbs;
+	bool mMergeLayers = false;
 	Style mStyle;
 
 	WChar mSelectedChar = ' ';
 
 public:
-	ColorDrawClient(Tab* tab);
+	ColorDrawClient(Tab* tab, std::string file);
+
+	void toggleMergeLayers(void);
+
+	void openDirectory(void);
 
 	void enterCommandMode(void);
 	void exitCommandMode(void);
@@ -56,8 +64,15 @@ public:
 
 	void resizeCanvas(int width, int height);
 
+	void addColor(std::vector<std::string_view> params);
+
 	std::pair<Vec2, Vec2> getSelectionArea(void);
 
+	void save(void);
+	void load(void);
+
+	void selectLayer(void);
+	void returnToTextEditor(void);
 	void copy(void);
 	void paste(void);
 	void pasteTransparent(void);
